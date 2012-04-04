@@ -2,7 +2,7 @@
 #define OGLENUM_H_
 
 #include <GL/glew.h>
-#include <plugin/Enums.h>
+#include <dukeengine/renderer/Enums.h>
 #include <dukeio/Formats.h>
 
 class OGLEnum

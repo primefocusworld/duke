@@ -2,7 +2,6 @@
 use-project /pb/player     : protobuf/player ;
 use-project /pb/playlist   : protobuf/playlist ;
 use-project /pb/serialize  : protobuf/serialize ;
-use-project /dukerenderer  : dukerenderer ;
 use-project /dukeio        : dukeio ;
 
 alias tests : dukeapi/tests dukeengine/tests ;

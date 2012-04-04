@@ -44,12 +44,6 @@ public:
     inline void setThreadSize(const size_t size) {
         mThreadSize = size;
     }
-    inline const std::string rendererPath() const {
-        return mRendererPath;
-    }
-    inline void setRendererPath(const std::string& path) {
-        mRendererPath = path;
-    }
     ::duke::playlist::Playlist & playlist() {
         return mPlaylist;
     }
@@ -78,7 +72,6 @@ private:
     bool mPlaying;
     uint64_t mCacheSize;
     size_t mThreadSize;
-    std::string mRendererPath;
     ::duke::playlist::Playlist mPlaylist;
     ::duke::protocol::StaticParameter mDisplayMode;
     ::duke::protocol::PlaybackState::PlaybackMode mPlaybackMode;

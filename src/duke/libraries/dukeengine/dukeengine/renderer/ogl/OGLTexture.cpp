@@ -1,8 +1,7 @@
 #include "OGLTexture.h"
 #include "OGLRenderer.h"
 #include "OGLEnum.h"
-#include <dukerenderer/plugin/utils/PixelUtils.h>
-#include <dukerenderer/Setup.h>
+#include <dukeengine/renderer/utils/PixelUtils.h>
 #ifndef __APPLE__
 #include <GL/gl.h>
 #else

@@ -6,8 +6,8 @@
 
 #include <dukeapi/sequence/PlaylistHelper.h>
 
+#include <dukeengine/renderer/ogl/OGLRenderer.h>
 #include <dukeengine/image/ImageToolbox.h>
-#include <dukeengine/host/renderer/Renderer.h>
 
 #include <google/protobuf/descriptor.h>
 
@@ -31,61 +31,6 @@ using namespace ::std;
 
 static const string HEADER = "[Application] ";
 
-namespace {
-
-Application* g_pApplication;
-
-void renderStart() {
-    g_pApplication->renderStart();
-}
-
-void pushEvent(const google::protobuf::serialize::MessageHolder&event) {
-    g_pApplication->pushEvent(event);
-}
-
-const google::protobuf::serialize::MessageHolder * popEvent() {
-    return g_pApplication->popEvent();
-}
-
-bool renderFinished(unsigned msToPresent) {
-    return g_pApplication->renderFinished(msToPresent);
-}
-
-void verticalBlanking(bool presented) {
-    return g_pApplication->verticalBlanking(presented);
-}
-
-OfxRendererSuiteV1::PresentStatus getPresentStatus() {
-    return g_pApplication->getPresentStatus();
-}
-
-void* fetchSuite(OfxPropertySetHandle host, const char* suiteName, int suiteVersion) {
-    return ((Application*) host)->fetchSuite(suiteName, suiteVersion);
-}
-
-OfxRendererSuiteV1 buildRendererSuite() {
-    OfxRendererSuiteV1 rendererSuite;
-    rendererSuite.verticalBlanking = &::verticalBlanking;
-    rendererSuite.getPresentStatus = &::getPresentStatus;
-    rendererSuite.renderStart = &::renderStart;
-    rendererSuite.renderEnd = &::renderFinished;
-    rendererSuite.pushEvent = &::pushEvent;
-    rendererSuite.popEvent = &::popEvent;
-    return rendererSuite;
-}
-
-OfxRendererSuiteV1 g_ApplicationRendererSuite = buildRendererSuite();
-
-OfxHost buildHost(Application* pApplication) {
-    g_pApplication = pApplication;
-    OfxHost ofxHost;
-    ofxHost.host = (OfxPropertySetHandle) pApplication;
-    ofxHost.fetchSuite = &::fetchSuite;
-    return ofxHost;
-}
-
-} // namespace
-
 static inline void dump(const google::protobuf::Descriptor* pDescriptor, const google::protobuf::serialize::MessageHolder &holder, bool push = false) {
 #ifdef DEBUG_MESSAGES
     const string debugString = pDescriptor == Texture::descriptor() ? "texture" : unpack(holder)->ShortDebugString();
@@ -93,7 +38,7 @@ static inline void dump(const google::protobuf::Descriptor* pDescriptor, const g
 #endif
 }
 
-Application::Application(const char* rendererFilename, ImageDecoderFactoryImpl &imageDecoderFactory, IMessageIO &io, int &returnCode,
+Application::Application(ImageDecoderFactoryImpl &imageDecoderFactory, IMessageIO &io, int &returnCode,
                          const duke::protocol::Cache& cacheConfiguration) :
                 m_IO(io), //
                 m_ImageDecoderFactory(imageDecoderFactory), //
@@ -108,14 +53,9 @@ Application::Application(const char* rendererFilename, ImageDecoderFactoryImpl &
                 m_bRequestTermination(false), //
                 m_bAutoNotifyOnFrameChange(false), //
                 m_bForceRefresh(true), //
-                m_iReturnCode(returnCode), //
-                m_Renderer(buildHost(this), rendererFilename) {
+                m_iReturnCode(returnCode) {
     m_ImageDecoderFactory.dumpDecoderInfos();
     consumeUntilRenderOrQuit();
-}
-
-Application::~Application() {
-    g_pApplication = NULL;
 }
 
 void Application::consumeUntilRenderOrQuit() {
@@ -131,7 +71,7 @@ void Application::consumeUntilRenderOrQuit() {
         const Descriptor* descriptor = descriptorFor(holder);
 
         if (isType<Renderer>(descriptor)) {
-            m_Renderer.initRender(unpackTo<Renderer>(holder));
+            createWindowAndLoop(unpackTo<Renderer>(holder), *this);
             break;
         }
         cerr << HEADER + "First message must be either Renderer or Quit, ignoring message of type " << descriptor->name() << endl;
@@ -148,10 +88,6 @@ bool Application::handleQuitMessage(const ::google::protobuf::serialize::SharedH
         return true;
     }
     return false;
-}
-
-void* Application::fetchSuite(const char* suiteName, int suiteVersion) {
-    return &g_ApplicationRendererSuite;
 }
 
 ///////////////////////
@@ -498,7 +434,6 @@ void Application::renderStart() {
             m_AudioEngine.checksync(m_Playback.playlistTime());
 
         // retrieve images
-        Setup &setup(g_ApplicationRendererSuite.m_Setup);
         if (m_bForceRefresh || m_PreviousFrame != frame) {
             const int32_t speed = m_Playback.getSpeed();
             const EPlaybackState state = speed == 0 ? BALANCE : (speed > 0 ? FORWARD : REVERSE);
@@ -507,26 +442,25 @@ void Application::renderStart() {
             m_bForceRefresh = false;
         }
 
-        setup.m_Images.clear();
+        m_Setup.m_Images.clear();
         BOOST_FOREACH( const ImageHolder &image, m_FileBufferHolder.getImages() )
                 {
-                    //cout << image.getImageDescription().width << "x" << image.getImageDescription().height << endl;
-                    setup.m_Images.push_back(image.getImageDescription());
+                    m_Setup.m_Images.push_back(image.getImageDescription());
                 }
 
         // populate clips
         // TODO : need better code... this is awkward
-        m_Playlist.clipsAt(frame, setup.m_Clips);
+        m_Playlist.clipsAt(frame, m_Setup.m_Clips);
 
         // set current frame
-        setup.m_iFrame = frame;
+        m_Setup.m_iFrame = frame;
     } catch (exception& e) {
         cerr << HEADER + "Unexpected error while starting simulation step : " << e.what() << endl;
     }
 }
 
-OfxRendererSuiteV1::PresentStatus Application::getPresentStatus() {
-    return m_Playback.shouldPresent() ? OfxRendererSuiteV1::PRESENT_NEXT_BLANKING : OfxRendererSuiteV1::SKIP_NEXT_BLANKING;
+IRendererHost::PresentStatus Application::getPresentStatus() {
+    return m_Playback.shouldPresent() ? PRESENT_NEXT_BLANKING : SKIP_NEXT_BLANKING;
 }
 
 void Application::verticalBlanking(bool presented) {

@@ -8,10 +8,9 @@
 #include "RenderingContext.h"
 #include "IShaderBase.h"
 
-#include "RendererSuite.h"
-#include <dukerenderer/Setup.h>
-
 #include <player.pb.h>
+
+#include <dukeengine/RenderInterface.h>
 
 #include <SFML/System.hpp>
 #include <SFML/Window/Event.hpp>
@@ -22,7 +21,7 @@ class IBufferBase;
 
 class IRenderer : public IFactory {
 public:
-    IRenderer(const duke::protocol::Renderer&, sf::Window&, const RendererSuite&);
+    IRenderer(const duke::protocol::Renderer&, sf::Window&, IRendererHost&);
     virtual ~IRenderer();
 
     // to implement in derived classes
@@ -39,6 +38,7 @@ public:
     virtual Image dumpTexture(ITextureBase* pTextureBase) = 0;
     virtual void waitForBlanking() const = 0;
     virtual void presentFrame() = 0;
+    void loop();
 
 protected:
     friend struct RAIIScene;
@@ -55,7 +55,6 @@ private:
     friend class SfmlWindow;
     void waitForBlankingAndWarn(bool presented) const;
     void consumeUntilEngine();
-    void loop();
     void displayClip(const ::duke::protocol::Clip&);
     void displayPass(const ::duke::protocol::RenderPass&);
     void displayMesh(const ::duke::protocol::Mesh&);
@@ -68,9 +67,12 @@ private:
     template<typename T>
     inline void addResource(const ::google::protobuf::serialize::MessageHolder&);
 
+    inline const Setup& getSetup() const {
+        return m_Host.m_Setup;
+    }
+
     const duke::protocol::Renderer m_Renderer;
-    const RendererSuite& m_RendererSuite;
-    const Setup* m_pSetup;
+    IRendererHost& m_Host;
     sf::Event m_Event;
     unsigned long m_DisplayedFrameCount;
     ::duke::protocol::Engine m_EngineStatus;

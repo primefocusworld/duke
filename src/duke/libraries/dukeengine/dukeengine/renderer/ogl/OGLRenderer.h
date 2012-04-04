@@ -3,10 +3,9 @@
 
 #include <GL/glew.h>
 #include <player.pb.h>
-#include <plugin/RendererSuite.h>
-#include <plugin/IRenderer.h>
-#include <plugin/IFactory.h>
-#include <plugin/Mesh.h>
+#include <dukeengine/renderer/IRenderer.h>
+#include <dukeengine/renderer/IFactory.h>
+#include <dukeengine/renderer/Mesh.h>
 
 class OGLRenderer : public IRenderer
 {
@@ -17,7 +16,8 @@ protected:
     virtual void waitForBlanking() const;
 	virtual Image dumpTexture( ITextureBase* pTextureBase );
 
-public: OGLRenderer( const duke::protocol::Renderer& Renderer, sf::Window& window, const RendererSuite& suite );
+public:
+	OGLRenderer( const duke::protocol::Renderer& Renderer, sf::Window& window, IRendererHost& host );
 	~OGLRenderer();
 
 	// IFactory

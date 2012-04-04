@@ -69,7 +69,6 @@ bool Configuration::parse(int argc, char** argv) {
 
     // available in the configuration file and command line
     m_Config.add_options() //
-    (RENDERER_OPT, po::value<string>(), "Sets the renderer to be used") //
     (CACHESIZE_OPT, po::value<string>()->default_value("50%"), "Cache size for look ahead. Valid units are K,M,G or %") //
     (THREADS_OPT, po::value<size_t>()->default_value(1), "Number of load/decode threads. Cache size must be >0.");
 
@@ -117,11 +116,6 @@ bool Configuration::parse(int argc, char** argv) {
             displayVersion();
             return false;
         }
-        if (m_Vm.count(RENDERER) == 0)
-            throw cmdline_exception("No renderer specified. Aborting.");
-
-        // renderer plugin path
-        m_Descriptor.setRendererPath(m_Vm[RENDERER].as<std::string>());
 
         // threading
         if (m_Vm.count(THREADS))

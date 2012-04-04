@@ -2,7 +2,7 @@
 #define OGLBUFFER_H_
 
 #include <GL/glew.h>
-#include <plugin/IBufferBase.h>
+#include <dukeengine/renderer/IBufferBase.h>
 
 template<int T>
 class OGLBuffer : public IBufferBase

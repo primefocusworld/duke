@@ -1,7 +1,7 @@
 #ifndef OGLSHADER_H_
 #define OGLSHADER_H_
 
-#include <plugin/IShaderBase.h>
+#include <dukeengine/renderer/IShaderBase.h>
 
 class OGLShader : public IShaderBase
 {

@@ -1,6 +1,6 @@
 #include "OGLEnum.h"
 
-#include <plugin/utils/PixelUtils.h>
+#include <dukeengine/renderer/utils/PixelUtils.h>
 
 #include <iostream>
 #include <stdexcept>

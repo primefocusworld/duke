@@ -70,8 +70,8 @@ inline void IRenderer::addResource(const ::google::protobuf::serialize::MessageH
                     );
 }
 
-IRenderer::IRenderer(const duke::protocol::Renderer& renderer, sf::Window& window, const RendererSuite& suite) :
-                m_Window(window), m_Renderer(renderer), m_RendererSuite(suite), m_pSetup(NULL), m_DisplayedFrameCount(0), m_bRenderOccured(false) {
+IRenderer::IRenderer(const duke::protocol::Renderer& renderer, sf::Window& window, IRendererHost& host) :
+                m_Window(window), m_Renderer(renderer), m_Host(host), m_DisplayedFrameCount(0), m_bRenderOccured(false) {
     m_EmptyImageDescription.width = 1;
     m_EmptyImageDescription.height = 1;
     m_EmptyImageDescription.depth = 0;
@@ -111,7 +111,7 @@ static void dump(const google::protobuf::Descriptor* pDescriptor, const google::
 void IRenderer::consumeUntilEngine() {
     // updating resources by popping all the pending messages
     const MessageHolder* pHolder;
-    while ((pHolder = m_RendererSuite.popEvent()) != NULL) {
+    while ((pHolder = m_Host.popEvent()) != NULL) {
         const MessageHolder &holder(*pHolder);
         const Descriptor *pDescriptor(descriptorFor(holder));
         holder.CheckInitialized();
@@ -170,7 +170,7 @@ void IRenderer::consumeUntilEngine() {
 
 bool IRenderer::simulationStep() {
     m_Context.reset();
-    m_RendererSuite.renderStart();
+    m_Host.renderStart();
 
     try {
         consumeUntilEngine();
@@ -181,22 +181,21 @@ bool IRenderer::simulationStep() {
 
     // rendering clips
     {
-        m_pSetup = &m_RendererSuite.getSetup();
         const bool renderRequested = m_EngineStatus.action() != Engine_Action_RENDER_STOP;
-        const bool renderAvailable = m_pSetup && renderRequested && m_Window.IsOpened();
+        const bool renderAvailable = renderRequested && m_Window.IsOpened();
 
         if (renderAvailable) {
             try {
                 m_bRenderOccured = false;
-                for_each(m_pSetup->m_Clips.begin(), m_pSetup->m_Clips.end(), boost::bind(&IRenderer::displayClip, this, _1));
+                for_each(getSetup().m_Clips.begin(), getSetup().m_Clips.end(), boost::bind(&IRenderer::displayClip, this, _1));
                 if (!m_bRenderOccured) {
                     ::boost::this_thread::sleep(::boost::posix_time::milliseconds(10));
                 } else {
-                    OfxRendererSuiteV1::PresentStatus status;
-                    while ((status = m_RendererSuite.getPresentStatus()) == OfxRendererSuiteV1::SKIP_NEXT_BLANKING)
+                    IRendererHost::PresentStatus status;
+                    while ((status = m_Host.getPresentStatus()) == IRendererHost::SKIP_NEXT_BLANKING)
                         waitForBlankingAndWarn(false);
                     presentFrame();
-                    if (status == OfxRendererSuiteV1::PRESENT_NEXT_BLANKING)
+                    if (status == IRendererHost::PRESENT_NEXT_BLANKING)
                         waitForBlankingAndWarn(true);
                 }
             } catch (exception& e) {
@@ -207,8 +206,6 @@ bool IRenderer::simulationStep() {
 
         if (m_EngineStatus.action() == Engine_Action_RENDER_ONE)
             m_EngineStatus.set_action(Engine_Action_RENDER_STOP);
-
-        m_pSetup = NULL;
     }
 
     // Sending back messages if needed
@@ -220,7 +217,7 @@ bool IRenderer::simulationStep() {
             // transcoding the event to protocol buffer
             Update(event, m_Event);
             pack(event, holder);
-            m_RendererSuite.pushEvent(holder);
+            m_Host.pushEvent(holder);
         }
     } catch (exception& e) {
         cerr << HEADER + "Unexpected error while dispatching events : " + e.what() << endl;
@@ -234,14 +231,14 @@ bool IRenderer::simulationStep() {
                 pair.second->dump(texture);
                 texture.set_name(name);
                 pack(texture, holder);
-                m_RendererSuite.pushEvent(holder);
+                m_Host.pushEvent(holder);
             }
-    return m_RendererSuite.renderEnd(0);
+    return m_Host.renderFinished(0);
 }
 
 void IRenderer::waitForBlankingAndWarn(bool presented) const {
     waitForBlanking();
-    m_RendererSuite.verticalBlanking(presented);
+    m_Host.verticalBlanking(presented);
 }
 
 void IRenderer::displayClip(const ::duke::protocol::Clip& clip) {
@@ -254,7 +251,7 @@ void IRenderer::displayClip(const ::duke::protocol::Clip& clip) {
             cerr << HEADER + "clip has both grade and gradeName set : picking grade" << endl;
 
         // allocating context
-        m_Context.set(m_pSetup->m_Images, m_DisplayedFrameCount, m_Window.GetWidth(), m_Window.GetHeight());
+        m_Context.set(getSetup().m_Images, m_DisplayedFrameCount, m_Window.GetWidth(), m_Window.GetHeight());
         RAIIContext clipContext(m_Context, clip.name(), clip.has_name());
 
         TResourcePtr pResource;
@@ -380,12 +377,12 @@ inline const ImageDescription& IRenderer::getSafeImageDescription(const ImageDes
 }
 
 const ImageDescription& IRenderer::getImageDescriptionFromClip(const string &clipName) const {
-    const vector<ImageDescription> &images = m_pSetup->m_Images;
+    const vector<ImageDescription> &images = getSetup().m_Images;
     if (clipName.empty())
         return getSafeImageDescription(images.empty() ? NULL : &images[0]);
 
     size_t index = 0;
-    BOOST_FOREACH(const duke::protocol::Clip &clip ,m_pSetup->m_Clips)
+    BOOST_FOREACH(const duke::protocol::Clip &clip ,getSetup().m_Clips)
             {
                 if (clip.has_name() && clip.name() == clipName)
                     return getSafeImageDescription(&images[index]);

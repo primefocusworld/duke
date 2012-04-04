@@ -75,7 +75,6 @@ Configuration::Configuration(int argc, char** argv) :
 
     // available in the configuration file and command line
     m_Config.add_options() //
-    (RENDERER_OPT, po::value<string>(), "Sets the renderer to be used") //
     (PLAYBACK_OPT, po::value<string>(), "Play a recorded session back from file") //
     (RECORD_OPT, po::value<string>(), "Record a session to file") //
     (PORT_OPT, po::value<short>(), "Sets the port number to be used") //
@@ -126,8 +125,6 @@ Configuration::Configuration(int argc, char** argv) :
             displayVersion();
             return;
         }
-        if (m_Vm.count(RENDERER) == 0)
-            throw cmdline_exception("No renderer specified. Aborting.");
 
         // loading plugins
         ImageDecoderFactoryImpl imageDecoderFactory;
@@ -270,14 +267,13 @@ void Configuration::decorateAndRun(IMessageIO& io, ImageDecoderFactoryImpl &imag
 }
 
 void Configuration::run(IMessageIO& io, ImageDecoderFactoryImpl &imageDecoderFactory) {
-    const string rendererFilename = m_Vm[RENDERER].as<string>();
     const uint64_t cacheSize = parseCache(m_Vm[CACHESIZE].as<string>());
     const size_t threads = m_Vm[THREADS].as<size_t>();
     duke::protocol::Cache cache;
     cache.set_size(cacheSize);
     cache.set_threading(threads);
     cache.clear_region();
-    Application(rendererFilename.c_str(), imageDecoderFactory, io, m_iReturnValue, cache);
+    Application(imageDecoderFactory, io, m_iReturnValue, cache);
 }
 
 void Configuration::displayVersion() {

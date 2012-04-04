@@ -3,7 +3,7 @@
 #include "OGLShader.h"
 #include "OGLEnum.h"
 #include "OGLTexture.h"
-#include <plugin/Mesh.h>
+#include <dukeengine/renderer/Mesh.h>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -41,13 +41,14 @@ int CheckGLError(const char* msg, const char* file, int line) {
                 break;
             default:
                 std::cerr << "UNKNOWN ERROR error in File " << file << " at line: " << line << std::endl;
+                break;
         }
     }
     return retCode;
 }
 
-OGLRenderer::OGLRenderer(const duke::protocol::Renderer& Renderer, sf::Window& window, const RendererSuite& suite) :
-    IRenderer(Renderer, window, suite), m_lastPBOUsed(0) {
+OGLRenderer::OGLRenderer(const duke::protocol::Renderer& Renderer, sf::Window& window, IRendererHost& host) :
+    IRenderer(Renderer, window, host), m_lastPBOUsed(0) {
 
     // Initializing OGL Extensions
     GLenum err = glewInit();

@@ -31,7 +31,7 @@ void launch(Session& s) {
         cache.set_threading(descriptor.threadSize());
         cache.clear_region();
         int returnvalue = 0;
-        Application(descriptor.rendererPath().c_str(), s.factory(), s.queue(), returnvalue, cache);
+        Application(s.factory(), s.queue(), returnvalue, cache);
     } catch (std::exception & e) {
         std::cerr << "[Session::launch] Error: " << e.what() << std::endl;
     } catch (...) {

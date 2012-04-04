@@ -5,10 +5,11 @@
 project 
 	: requirements 
 		<library>/dukeio//dukeio/<link>static					# header only library
-		<library>/dukerenderer//dukerenderer/<link>static		# header only library
 		<library>/duke/sub/dukeplugins//dukehost/<link>static	# plugin manager embedded
 		<library>/dukeapi//dukeapi/<link>static					# dukeapi is embedded
 		
+		<library>/user-config//cg/<link>shared
+		<library>/user-config//cggl/<link>shared
 		<library>/user-config//sfml/<link>shared
 		<library>/boost//iostreams/<link>shared
 		<library>/boost//chrono/<link>shared

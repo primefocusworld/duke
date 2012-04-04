@@ -2,8 +2,8 @@
 #define OGLTEXTURE_H_
 
 #include <GL/glew.h>
-#include <plugin/math/Rect.h>
-#include <plugin/ITextureBase.h>
+#include <dukeengine/renderer/math/Rect.h>
+#include <dukeengine/renderer/ITextureBase.h>
 
 class OGLRenderer;
 
