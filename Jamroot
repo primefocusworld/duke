@@ -30,7 +30,7 @@ use-project /dukerendererplugin	        : src/duke/libraries/dukerenderer/plugin
 use-project /duke/sub/dukeplugins		: src/duke/submodules/dukeplugins ;
 use-project /duke/sub/sequence      	: src/duke/submodules/sequenceparser/src/sequence ;
 use-project /duke/sub/sequenceparser	: src/duke/submodules/sequenceparser/src/sequence/parser ;
-use-project /duke/sub/concurrent		: src/duke/submodules/concurrent_utils/src ;
+use-project /duke/sub/concurrent		: src/duke/submodules/concurrent_utils ;
 use-project /dukexcore                  : src/dukex/libraries/dukexcore ;
 use-project /dukexgui                   : src/dukex/libraries/dukexgui ;
 
@@ -43,6 +43,7 @@ project : requirements
             <os>NT:<define>VC_EXTRALEAN
             <os>NT:<define>_WIN32_WINNT=0x0501
             <variant>debug:<define>DEBUG
+            <variant>release:<strip>on
             <define>GIT_COMMIT=\"\\\"$(GIT_COMMIT)\\\"\"
             <define>GIT_BRANCH=\"\\\"$(GIT_BRANCH)\\\"\"
             <define>BUILD_NUMBER=\"\\\"$(BUILD_NUMBER)\\\"\"
@@ -58,6 +59,7 @@ explicit plugin-jpg
          plugin-ogl
          plugin-dx9
          plugin-timeline
+         plugin-imageinfo
          dukeplugins
          duketests
          shader_prototypes
@@ -75,11 +77,12 @@ alias plugin-oiio       : src/duke/plugins/io/oiio//oiio ;
 alias plugin-ogl        : src/duke/plugins/renderer/ogl//ogl ;
 alias plugin-dx9        : src/duke/plugins/renderer/dx9//dx9 ;
 alias plugin-timeline   : src/dukex/plugins/timeline//timeline ;
+alias plugin-imageinfo   : src/dukex/plugins/imageinfo//imageinfo ;
 alias dukeplugins 		: plugin-jpg plugin-dpx plugin-oiio plugin-ogl : <os>LINUX ;
 alias dukeplugins 		: plugin-jpg plugin-dpx plugin-oiio plugin-ogl : <os>MACOSX ;
 alias dukeplugins 		: plugin-jpg plugin-dpx plugin-dx9 plugin-ogl : <os>NT ;
 alias duketests 	    : src/duke/libraries//tests src/duke/submodules//tests ;
-alias dukexplugins 		: plugin-timeline ;
+alias dukexplugins 		: plugin-timeline plugin-imageinfo ;
 alias dukextests 	    : [ glob src/dukex/tests/* ] ;
 alias tests 	        : duketests dukextests ;
 alias mingw_runtime     ;

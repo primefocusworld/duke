@@ -1,20 +1,16 @@
 #ifndef UIAPPLICATION_H
 #define UIAPPLICATION_H
 
-#include "ui_mainwindow.h"
 #include "IUIBuilder.h"
+#include "ui_mainwindow.h"
 #include "UserPreferences.h"
 #include <dukexcore/dkxNodeManager.h>
 #include <dukexcore/dkxSession.h>
-//#include <QDeclarativeEngine>
 #include <QtGui>
 
 class UIRenderWindow;
 class UIFileDialog;
 class UIPluginDialog;
-//QT_BEGIN_NAMESPACE
-//class QDeclarativeItem;
-//QT_END_NAMESPACE
 
 class UIApplication : public QMainWindow, public IUIBuilder {
 
@@ -27,13 +23,14 @@ public:
 
 public:
     // IUIBuilder Interface
-//    QMenu * createMenu(QObject* _plugin, const QString & _title);
-//    QWidget* createWindow(QObject* _plugin, const Qt::DockWidgetArea & _area, const QString & _title);
-    bool createWindow(QObject* _plugin, UIWidget* _widget, const Qt::DockWidgetArea & _area, const QString & _title);
-//    QDeclarativeItem* createQMLWindow(QObject* _plugin, const QUrl &qmlfile, const Qt::DockWidgetArea & _area, const QString & _title);
+    void addObserver(QObject* _plugin, IObserver* _observer);
+    QAction* createAction(QObject* _plugin, const QString & _parentMenuName);
+    QMenu* createMenu(QObject* _plugin, const QString & _parentMenuName);
+    QDockWidget* createWindow(QObject* _plugin, Qt::DockWidgetArea _area, bool floating);
     void closeUI(QObject* _plug);
 
 private:
+    void showEvent(QShowEvent* event);
     void closeEvent(QCloseEvent *event);
     void timerEvent(QTimerEvent *event);
     void keyPressEvent(QKeyEvent * event);
@@ -45,10 +42,11 @@ private:
 
 private slots:
     // file
-    void openFiles(const QStringList &, const bool &, const bool &);
+    void openFiles(const QStringList &, const bool & browseMode, const bool & parseSequence);
     void openFiles();
     void openRecent();
     void browseDirectory();
+    void savePlaylist();
     // control
     void playStop();
     void previousFrame();
@@ -58,7 +56,9 @@ private slots:
     void previousShot();
     void nextShot();
     // display
-    void info();
+    void colorspaceLIN();
+    void colorspaceLOG();
+    void colorspaceSRGB();
     // window
     void fullscreen();
     void toggleFitMode();
@@ -71,6 +71,8 @@ private slots:
     void about();
     void aboutPlugins();
 
+    void topLevelChanged(bool); // TEST
+
 private:
     Ui::mainWindow ui;
 //    QDeclarativeEngine m_Engine;
@@ -80,7 +82,6 @@ private:
     UIRenderWindow* m_RenderWindow;
     UIFileDialog* m_FileDialog;
     UIPluginDialog* m_PluginDialog;
-//    QLabel* m_statusInfo;
     int m_timerID;
 };
 

@@ -1,9 +1,14 @@
 #include "Configuration.h"
+
+#include <dukexcore/dkxSessionDescriptor.h>
+
 #include <dukeengine/CmdLineOptions.h>
 #include <dukeengine/Version.h>
 #include <dukeengine/host/io/ImageDecoderFactoryImpl.h>
 #include <dukeapi/io/PlaybackReader.h>
-#include <dukeapi/protobuf_builder/CmdLinePlaylistBuilder.h>
+#include <dukeapi/protobuf_builder/CmdLineParser.h>
+#include <dukeapi/protobuf_builder/SceneBuilder.h>
+#include <dukeapi/extension_set.hpp>
 #include <dukeapi/io/InteractiveMessageIO.h>
 #include <dukeapi/SocketMessageIO.h>
 #include <dukeapi/QueueMessageIO.h>
@@ -33,7 +38,7 @@ const string HEADER = "[Configuration] ";
 
 } // empty namespace
 
-Configuration::Configuration(Session::ptr s) :
+Configuration::Configuration(SessionDescriptor &descriptor, const char** availableExtensions) :
                 m_CmdLineOnly("command line only options"), //
                 m_Config("configuration options"), //
                 m_Display("display options"), //
@@ -41,7 +46,8 @@ Configuration::Configuration(Session::ptr s) :
                 m_CmdlineOptionsGroup("Command line options"), //
                 m_ConfigFileOptions("Configuration file options"), //
                 m_HiddenOptions("hidden options"), //
-                mSession(s) {
+                m_Descriptor(descriptor), //
+                m_AvailableExtensions(availableExtensions) {
 }
 
 bool Configuration::parse(int argc, char** argv) {
@@ -64,18 +70,16 @@ bool Configuration::parse(int argc, char** argv) {
     // available in the configuration file and command line
     m_Config.add_options() //
     (RENDERER_OPT, po::value<string>(), "Sets the renderer to be used") //
-    (CACHESIZE_OPT, po::value<size_t>()->default_value(0), "Cache size for preemptive read in MB. 0 means no caching.") //
+    (CACHESIZE_OPT, po::value<string>()->default_value("50%"), "Cache size for look ahead. Valid units are K,M,G or %") //
     (THREADS_OPT, po::value<size_t>()->default_value(1), "Number of load/decode threads. Cache size must be >0.");
 
     // Adding display settings
-    // Get Renderer from session descriptor
-    ::duke::protocol::Renderer & renderer = mSession->descriptor().renderer();
+    ::duke::protocol::Renderer renderer;
     setDisplayOptions(m_Display, renderer);
 
     // adding interactive mode options
     m_Interactive.add_options() //
     (BROWSE_OPT, "Browse mode, act as an image browser") //
-    (SEQUENCE_OPT, "Take the containing sequence for unit file") //
     (FRAMERATE_OPT, po::value<unsigned int>()->default_value(25), "Sets the playback framerate") //
     (NOFRAMERATE_OPT, "Reads the playlist as fast as possible. All images are displayed . Testing purpose only.") //
     (NOSKIP_OPT, "Try to keep the framerate but still ensures all images are displayed. Testing purpose only.");
@@ -117,15 +121,15 @@ bool Configuration::parse(int argc, char** argv) {
             throw cmdline_exception("No renderer specified. Aborting.");
 
         // renderer plugin path
-        mSession->setRendererPath(m_Vm[RENDERER].as<std::string>());
+        m_Descriptor.setRendererPath(m_Vm[RENDERER].as<std::string>());
 
         // threading
         if (m_Vm.count(THREADS))
-            mSession->setThreadSize(m_Vm[THREADS].as<size_t>());
+            m_Descriptor.setThreadSize(m_Vm[THREADS].as<size_t>());
 
         // caching
         if (m_Vm.count(CACHESIZE))
-            mSession->setCacheSize((((uint64_t) m_Vm[CACHESIZE].as<size_t>()) * 1024) * 1024);
+            m_Descriptor.setCacheSize(parseCache(m_Vm[CACHESIZE].as<string>()));
 
         // blanking / refreshrate
         renderer.set_presentinterval(m_Vm[BLANKING].as<unsigned>());
@@ -135,55 +139,65 @@ bool Configuration::parse(int argc, char** argv) {
         if (renderer.presentinterval() > 4)
             throw cmdline_exception(string(BLANKING) + " must be between 0 an 4");
 
-        // no special mode specified, using interactive mode
-        Playlist & playlist = mSession->descriptor().playlist();
-        MessageQueue & queue = mSession->getInitTimeMsgQueue();
-
-        // Push engine stop
-        ::duke::protocol::Engine stop;
-        stop.set_action(::duke::protocol::Engine_Action_RENDER_STOP);
-        push(queue, stop);
-
         // checking command line
-        const bool useContainingSequence = m_Vm.count(SEQUENCE);
         const bool browseMode = m_Vm.count(BROWSE);
-
-        if (useContainingSequence && browseMode)
-            throw cmdline_exception("Choose either browse or sequence option but not both at the same time.");
-
         const bool hasInputs = m_Vm.count(INPUTS);
         const vector<string> inputs = hasInputs ? m_Vm[INPUTS].as<vector<string> >() : vector<string>();
+
+        // no special mode specified, using interactive mode
+        MessageQueue & queue = m_Descriptor.getInitTimeQueue();
+        IOQueueInserter queueInserter(queue);
+
+        // first, push the renderer msg
+        queueInserter << renderer;
+
+        // stopping rendering for now
+        Engine stop;
+        stop.set_action(Engine::RENDER_STOP);
+        queueInserter << stop;
+
+        const extension_set validExtensions = extension_set::create(m_AvailableExtensions);
+        duke::playlist::Playlist playlist = browseMode ?  browseViewerComplete(validExtensions, inputs[0]) :  browsePlayer(validExtensions, inputs);
+
+        if (m_Vm.count(FRAMERATE))
+            playlist.set_framerate(m_Vm[FRAMERATE].as<unsigned int>());
+
+        normalize(playlist);
+
+        m_Descriptor.setPlaylist(playlist);
 
         if (hasInputs) {
             if (browseMode && inputs.size() > 1)
                 throw cmdline_exception("You are in browse mode, you must specify one and only one input.");
 
-            IOQueueInserter queueInserter(queue);
-            CmdLinePlaylistBuilder playlistBuilder(queueInserter, browseMode, useContainingSequence, mSession->getAvailableExtensions());
-            for_each(inputs.begin(), inputs.end(), playlistBuilder.appender());
+            vector<google::protobuf::serialize::SharedHolder> messages = getMessages(playlist);
+            queue.drainFrom(messages);
 
-            // Update & Push the new playlist
-            playlist = playlistBuilder.getPlaylist(); // updating playlist
-            queueInserter << playlistBuilder.getCue();
+            {
+                duke::protocol::PlaybackState playback;
+                const PlaybackState::PlaybackMode mode = m_Vm.count(NOFRAMERATE) > 0 ? //
+                                PlaybackState::RENDER : //
+                                m_Vm.count(NOSKIP) > 0 ? //
+                                                PlaybackState::NO_SKIP : //
+                                                PlaybackState::DROP_FRAME_TO_KEEP_REALTIME;
+                playback.set_playbackmode(mode);
+                playback.set_frameratenumerator(playlist.framerate());
+                playback.set_loop(playlist.loop());
+                queueInserter << playback;
+            }
+            if (playlist.has_startframe()) {
+                duke::protocol::Transport cue;
+                cue.set_type(Transport::CUE);
+                cue.mutable_cue()->set_value(playlist.startframe());
+                queueInserter << cue;
+            }
         }
 
-        // Playlist parameters
-        const unsigned int framerate = m_Vm[FRAMERATE].as<unsigned int>();
-        playlist.set_frameratenumerator((int) framerate);
-        if (m_Vm.count(NOFRAMERATE) > 0)
-            playlist.set_playbackmode(Playlist::RENDER);
-        else if (m_Vm.count(NOSKIP) > 0)
-            playlist.set_playbackmode(Playlist::NO_SKIP);
-        else
-            playlist.set_playbackmode(Playlist::DROP_FRAME_TO_KEEP_REALTIME);
-
-        // Push Playlist
-        push(queue, playlist);
-
         // Push engine start
-        ::duke::protocol::Engine start;
-        start.set_action(::duke::protocol::Engine_Action_RENDER_START);
-        push(queue, start);
+        Engine start;
+        start.set_action(Engine::RENDER_START);
+        queueInserter << start;
+
     } catch (cmdline_exception &e) {
         cout << "invalid command line : " << e.what() << endl << endl;
         displayHelp();

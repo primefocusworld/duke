@@ -5,9 +5,7 @@
 #include "components/UITracksRuler.h"
 #include "components/UITimelineControls.h"
 #include <dukexcore/dkxNodeManager.h>
-#include <dukexcore/nodes/TransportNode.h>
-#include <dukexcore/nodes/PlaylistNode.h>
-#include <dukexcore/nodes/InfoNode.h>
+#include <dukexcore/nodes/Commons.h>
 #include <QHBoxLayout>
 #include <QScrollBar>
 #include <QCloseEvent>
@@ -16,7 +14,7 @@
 #define MAXZOOMRATIO 13
 
 UITimeline::UITimeline(NodeManager* _manager) :
-    m_manager(_manager), m_zoom(4) {
+    m_manager(_manager), m_zoom(4), m_isPlaying(false) {
     m_ui.setupUi(this);
 
     m_tracksScene = new UITracksScene(this);
@@ -103,10 +101,14 @@ void UITimeline::update(::google::protobuf::serialize::SharedHolder sharedholder
     using namespace ::duke::protocol;
     // do not update position when mouse button is down (==scrub)
     if (::google::protobuf::serialize::isType<Transport>(*sharedholder) && QApplication::mouseButtons() == Qt::NoButton) {
-        const Transport t = ::google::protobuf::serialize::unpackTo<Transport>(*sharedholder);
+        const Transport & t = ::google::protobuf::serialize::unpackTo<Transport>(*sharedholder);
         switch (t.type()) {
             case Transport_TransportType_PLAY:
+                m_isPlaying = true;
+                break;
             case Transport_TransportType_STOP:
+                m_isPlaying = false;
+                break;
             case Transport_TransportType_STORE:
             case Transport_TransportType_CUE_FIRST:
             case Transport_TransportType_CUE_LAST:
@@ -121,10 +123,10 @@ void UITimeline::update(::google::protobuf::serialize::SharedHolder sharedholder
                 m_timelineControls->frameChanged(t.cue().value());
                 break;
         }
-    } else if (::google::protobuf::serialize::isType<Playlist>(*sharedholder)) {
+    } else if (::google::protobuf::serialize::isType<Scene>(*sharedholder)) {
         m_tracksControls->clear();
         m_tracksView->clear();
-        const Playlist & p = ::google::protobuf::serialize::unpackTo<Playlist>(*sharedholder);
+        const Scene & p = ::google::protobuf::serialize::unpackTo<Scene>(*sharedholder);
         qint64 lastFrame = 0;
         if (p.track_size() > 0) {
             for (int i = 0; i < p.track_size(); ++i) {
@@ -157,6 +159,9 @@ void UITimeline::update(::google::protobuf::serialize::SharedHolder sharedholder
         const Info & info = ::google::protobuf::serialize::unpackTo<Info>(*sharedholder);
         if (info.IsInitialized()){
 //            info.PrintDebugString();
+            if(info.has_playbackstate() && m_isPlaying){
+                m_timelineControls->framerateChanged(info.playbackstate().fps());
+            }
             if(info.has_cachestate()){
                 mCachedFrames.clear();
                 for(int i = 0; i < info.cachestate().track_size(); ++i){
@@ -182,10 +187,10 @@ void UITimeline::frameChanged(qint64 pos) {
 }
 
 void UITimeline::framerateChanged(double framerate) {
-    PlaylistNode::ptr p = m_manager->nodeByName<PlaylistNode>("fr.mikrosimage.dukex.playlist");
-    if (p.get() == NULL)
+    PlaybackNode::ptr pb = m_manager->nodeByName<PlaybackNode>("fr.mikrosimage.dukex.playback");
+    if (pb.get() == NULL)
         return;
-    p->setFramerate(framerate);
+    pb->setFramerate(framerate);
 }
 
 void UITimeline::fit() {
@@ -243,5 +248,6 @@ void UITimeline::timerEvent(QTimerEvent *event) {
     if (i.get() == NULL)
         return;
     i->callCurrentCacheState();
+    i->callCurrentPlaybackState();
     event->accept();
 }

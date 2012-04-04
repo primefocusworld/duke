@@ -1,14 +1,10 @@
 #include "UIApplication.h"
-//#include "UIView.h"
 #include "UIRenderWindow.h"
 #include "UIFileDialog.h"
 #include "UIPluginDialog.h"
 #include <dukeengine/Version.h>
 #include <dukexcore/nodes/Commons.h>
 #include <boost/filesystem.hpp>
-//#include <QDeclarativeComponent>
-//#include <QDeclarativeContext>
-//#include <QDeclarativeItem>
 #include <iostream>
 
 UIApplication::UIApplication(Session::ptr s) :
@@ -31,6 +27,7 @@ UIApplication::UIApplication(Session::ptr s) :
     // File Actions
     connect(ui.openFileAction, SIGNAL(triggered()), this, SLOT(openFiles()));
     connect(ui.browseDirectoryAction, SIGNAL(triggered()), this, SLOT(browseDirectory()));
+    connect(ui.savePlaylistAction, SIGNAL(triggered()), this, SLOT(savePlaylist()));
     connect(ui.quitAction, SIGNAL(triggered()), this, SLOT(close()));
     // Control Actions
     connect(ui.playStopAction, SIGNAL(triggered()), this, SLOT(playStop()));
@@ -41,7 +38,9 @@ UIApplication::UIApplication(Session::ptr s) :
     connect(ui.nextShotAction, SIGNAL(triggered()), this, SLOT(nextShot()));
     connect(ui.previousShotAction, SIGNAL(triggered()), this, SLOT(previousShot()));
     // Display Actions
-    connect(ui.infoAction, SIGNAL(triggered()), this, SLOT(info()));
+    connect(ui.LINAction, SIGNAL(triggered()), this, SLOT(colorspaceLIN()));
+    connect(ui.LOGAction, SIGNAL(triggered()), this, SLOT(colorspaceLOG()));
+    connect(ui.SRGBAction, SIGNAL(triggered()), this, SLOT(colorspaceSRGB()));
     // Window Actions
     connect(ui.fullscreenAction, SIGNAL(triggered()), this, SLOT(fullscreen()));
     connect(ui.toggleFitModeAction, SIGNAL(triggered()), this, SLOT(toggleFitMode()));
@@ -55,8 +54,8 @@ UIApplication::UIApplication(Session::ptr s) :
     connect(ui.aboutPluginsAction, SIGNAL(triggered()), this, SLOT(aboutPlugins()));
 
     // Registering nodes
-    PlaylistNode::ptr p = PlaylistNode::ptr(new PlaylistNode());
-    m_Manager.addNode(p, m_Session);
+    SceneNode::ptr sc = SceneNode::ptr(new SceneNode());
+    m_Manager.addNode(sc, m_Session);
     TransportNode::ptr t = TransportNode::ptr(new TransportNode());
     m_Manager.addNode(t, m_Session);
     FitNode::ptr f = FitNode::ptr(new FitNode());
@@ -65,78 +64,116 @@ UIApplication::UIApplication(Session::ptr s) :
     m_Manager.addNode(g, m_Session);
     InfoNode::ptr info = InfoNode::ptr(new InfoNode());
     m_Manager.addNode(info, m_Session);
+    PlaybackNode::ptr pb = PlaybackNode::ptr(new PlaybackNode());
+    m_Manager.addNode(pb, m_Session);
+}
 
-    // starting session
-    m_Session->startSession(m_RenderWindow->renderWindowID());
+void UIApplication::showEvent(QShowEvent* event) {
+    // load needed plugins
+    m_PluginDialog->load(QString("plugin_dukex_imageinfo"));
+    m_PluginDialog->load(QString("plugin_dukex_timeline"));
     // starting timer (to compute 'IN' msgs every N ms)
     m_timerID = QObject::startTimer(40);
+    // starting session
+    m_Session->start(m_RenderWindow->renderWindowID());
+    event->accept();
 }
 
-bool UIApplication::createWindow(QObject* _plugin, UIWidget* uiwidget, const Qt::DockWidgetArea & _area, const QString & _title) {
-    QDockWidget * dockwidget = new QDockWidget(_title, this);
-    dockwidget->setContentsMargins(0, 0, 0, 0);
-    //    dockwidget->setMinimumSize(uiwidget->minimumSize());
-    //    dockwidget->setMaximumSize(uiwidget->maximumSize());
-    uiwidget->setParent(dockwidget);
-    m_Session->addObserver(uiwidget);
-    dockwidget->setWidget(uiwidget);
-    addDockWidget(_area, dockwidget);
-    m_LoadedUIElements.insert(_plugin, dockwidget);
-    return true;
+void UIApplication::addObserver(QObject* _plugin, IObserver* _observer) {
+    if (!_observer)
+        return;
+    m_Session->addObserver(_observer);
+    m_RegisteredObservers.insert(_plugin, _observer);
 }
 
-//QMenu* UIApplication::createMenu(QObject* _plugin, const QString & _title) {
-//    QMenu * m = new QMenu(_title, this);
-//    menuBar()->addMenu(m);
-//    m_LoadedUIElements.insert(_plugin, m);
-//    return m;
-//}
-//
-//QDeclarativeItem* UIApplication::createQMLWindow(QObject* _plugin, const QUrl &qmlfile, const Qt::DockWidgetArea & _area, const QString & _title) {
-//    QDockWidget * dockwidget = new QDockWidget(_title, this);
-//    UIView * view = new UIView(dockwidget);
-//    QGraphicsScene* scene = new QGraphicsScene();
-//    QGraphicsWidget *widget = new QGraphicsWidget();
-//    QGraphicsLinearLayout *layout = new QGraphicsLinearLayout();
-//    widget->setLayout(layout);
-//    scene->addItem(widget);
-//    view->setScene(scene);
-//
-//    //Add the QML snippet into the layout
-//    QDeclarativeContext * rootContext = m_Engine.rootContext();
-//    QDeclarativeContext * context = new QDeclarativeContext(rootContext);
-//    QDeclarativeComponent * c = new QDeclarativeComponent(&m_Engine, qmlfile, view);
-//    qDebug() << c->errors();
-//    if (!c) {
-//        return NULL;
-//    }
-//    QDeclarativeItem * item = qobject_cast<QDeclarativeItem *> (c->create(context));
-//    if (!item)
-//        return NULL;
-//    QGraphicsLayoutItem* obj = qobject_cast<QGraphicsLayoutItem*> (item);
-//    if (!obj)
-//        return NULL;
-//    layout->addItem(obj);
-//
-//    //	widget->setGeometry(QRectF(0,0, 400,400));
-//    view->setSceneRect(item->childrenRect());
-//    view->show();
-//    dockwidget->setWidget(view);
-//    addDockWidget(_area, dockwidget);
-//
-//    m_LoadedUIElements.insert(_plugin, dockwidget);
-//    return item;
-//}
+QAction* UIApplication::createAction(QObject* _plugin, const QString & _menuName) {
+    QAction * customaction = NULL;
+    if (!_menuName.isEmpty()) {
+        QList<QMenu *> menus = findChildren<QMenu *> ();
+        QListIterator<QMenu *> iter(menus);
+        while (iter.hasNext()) {
+            QMenu *pMenu = iter.next();
+            if (pMenu->objectName() != _menuName)
+                continue;
+            customaction = new QAction(menuBar());
+            pMenu->addAction(customaction);
+            break;
+        }
+    }
+
+    if (customaction)
+        m_LoadedUIElements.insert(_plugin, customaction);
+
+    return customaction;
+}
+
+QMenu* UIApplication::createMenu(QObject* _plugin, const QString & _menuName) {
+    QMenu * custommenu = new QMenu(menuBar());
+    if (!_menuName.isEmpty()) {
+        QList<QMenu *> menus = findChildren<QMenu *> ();
+        QListIterator<QMenu *> iter(menus);
+        while (iter.hasNext()) {
+            QMenu *pMenu = iter.next();
+            if (pMenu->objectName() != _menuName)
+                continue;
+            pMenu->addMenu(custommenu);
+            break;
+        }
+    } else {
+        menuBar()->addMenu(custommenu);
+        custommenu->setParent(menuBar());
+    }
+    m_LoadedUIElements.insert(_plugin, custommenu);
+    return custommenu;
+}
+
+QDockWidget* UIApplication::createWindow(QObject* _plugin, Qt::DockWidgetArea _area, bool floating) {
+    QDockWidget * customdockwidget = new QDockWidget("undefined", this);
+    customdockwidget->setContentsMargins(0, 0, 0, 0);
+    connect(customdockwidget, SIGNAL(topLevelChanged(bool)), this, SLOT(topLevelChanged(bool)));
+    addDockWidget(_area, customdockwidget);
+    m_LoadedUIElements.insert(_plugin, customdockwidget);
+    if (floating) {
+        customdockwidget->setFloating(true);
+        customdockwidget->move(mapToGlobal(m_RenderWindow->renderWidget()->pos()) + QPoint(40, 60));
+        customdockwidget->adjustSize();
+    }
+    return customdockwidget;
+}
+
+void UIApplication::topLevelChanged(bool b) {
+    QDockWidget *dockwidget = qobject_cast<QDockWidget *> (sender());
+    if (dockwidget && b) {
+        dockwidget->setWindowOpacity(0.6);
+        dockwidget->move(mapToGlobal(m_RenderWindow->renderWidget()->pos()) + QPoint(40, 60));
+        dockwidget->adjustSize();
+    }
+}
 
 void UIApplication::closeUI(QObject* _plug) {
-    QList<QObject*> values = m_LoadedUIElements.values(_plug);
-    for (int i = 0; i < values.size(); ++i) {
-        if (qobject_cast<QDockWidget*> (values.at(i))) {
-            QDockWidget* obj = qobject_cast<QDockWidget*> (values.at(i));
+    // deregister observers
+    QList<IObserver*> registeredobservers = m_RegisteredObservers.values(_plug);
+    for (int i = 0; i < registeredobservers.size(); ++i) {
+        IObserver* obs = registeredobservers.at(i);
+        m_Session->removeObserver(obs);
+    }
+    m_RegisteredObservers.remove(_plug);
+
+    // close & delete UI elements
+    QList<QObject*> uielements = m_LoadedUIElements.values(_plug);
+    for (int i = 0; i < uielements.size(); ++i) {
+        if (qobject_cast<QDockWidget*> (uielements.at(i))) {
+            QDockWidget* obj = qobject_cast<QDockWidget*> (uielements.at(i));
             obj->close();
             removeDockWidget(obj);
-            // FIXME : delete asap
-            //            obj->deleteLater();
+            obj->deleteLater();
+        } else if (qobject_cast<QMenu*> (uielements.at(i))) {
+            QMenu* obj = qobject_cast<QMenu*> (uielements.at(i));
+            obj->close();
+            obj->deleteLater();
+        } else if (qobject_cast<QAction*> (uielements.at(i))) {
+            QAction* obj = qobject_cast<QAction*> (uielements.at(i));
+            obj->deleteLater();
         }
     }
     m_LoadedUIElements.remove(_plug);
@@ -145,7 +182,7 @@ void UIApplication::closeUI(QObject* _plug) {
 // private
 void UIApplication::closeEvent(QCloseEvent *event) {
     m_RenderWindow->close();
-    m_Session->stopSession();
+    m_Session->stop();
     QObject::killTimer(m_timerID);
     m_Manager.clearNodes();
     m_Preferences.saveShortcuts(this);
@@ -156,15 +193,8 @@ void UIApplication::closeEvent(QCloseEvent *event) {
 
 // private
 void UIApplication::timerEvent(QTimerEvent *event) {
-    //    // check connection status
-    //    if (!m_Session->connected()) {
-    //        m_statusInfo->setStyleSheet("QLabel { color : red; }");
-    //        m_statusInfo->setText("Disconnected.");
-    //    } else {
-    //        m_statusInfo->setStyleSheet("QLabel { color : green; }");
-    //        m_statusInfo->setText("Connected.");
-    //    }
-    m_Session->computeInMsg();
+    // retrieve in msgs
+    m_Session->receiveMsg();
     event->accept();
 }
 
@@ -261,6 +291,8 @@ void UIApplication::resizeCentralWidget(const QSize& resolution) {
                 dock->setMinimumHeight(sizes.takeFirst());
                 dock->setMaximumHeight(sizes.takeFirst());
                 break;
+            default:
+                break;
         }
     }
 }
@@ -280,8 +312,8 @@ void UIApplication::updateRecentFilesMenu() {
 
 // private slot
 void UIApplication::openFiles(const QStringList & _list, const bool & browseMode, const bool & parseSequence) {
-    PlaylistNode::ptr p = m_Manager.nodeByName<PlaylistNode> ("fr.mikrosimage.dukex.playlist");
-    if (p.get() == NULL)
+    SceneNode::ptr s = m_Manager.nodeByName<SceneNode> ("fr.mikrosimage.dukex.scene");
+    if (s.get() == NULL)
         return;
     if (!_list.isEmpty()) {
         // --- QStringList to STL vector<string>
@@ -290,7 +322,7 @@ void UIApplication::openFiles(const QStringList & _list, const bool & browseMode
         for (int i = 0; i < _list.count(); ++i) {
             v[i] = _list[i].toStdString();
         }
-        p->openFiles(v, browseMode, parseSequence);
+        s->openFiles(v, browseMode);
         if (v.size() == 1) { // multi selection not handled in file history
             QString history = _list[0];
             if (browseMode) {
@@ -343,11 +375,24 @@ void UIApplication::openRecent() {
 
 // private slot
 void UIApplication::browseDirectory() {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    if (!dir.isEmpty()) {
-        QStringList list;
-        list.append(dir);
-        openFiles(list, true, false);
+    QStringList list;
+    if (m_FileDialog->exec()) {
+        list = m_FileDialog->selectedFiles();
+        if (list.size() != 0)
+            openFiles(list, true, m_FileDialog->asSequence());
+    }
+}
+
+// private slot
+void UIApplication::savePlaylist() {
+    QString file = QFileDialog::getSaveFileName(this, tr("Save Current Playlist"), QString(), tr("Duke Playlist (*.dk);;All(*)"));
+    if (!file.isEmpty()) {
+        if(!file.endsWith(".dk"))
+            file.append(".dk");
+        SceneNode::ptr scene = m_Manager.nodeByName<SceneNode> ("fr.mikrosimage.dukex.scene");
+        if (scene.get() == NULL)
+            return;
+        scene->save(file.toStdString());
     }
 }
 
@@ -356,7 +401,7 @@ void UIApplication::playStop() {
     TransportNode::ptr t = m_Manager.nodeByName<TransportNode> ("fr.mikrosimage.dukex.transport");
     if (t.get() == NULL)
         return;
-    if (m_Session->isPlaying())
+    if (m_Session->descriptor().isPlaying())
         t->stop();
     else
         t->play();
@@ -411,9 +456,27 @@ void UIApplication::nextShot() {
 }
 
 // private slot
-void UIApplication::info() {
-    //    m_RenderWindow->showInfo();
-    setFocus();
+void UIApplication::colorspaceLIN() {
+    GradingNode::ptr g = m_Manager.nodeByName<GradingNode> ("fr.mikrosimage.dukex.grading");
+    if (g.get() == NULL)
+        return;
+    g->setColorspace(::duke::playlist::Display::LIN);
+}
+
+// private slot
+void UIApplication::colorspaceLOG() {
+    GradingNode::ptr g = m_Manager.nodeByName<GradingNode> ("fr.mikrosimage.dukex.grading");
+    if (g.get() == NULL)
+        return;
+    g->setColorspace(::duke::playlist::Display::LOG);
+}
+
+// private slot
+void UIApplication::colorspaceSRGB() {
+    GradingNode::ptr g = m_Manager.nodeByName<GradingNode> ("fr.mikrosimage.dukex.grading");
+    if (g.get() == NULL)
+        return;
+    g->setColorspace(::duke::playlist::Display::SRGB);
 }
 
 // private slot

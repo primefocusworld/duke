@@ -5,10 +5,10 @@
 #include <dukeengine/host/io/ImageDecoderFactoryImpl.h>
 #include <dukeapi/messageBuilder/QuitBuilder.h>
 #include <dukeapi/io/PlaybackReader.h>
-#include <dukeapi/io/PlaylistReader.h>
 #include <dukeapi/io/FileRecorder.h>
 #include <dukeapi/io/InteractiveMessageIO.h>
-#include <dukeapi/protobuf_builder/CmdLinePlaylistBuilder.h>
+#include <dukeapi/protobuf_builder/CmdLineParser.h>
+#include <dukeapi/protobuf_builder/SceneBuilder.h>
 #include <dukeapi/SocketMessageIO.h>
 #include <dukeapi/QueueMessageIO.h>
 #include <dukeapi/ProtobufSocket.h>
@@ -79,7 +79,7 @@ Configuration::Configuration(int argc, char** argv) :
     (PLAYBACK_OPT, po::value<string>(), "Play a recorded session back from file") //
     (RECORD_OPT, po::value<string>(), "Record a session to file") //
     (PORT_OPT, po::value<short>(), "Sets the port number to be used") //
-    (CACHESIZE_OPT, po::value<size_t>()->default_value(0), "Cache size for preemptive read in MB. 0 means no caching.") //
+    (CACHESIZE_OPT, po::value<string>()->default_value("50%"), "Cache size for look ahead. Valid units are K,M,G or %") //
     (THREADS_OPT, po::value<size_t>()->default_value(0), "Number of load/decode threads. Cache size must be >0.");
     // adding display settings
     ::duke::protocol::Renderer renderer;
@@ -88,7 +88,6 @@ Configuration::Configuration(int argc, char** argv) :
     // adding interactive mode options
     m_Interactive.add_options() //
     (BROWSE_OPT, "Browse mode, act as an image browser") //
-    (SEQUENCE_OPT, "Take the containing sequence for unit file") //
     (FRAMERATE_OPT, po::value<unsigned int>()->default_value(25), "Sets the playback framerate") //
     (NOFRAMERATE_OPT, "Reads the playlist as fast as possible. All images are displayed . Testing purpose only.") //
     (NOSKIP_OPT, "Try to keep the framerate but still ensures all images are displayed. Testing purpose only.");
@@ -195,17 +194,12 @@ Configuration::Configuration(int argc, char** argv) :
             throw cmdline_exception(string(BLANKING) + " must be between 0 an 4");
 
         // checking command line
-        const bool useContainingSequence = m_Vm.count(SEQUENCE);
         const bool browseMode = m_Vm.count(BROWSE);
-
-        if (useContainingSequence && browseMode)
-            throw cmdline_exception("Choose either browse or sequence option but not both at the same time.");
-
         const bool hasInputs = m_Vm.count(INPUTS);
-        const vector<string> inputs = hasInputs ? m_Vm[INPUTS].as<vector<string> >() : vector<string>() ;
+        const vector<string> inputs = hasInputs ? m_Vm[INPUTS].as<vector<string> >() : vector<string>();
 
         if (browseMode) {
-            if (inputs.empty() || inputs.size()>1)
+            if (inputs.empty() || inputs.size() > 1)
                 throw cmdline_exception("You are in browse mode, you must specify one and only one input.");
         } else if (inputs.empty())
             throw cmdline_exception("You should specify at least one input : filename, directory or playlist files.");
@@ -216,33 +210,44 @@ Configuration::Configuration(int argc, char** argv) :
         queueInserter << renderer; // setting renderer
 
         Engine stop;
-        stop.set_action(Engine_Action_RENDER_STOP);
+        stop.set_action(Engine::RENDER_STOP);
         queueInserter << stop; // stopping rendering for now
 
-        CmdLinePlaylistBuilder playlistBuilder(queueInserter, browseMode, useContainingSequence, listOfExtensions);
+        const extension_set validExtensions = extension_set::create(listOfExtensions);
+        duke::playlist::Playlist playlist = browseMode ?  browseViewerComplete(validExtensions, inputs[0]) :  browsePlayer(validExtensions, inputs);
 
-        for_each(inputs.begin(), inputs.end(), playlistBuilder.appender());
-
-        if (playlistBuilder.empty())
+        if (playlist.shot_size() == 0)
             throw runtime_error("No media found, nothing to render. Aborting.");
 
-        Playlist playlist = playlistBuilder.getPlaylist();
+        if (m_Vm.count(FRAMERATE))
+            playlist.set_framerate(m_Vm[FRAMERATE].as<unsigned int>());
 
-        const unsigned int framerate = m_Vm[FRAMERATE].as<unsigned int>();
-        playlist.set_frameratenumerator((int) framerate);
-        if (m_Vm.count(NOFRAMERATE) > 0)
-            playlist.set_playbackmode(Playlist::RENDER);
-        else if (m_Vm.count(NOSKIP) > 0)
-            playlist.set_playbackmode(Playlist::NO_SKIP);
-        else
-            playlist.set_playbackmode(Playlist::DROP_FRAME_TO_KEEP_REALTIME);
+        normalize(playlist);
 
-        queueInserter << playlist;
+        vector<google::protobuf::serialize::SharedHolder> messages = getMessages(playlist);
+        queue.drainFrom(messages);
 
-        queueInserter << playlistBuilder.getCue();
+        {
+            duke::protocol::PlaybackState playback;
+            const PlaybackState::PlaybackMode mode = m_Vm.count(NOFRAMERATE) > 0 ? //
+                            PlaybackState::RENDER : //
+                            m_Vm.count(NOSKIP) > 0 ? //
+                                            PlaybackState::NO_SKIP : //
+                                            PlaybackState::DROP_FRAME_TO_KEEP_REALTIME;
+            playback.set_playbackmode(mode);
+            playback.set_frameratenumerator(playlist.framerate());
+            playback.set_loop(playlist.loop());
+            queueInserter << playback;
+        }
+        if (playlist.has_startframe()) {
+            duke::protocol::Transport cue;
+            cue.set_type(Transport::CUE);
+            cue.mutable_cue()->set_value(playlist.startframe());
+            queueInserter << cue;
+        }
 
         Engine start;
-        start.set_action(Engine_Action_RENDER_START);
+        start.set_action(Engine::RENDER_START);
         queueInserter << start;
 
         InteractiveMessageIO decoder(queue);
@@ -266,7 +271,7 @@ void Configuration::decorateAndRun(IMessageIO& io, ImageDecoderFactoryImpl &imag
 
 void Configuration::run(IMessageIO& io, ImageDecoderFactoryImpl &imageDecoderFactory) {
     const string rendererFilename = m_Vm[RENDERER].as<string>();
-    const uint64_t cacheSize = (((uint64_t) m_Vm[CACHESIZE].as<size_t>()) * 1024) * 1024;
+    const uint64_t cacheSize = parseCache(m_Vm[CACHESIZE].as<string>());
     const size_t threads = m_Vm[THREADS].as<size_t>();
     duke::protocol::Cache cache;
     cache.set_size(cacheSize);

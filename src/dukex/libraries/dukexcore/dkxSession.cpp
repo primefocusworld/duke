@@ -2,6 +2,7 @@
 #include <dukeapi/SocketMessageIO.h>
 #include <dukeapi/messageBuilder/Commons.h>
 #include <dukeengine/Application.h>
+#include <google/protobuf/descriptor.h>
 #include <boost/lexical_cast.hpp>
 
 using namespace std;
@@ -21,13 +22,16 @@ private:
     QueueMessageIO& io;
 };
 
-void launch(int & returnvalue, const std::string & rendererpath, ImageDecoderFactoryImpl& decoder, QueueMessageIO & io, uint64_t cacheSize, size_t threads) {
+void launch(Session& s) {
     try {
+        const SessionDescriptor & descriptor = s.descriptor();
+
         duke::protocol::Cache cache;
-        cache.set_size(cacheSize);
-        cache.set_threading(threads);
+        cache.set_size(descriptor.cacheSize());
+        cache.set_threading(descriptor.threadSize());
         cache.clear_region();
-        Application(rendererpath.c_str(), decoder, io, returnvalue, cache);
+        int returnvalue = 0;
+        Application(descriptor.rendererPath().c_str(), s.factory(), s.queue(), returnvalue, cache);
     } catch (std::exception & e) {
         std::cerr << "[Session::launch] Error: " << e.what() << std::endl;
     } catch (...) {
@@ -39,36 +43,29 @@ void launch(int & returnvalue, const std::string & rendererpath, ImageDecoderFac
 
 
 Session::Session() :
-    mFrame(0), mPlaying(false), mIP("127.0.0.1"), mPort(7171), mConnected(false) {
+    mConnected(false) {
 }
 
-bool Session::startSession(void* handle) {
+bool Session::start(void* handle) {
     try {
         if (connected())
             return false;
 
-//        // CLIENT MODE
-//        mThread = boost::thread(&Session::run, this);
-//        boost::this_thread::sleep(boost::posix_time::millisec(40));
-
-        int returnvalue = 0;
-        mThread = boost::thread(&launch, returnvalue, mRendererPath, boost::ref(mImageDecoderFactory), boost::ref(mIo), mCacheSize, mThreadSize);
-//        boost::this_thread::sleep(boost::posix_time::millisec(40));
+        mThread = boost::thread(&launch, boost::ref(*this));
         mConnected = true;
 
-        // edit the renderer with the right handle
-        ::duke::protocol::Renderer & renderer = mDescriptor.renderer();
-        renderer.set_handle((::google::protobuf::uint64) handle);
+        // pop first msg (must be of type Renderer) to set the right handle
+        if (handle) {
+            SharedHolder holder;
+            descriptor().getInitTimeQueue().tryPop(holder);
+            if (isType< ::duke::protocol::Renderer> (*holder)) {
+                ::duke::protocol::Renderer r = unpackTo< ::duke::protocol::Renderer> (*holder);
+                r.set_handle((::google::protobuf::uint64) handle);
+                push(mIo.inputQueue, r); // send to engine
+            }
+        }
 
-        MessageQueue q;
-
-        // send the renderer
-        push(q, renderer);
-        sendMsg(q);
-
-        // after the renderer, send all init-time msgs
-        sendMsg(mInitTimeMsgQueue);
-
+        sendMsg(descriptor().getInitTimeQueue());
 
     } catch (std::exception& e) {
         std::cerr << "Error while connecting to server." << std::endl;
@@ -77,51 +74,29 @@ bool Session::startSession(void* handle) {
     return true;
 }
 
-bool Session::stopSession() {
+bool Session::stop() {
     if (!connected())
         return false;
-
-//    // CLIENT MODE
-//    quitRenderer(mIo.outputQueue);
-//    mIo.outputQueue.push(makeSharedHolder(quitSuccess()));
-//    mThread.join();
-
     quitRenderer(mIo.inputQueue);
-    mIo.inputQueue.push(makeSharedHolder(quitSuccess()));
+    mIo.inputQueue.push(make_shared(quitSuccess()));
     mThread.join();
     return true;
 }
 
-bool Session::computeInMsg() {
-    using namespace ::duke::protocol;
+bool Session::receiveMsg() {
+    if (!connected())
+        return false;
     SharedHolder holder;
     while (mIo.outputQueue.tryPop(holder)) {
-        notify(holder);
-        // check for Transport Msg
-        if (::google::protobuf::serialize::isType<Transport>(*holder)) {
-            const Transport t = ::google::protobuf::serialize::unpackTo<Transport>(*holder);
-            switch (t.type()) {
-                case Transport_TransportType_PLAY:
-                case Transport_TransportType_STOP:
-                case Transport_TransportType_STORE:
-                case Transport_TransportType_CUE_FIRST:
-                case Transport_TransportType_CUE_LAST:
-                case Transport_TransportType_CUE_STORED:
-                    break;
-                case Transport_TransportType_CUE:
-                    if (t.cue().cueclip())
-                        break;
-                    if (t.cue().cuerelative())
-                        break;
-                    mFrame = t.cue().value();
-                    break;
-            }
-        }
+        updateDescriptor(holder); // update session descriptor
+        notify(holder); // notify observers
     }
     return false;
 }
 
 bool Session::sendMsg(MessageQueue & queue) {
+    if (!connected())
+        return false;
     SharedHolder holder;
     while (queue.tryPop(holder)) {
         notify(holder);
@@ -130,23 +105,63 @@ bool Session::sendMsg(MessageQueue & queue) {
     return false;
 }
 
-// private - separate thread
-void Session::run() {
-    try {
-        using namespace boost::asio;
-        using namespace boost::asio::ip;
-        using google::protobuf::serialize::duke_server;
-        SessionCreator creator(mIo);
-        boost::asio::ip::tcp::resolver::query query(mIP, boost::lexical_cast<std::string>(mPort));
-        duke_client client(query, boost::bind(&SessionCreator::create, &creator, _1));
-        if (client.error())
-            return;
-        mConnected = true;
-        client.run(); // blocking
-    } catch (std::exception & e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-    } catch (...) {
-        std::cerr << "Unknown error." << std::endl;
+// private
+void Session::updateDescriptor(SharedHolder pholder) {
+    const MessageHolder &holder = *pholder;
+    const ::google::protobuf::Descriptor* pDescriptor = descriptorFor(holder);
+    if (isType<Transport> (pDescriptor))
+        analyseTransport(unpackTo<Transport> (holder));
+    else if (isType<PlaybackState> (pDescriptor))
+        analysePlaybackState(unpackTo<PlaybackState> (holder));
+    else {
+        // pass
     }
-    mConnected = false;
 }
+
+// private
+void Session::analyseTransport(Transport transport) {
+    switch (transport.type()) {
+        case Transport_TransportType_PLAY:
+        case Transport_TransportType_STOP:
+        case Transport_TransportType_STORE:
+        case Transport_TransportType_CUE_FIRST:
+        case Transport_TransportType_CUE_LAST:
+        case Transport_TransportType_CUE_STORED:
+            break;
+        case Transport_TransportType_CUE:
+            if (transport.cue().cueclip())
+                break;
+            if (transport.cue().cuerelative())
+                break;
+            descriptor().setCurrentFrame(transport.cue().value());
+            break;
+    }
+}
+
+// private
+void Session::analysePlaybackState(PlaybackState playbackstate) {
+    if (playbackstate.has_frameratenumerator()) {
+        descriptor().setFramerate(playbackstate.frameratenumerator());
+    }
+}
+
+//// private - separate thread
+//void Session::run() {
+//    try {
+//        using namespace boost::asio;
+//        using namespace boost::asio::ip;
+//        using google::protobuf::serialize::duke_server;
+//        SessionCreator creator(mIo);
+//        boost::asio::ip::tcp::resolver::query query(mIP, boost::lexical_cast<std::string>(mPort));
+//        duke_client client(query, boost::bind(&SessionCreator::create, &creator, _1));
+//        if (client.error())
+//            return;
+//        mConnected = true;
+//        client.run(); // blocking
+//    } catch (std::exception & e) {
+//        std::cerr << "Error: " << e.what() << std::endl;
+//    } catch (...) {
+//        std::cerr << "Unknown error." << std::endl;
+//    }
+//    mConnected = false;
+//}
