@@ -1,9 +1,9 @@
 #include "UITimeline.h"
-#include "components/UITracksView.h"
-#include "components/UITracksScene.h"
-#include "components/UITracksControls.h"
-#include "components/UITracksRuler.h"
-#include "components/UITimelineControls.h"
+#include "UITracksView.h"
+#include "UITracksScene.h"
+#include "UITracksControls.h"
+#include "UITracksRuler.h"
+#include "UITimelineControls.h"
 #include <dukexcore/dkxNodeManager.h>
 #include <dukexcore/nodes/Commons.h>
 #include <QHBoxLayout>

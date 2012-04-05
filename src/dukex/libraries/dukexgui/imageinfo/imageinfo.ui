@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>343</width>
-    <height>301</height>
+    <width>347</width>
+    <height>282</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -42,8 +42,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>337</width>
-        <height>271</height>
+        <width>341</width>
+        <height>252</height>
        </rect>
       </property>
       <attribute name="label">
@@ -58,7 +58,7 @@
   <customwidget>
    <class>UIVideoPage</class>
    <extends>QWidget</extends>
-   <header>UIVideoPage.h</header>
+   <header>imageinfo/UIVideoPage.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

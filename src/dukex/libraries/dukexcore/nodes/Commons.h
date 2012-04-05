@@ -1,3 +1,4 @@
+#include "CacheNode.h"
 #include "FitNode.h"
 #include "GradingNode.h"
 #include "InfoNode.h"

@@ -1,19 +1,14 @@
 #include "UIApplication.h"
 #include "UIRenderWindow.h"
 #include "UIFileDialog.h"
-#include "UIPluginDialog.h"
+#include "UISettingsDialog.h"
 #include <dukeengine/Version.h>
 #include <dukexcore/nodes/Commons.h>
 #include <boost/filesystem.hpp>
 #include <iostream>
 
 UIApplication::UIApplication(Session::ptr s) :
-    m_Session(s), //
-                    m_RenderWindow(new UIRenderWindow(this)), //
-                    m_FileDialog(new UIFileDialog(this)), //
-                    m_PluginDialog(new UIPluginDialog(this, this, &m_Manager, qApp->applicationDirPath())), //
-                    m_timerID(0) {
-
+    m_Session(s), m_RenderWindow(new UIRenderWindow(this)), m_timerID(0), mStarted(false) {
     // Global UI
     ui.setupUi(this);
     setCentralWidget(m_RenderWindow);
@@ -29,6 +24,7 @@ UIApplication::UIApplication(Session::ptr s) :
     connect(ui.browseDirectoryAction, SIGNAL(triggered()), this, SLOT(browseDirectory()));
     connect(ui.savePlaylistAction, SIGNAL(triggered()), this, SLOT(savePlaylist()));
     connect(ui.quitAction, SIGNAL(triggered()), this, SLOT(close()));
+    connect(ui.preferencesAction, SIGNAL(triggered()), this, SLOT(openPreferences()));
     // Control Actions
     connect(ui.playStopAction, SIGNAL(triggered()), this, SLOT(playStop()));
     connect(ui.nextFrameAction, SIGNAL(triggered()), this, SLOT(nextFrame()));
@@ -41,6 +37,10 @@ UIApplication::UIApplication(Session::ptr s) :
     connect(ui.LINAction, SIGNAL(triggered()), this, SLOT(colorspaceLIN()));
     connect(ui.LOGAction, SIGNAL(triggered()), this, SLOT(colorspaceLOG()));
     connect(ui.SRGBAction, SIGNAL(triggered()), this, SLOT(colorspaceSRGB()));
+    QActionGroup * displayActionGroup = new QActionGroup(this);
+    displayActionGroup->addAction(ui.LINAction);
+    displayActionGroup->addAction(ui.LOGAction);
+    displayActionGroup->addAction(ui.SRGBAction);
     // Window Actions
     connect(ui.fullscreenAction, SIGNAL(triggered()), this, SLOT(fullscreen()));
     connect(ui.toggleFitModeAction, SIGNAL(triggered()), this, SLOT(toggleFitMode()));
@@ -51,9 +51,25 @@ UIApplication::UIApplication(Session::ptr s) :
     connect(m_RenderWindow, SIGNAL(panChanged(double,double)), this, SLOT(pan(double, double)));
     // About Actions
     connect(ui.aboutAction, SIGNAL(triggered()), this, SLOT(about()));
-    connect(ui.aboutPluginsAction, SIGNAL(triggered()), this, SLOT(aboutPlugins()));
+}
 
+void UIApplication::showEvent(QShowEvent* event) {
+    // start() will be called as soon as the program returns to the event loop after executing show()
+    QTimer::singleShot(0, this, SLOT(start()));
+    event->accept();
+}
+
+void UIApplication::start() {
+    if (mStarted)
+        return;
+    // UI
+    m_SettingsDialog = new UISettingsDialog(this);
+    m_FileDialog = new UIFileDialog(this);
+    // starting timer (to compute 'IN' msgs every N ms)
+    m_timerID = QObject::startTimer(40);
     // Registering nodes
+    CacheNode::ptr ca = CacheNode::ptr(new CacheNode());
+    m_Manager.addNode(ca, m_Session);
     SceneNode::ptr sc = SceneNode::ptr(new SceneNode());
     m_Manager.addNode(sc, m_Session);
     TransportNode::ptr t = TransportNode::ptr(new TransportNode());
@@ -66,79 +82,9 @@ UIApplication::UIApplication(Session::ptr s) :
     m_Manager.addNode(info, m_Session);
     PlaybackNode::ptr pb = PlaybackNode::ptr(new PlaybackNode());
     m_Manager.addNode(pb, m_Session);
-}
-
-void UIApplication::showEvent(QShowEvent* event) {
-    // load needed plugins
-    m_PluginDialog->load(QString("plugin_dukex_imageinfo"));
-    m_PluginDialog->load(QString("plugin_dukex_timeline"));
-    // starting timer (to compute 'IN' msgs every N ms)
-    m_timerID = QObject::startTimer(40);
     // starting session
     m_Session->start(m_RenderWindow->renderWindowID());
-    event->accept();
-}
-
-void UIApplication::addObserver(QObject* _plugin, IObserver* _observer) {
-    if (!_observer)
-        return;
-    m_Session->addObserver(_observer);
-    m_RegisteredObservers.insert(_plugin, _observer);
-}
-
-QAction* UIApplication::createAction(QObject* _plugin, const QString & _menuName) {
-    QAction * customaction = NULL;
-    if (!_menuName.isEmpty()) {
-        QList<QMenu *> menus = findChildren<QMenu *> ();
-        QListIterator<QMenu *> iter(menus);
-        while (iter.hasNext()) {
-            QMenu *pMenu = iter.next();
-            if (pMenu->objectName() != _menuName)
-                continue;
-            customaction = new QAction(menuBar());
-            pMenu->addAction(customaction);
-            break;
-        }
-    }
-
-    if (customaction)
-        m_LoadedUIElements.insert(_plugin, customaction);
-
-    return customaction;
-}
-
-QMenu* UIApplication::createMenu(QObject* _plugin, const QString & _menuName) {
-    QMenu * custommenu = new QMenu(menuBar());
-    if (!_menuName.isEmpty()) {
-        QList<QMenu *> menus = findChildren<QMenu *> ();
-        QListIterator<QMenu *> iter(menus);
-        while (iter.hasNext()) {
-            QMenu *pMenu = iter.next();
-            if (pMenu->objectName() != _menuName)
-                continue;
-            pMenu->addMenu(custommenu);
-            break;
-        }
-    } else {
-        menuBar()->addMenu(custommenu);
-        custommenu->setParent(menuBar());
-    }
-    m_LoadedUIElements.insert(_plugin, custommenu);
-    return custommenu;
-}
-
-QDockWidget* UIApplication::createWindow(QObject* _plugin, Qt::DockWidgetArea _area, bool floating) {
-    QDockWidget * customdockwidget = new QDockWidget("undefined", this);
-    customdockwidget->setContentsMargins(0, 0, 0, 0);
-    connect(customdockwidget, SIGNAL(topLevelChanged(bool)), this, SLOT(topLevelChanged(bool)));
-    addDockWidget(_area, customdockwidget);
-    m_LoadedUIElements.insert(_plugin, customdockwidget);
-    if (floating) {
-        customdockwidget->setFloating(true);
-        customdockwidget->move(mapToGlobal(m_RenderWindow->renderWidget()->pos()) + QPoint(40, 60));
-        customdockwidget->adjustSize();
-    }
-    return customdockwidget;
+    mStarted = true;
 }
 
 void UIApplication::topLevelChanged(bool b) {
@@ -148,35 +94,6 @@ void UIApplication::topLevelChanged(bool b) {
         dockwidget->move(mapToGlobal(m_RenderWindow->renderWidget()->pos()) + QPoint(40, 60));
         dockwidget->adjustSize();
     }
-}
-
-void UIApplication::closeUI(QObject* _plug) {
-    // deregister observers
-    QList<IObserver*> registeredobservers = m_RegisteredObservers.values(_plug);
-    for (int i = 0; i < registeredobservers.size(); ++i) {
-        IObserver* obs = registeredobservers.at(i);
-        m_Session->removeObserver(obs);
-    }
-    m_RegisteredObservers.remove(_plug);
-
-    // close & delete UI elements
-    QList<QObject*> uielements = m_LoadedUIElements.values(_plug);
-    for (int i = 0; i < uielements.size(); ++i) {
-        if (qobject_cast<QDockWidget*> (uielements.at(i))) {
-            QDockWidget* obj = qobject_cast<QDockWidget*> (uielements.at(i));
-            obj->close();
-            removeDockWidget(obj);
-            obj->deleteLater();
-        } else if (qobject_cast<QMenu*> (uielements.at(i))) {
-            QMenu* obj = qobject_cast<QMenu*> (uielements.at(i));
-            obj->close();
-            obj->deleteLater();
-        } else if (qobject_cast<QAction*> (uielements.at(i))) {
-            QAction* obj = qobject_cast<QAction*> (uielements.at(i));
-            obj->deleteLater();
-        }
-    }
-    m_LoadedUIElements.remove(_plug);
 }
 
 // private
@@ -387,13 +304,18 @@ void UIApplication::browseDirectory() {
 void UIApplication::savePlaylist() {
     QString file = QFileDialog::getSaveFileName(this, tr("Save Current Playlist"), QString(), tr("Duke Playlist (*.dk);;All(*)"));
     if (!file.isEmpty()) {
-        if(!file.endsWith(".dk"))
+        if (!file.endsWith(".dk"))
             file.append(".dk");
         SceneNode::ptr scene = m_Manager.nodeByName<SceneNode> ("fr.mikrosimage.dukex.scene");
         if (scene.get() == NULL)
             return;
         scene->save(file.toStdString());
     }
+}
+
+// private slot
+void UIApplication::openPreferences() {
+    m_SettingsDialog->show();
 }
 
 // private slot
@@ -540,10 +462,5 @@ void UIApplication::pan(double x, double y) {
 void UIApplication::about() {
     QString msg(getVersion("DukeX").c_str());
     QMessageBox::about(this, tr("About DukeX"), msg);
-}
-
-// private slot
-void UIApplication::aboutPlugins() {
-    m_PluginDialog->exec();
 }
 

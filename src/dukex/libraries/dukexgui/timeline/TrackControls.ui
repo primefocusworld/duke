@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>142</width>
-    <height>27</height>
+    <width>140</width>
+    <height>26</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -117,7 +117,7 @@
   <customwidget>
    <class>UIExtendedLabel</class>
    <extends>QLabel</extends>
-   <header>UIExtendedLabel.h</header>
+   <header>timeline/UIExtendedLabel.h</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -62,6 +62,9 @@ public:
     inline const ::duke::protocol::PlaybackState::PlaybackMode & playbackMode() const {
         return mPlaybackMode;
     }
+    inline void setPlaybackMode(const ::duke::protocol::PlaybackState::PlaybackMode & m) {
+        mPlaybackMode = m;
+    }
     inline MessageQueue & getInitTimeQueue() {
         return mInitTimeQueue;
     }

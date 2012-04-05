@@ -228,7 +228,7 @@ vector<google::protobuf::serialize::SharedHolder> getMessages(const Playlist &pl
     builder.packAndShare(MeshBuilder::buildPlane(MeshBuilder::plane));
     // appending unbound parameters
     builder.packAndShare(automaticTexDim(DISPLAY_DIM));
-    builder.packAndShare(staticFloat(DISPLAY_MODE, 0));
+    builder.packAndShare(staticFloat(DISPLAY_MODE, 2)); // fit to display X
     builder.packAndShare(staticFloat(IMAGE_RATIO, 0));
     builder.packAndShare(staticFloat(ZOOM, 1));
     builder.packAndShare(staticFloat(PANX, 0));

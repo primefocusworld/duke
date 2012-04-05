@@ -9,7 +9,6 @@ UITrackControls::UITrackControls(UIGraphicsTrack* track, QWidget *parent) :
         m_ui.fxButton->hide();
     setTrackDisabled(!m_track->isEnabled());
     connect(m_ui.disableButton, SIGNAL( clicked(bool) ), this, SLOT( setTrackDisabled(bool) ));
-    connect(m_ui.trackLabel, SIGNAL(doubleClicked()), this, SLOT(trackNameDoubleClicked()));
     connect(m_ui.fxButton, SIGNAL(clicked()), this, SLOT(fxButtonClicked()));
     updateTextLabels();
 }

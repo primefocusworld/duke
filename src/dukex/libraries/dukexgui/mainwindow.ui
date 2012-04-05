@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>853</width>
-    <height>707</height>
+    <width>980</width>
+    <height>768</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -56,13 +56,16 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>853</width>
+     <width>980</width>
      <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>&amp;File</string>
+    </property>
+    <property name="separatorsCollapsible">
+     <bool>false</bool>
     </property>
     <widget class="QMenu" name="openRecentMenu">
      <property name="title">
@@ -72,8 +75,10 @@
     <addaction name="openFileAction"/>
     <addaction name="openRecentMenu"/>
     <addaction name="browseDirectoryAction"/>
+    <addaction name="separator"/>
     <addaction name="savePlaylistAction"/>
     <addaction name="separator"/>
+    <addaction name="preferencesAction"/>
     <addaction name="quitAction"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -81,7 +86,6 @@
      <string>?</string>
     </property>
     <addaction name="aboutAction"/>
-    <addaction name="aboutPluginsAction"/>
    </widget>
    <widget class="QMenu" name="menuWindow">
     <property name="title">
@@ -373,17 +377,6 @@
     <string>Next image</string>
    </property>
   </action>
-  <action name="preferencesAction">
-   <property name="text">
-    <string>&amp;Preferences...</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+,</string>
-   </property>
-   <property name="shortcutContext">
-    <enum>Qt::ApplicationShortcut</enum>
-   </property>
-  </action>
   <action name="actionFullscreen_3">
    <property name="text">
     <string>Fullscreen mode</string>
@@ -560,6 +553,9 @@
    </property>
   </action>
   <action name="LOGAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>LOG</string>
    </property>
@@ -570,6 +566,9 @@
    </property>
   </action>
   <action name="LINAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>LIN</string>
    </property>
@@ -580,6 +579,12 @@
    </property>
   </action>
   <action name="SRGBAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>SRGB</string>
    </property>
@@ -626,12 +631,23 @@
   </action>
   <action name="savePlaylistAction">
    <property name="text">
-    <string>Save Playlist...</string>
+    <string>&amp;Save Playlist As...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="preferencesAction">
+   <property name="text">
+    <string>&amp;Preferences...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+,</string>
    </property>
   </action>
  </widget>
  <resources>
-  <include location="../../resources/resources.qrc"/>
+  <include location="../../app/resources/resources.qrc"/>
  </resources>
  <connections/>
 </ui>

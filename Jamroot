@@ -88,7 +88,6 @@ install dist :
 	    src/duke/app
 	    src/dukex/app
 	    dukeplugins
-	    dukexplugins
 	    mingw_runtime
     :
 	    <install-dependencies>on
@@ -115,7 +114,6 @@ install distduke :
 
 install distdukex :
 	    src/dukex/app
-	    dukexplugins
 	    mingw_runtime
     :
 	    <install-dependencies>on

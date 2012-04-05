@@ -1,18 +1,17 @@
 #ifndef UIAPPLICATION_H
 #define UIAPPLICATION_H
 
-#include "IUIBuilder.h"
 #include "ui_mainwindow.h"
-#include "UserPreferences.h"
+#include "settings/UserPreferences.h"
 #include <dukexcore/dkxNodeManager.h>
 #include <dukexcore/dkxSession.h>
 #include <QtGui>
 
 class UIRenderWindow;
 class UIFileDialog;
-class UIPluginDialog;
+class UISettingsDialog;
 
-class UIApplication : public QMainWindow, public IUIBuilder {
+class UIApplication : public QMainWindow {
 
 Q_OBJECT
 
@@ -20,14 +19,6 @@ public:
     UIApplication(Session::ptr s);
     ~UIApplication() {
     }
-
-public:
-    // IUIBuilder Interface
-    void addObserver(QObject* _plugin, IObserver* _observer);
-    QAction* createAction(QObject* _plugin, const QString & _parentMenuName);
-    QMenu* createMenu(QObject* _plugin, const QString & _parentMenuName);
-    QDockWidget* createWindow(QObject* _plugin, Qt::DockWidgetArea _area, bool floating);
-    void closeUI(QObject* _plug);
 
 private:
     void showEvent(QShowEvent* event);
@@ -41,12 +32,14 @@ private:
     void updateRecentFilesMenu();
 
 private slots:
+    void start();
     // file
     void openFiles(const QStringList &, const bool & browseMode, const bool & parseSequence);
     void openFiles();
     void openRecent();
     void browseDirectory();
     void savePlaylist();
+    void openPreferences();
     // control
     void playStop();
     void previousFrame();
@@ -69,20 +62,19 @@ private slots:
     void pan(double, double);
     // ?
     void about();
-    void aboutPlugins();
 
     void topLevelChanged(bool); // TEST
 
 private:
     Ui::mainWindow ui;
-//    QDeclarativeEngine m_Engine;
     NodeManager m_Manager;
     Session::ptr m_Session;
     UserPreferences m_Preferences;
     UIRenderWindow* m_RenderWindow;
     UIFileDialog* m_FileDialog;
-    UIPluginDialog* m_PluginDialog;
+    UISettingsDialog* m_SettingsDialog;
     int m_timerID;
+    bool mStarted;
 };
 
 #endif // UIAPPLICATION_H
