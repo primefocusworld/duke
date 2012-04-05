@@ -10,6 +10,8 @@
 class UIRenderWindow;
 class UIFileDialog;
 class UISettingsDialog;
+class UIImageInfo;
+class UITimeline;
 
 class UIApplication : public QMainWindow {
 
@@ -52,6 +54,8 @@ private slots:
     void colorspaceLIN();
     void colorspaceLOG();
     void colorspaceSRGB();
+    void timeline();
+    void imageInfo();
     // window
     void fullscreen();
     void toggleFitMode();
@@ -72,7 +76,9 @@ private:
     UserPreferences m_Preferences;
     UIRenderWindow* m_RenderWindow;
     UIFileDialog* m_FileDialog;
-    UISettingsDialog* m_SettingsDialog;
+    UISettingsDialog* m_SettingsUI;
+    UIImageInfo* m_ImageInfoUI;
+    UITimeline* m_TimelineUI;
     int m_timerID;
     bool mStarted;
 };

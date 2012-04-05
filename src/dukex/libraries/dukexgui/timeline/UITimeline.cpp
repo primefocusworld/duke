@@ -14,7 +14,7 @@
 #define MAXZOOMRATIO 13
 
 UITimeline::UITimeline(NodeManager* _manager) :
-    m_manager(_manager), m_zoom(4), m_isPlaying(false) {
+    m_manager(_manager), m_zoom(4), m_timerID(0), m_isPlaying(false) {
     m_ui.setupUi(this);
 
     m_tracksScene = new UITracksScene(this);
@@ -238,7 +238,10 @@ void UITimeline::showEvent(QShowEvent *event) {
 
 // private
 void UITimeline::closeEvent(QCloseEvent *event) {
-    QObject::killTimer(m_timerID);
+    if(m_timerID != 0){
+        QObject::killTimer(m_timerID);
+        m_timerID = 0;
+    }
     event->accept();
 }
 

@@ -2,13 +2,22 @@
 #include "UIRenderWindow.h"
 #include "UIFileDialog.h"
 #include "UISettingsDialog.h"
+#include "timeline/UITimeline.h"
+#include "imageinfo/UIImageInfo.h"
+#include "UISettingsDialog.h"
 #include <dukeengine/Version.h>
 #include <dukexcore/nodes/Commons.h>
 #include <boost/filesystem.hpp>
 #include <iostream>
 
 UIApplication::UIApplication(Session::ptr s) :
-    m_Session(s), m_RenderWindow(new UIRenderWindow(this)), m_timerID(0), mStarted(false) {
+    m_Session(s), //
+                    m_RenderWindow(new UIRenderWindow(this)), //
+                    m_SettingsUI(NULL), //
+                    m_ImageInfoUI(NULL), //
+                    m_TimelineUI(NULL), //
+                    m_timerID(0), mStarted(false) {
+
     // Global UI
     ui.setupUi(this);
     setCentralWidget(m_RenderWindow);
@@ -41,6 +50,8 @@ UIApplication::UIApplication(Session::ptr s) :
     displayActionGroup->addAction(ui.LINAction);
     displayActionGroup->addAction(ui.LOGAction);
     displayActionGroup->addAction(ui.SRGBAction);
+    connect(ui.timelineAction, SIGNAL(triggered()), this, SLOT(timeline()));
+    connect(ui.imageInfoAction, SIGNAL(triggered()), this, SLOT(imageInfo()));
     // Window Actions
     connect(ui.fullscreenAction, SIGNAL(triggered()), this, SLOT(fullscreen()));
     connect(ui.toggleFitModeAction, SIGNAL(triggered()), this, SLOT(toggleFitMode()));
@@ -62,9 +73,6 @@ void UIApplication::showEvent(QShowEvent* event) {
 void UIApplication::start() {
     if (mStarted)
         return;
-    // UI
-    m_SettingsDialog = new UISettingsDialog(this);
-    m_FileDialog = new UIFileDialog(this);
     // starting timer (to compute 'IN' msgs every N ms)
     m_timerID = QObject::startTimer(40);
     // Registering nodes
@@ -98,9 +106,17 @@ void UIApplication::topLevelChanged(bool b) {
 
 // private
 void UIApplication::closeEvent(QCloseEvent *event) {
-    m_RenderWindow->close();
+    if (m_TimelineUI) {
+        m_Session->removeObserver(m_TimelineUI);
+        delete m_TimelineUI;
+    }
+    if (m_ImageInfoUI) {
+        m_Session->removeObserver(m_ImageInfoUI);
+        delete m_ImageInfoUI;
+    }
+    if(m_timerID != 0)
+        QObject::killTimer(m_timerID);
     m_Session->stop();
-    QObject::killTimer(m_timerID);
     m_Manager.clearNodes();
     m_Preferences.saveShortcuts(this);
     m_Preferences.saveFileHistory();
@@ -220,7 +236,6 @@ void UIApplication::updateRecentFilesMenu() {
         if (m_Preferences.history(i) == "")
             continue;
         boost::filesystem::path fn(m_Preferences.history(i));
-        //        QAction * act = ui.openRecentMenu->addAction(fn.leaf().c_str());
         QAction * act = ui.openRecentMenu->addAction(m_Preferences.history(i).c_str());
         act->setData(m_Preferences.history(i).c_str());
         connect(act, SIGNAL(triggered()), this, SLOT(openRecent()));
@@ -315,7 +330,9 @@ void UIApplication::savePlaylist() {
 
 // private slot
 void UIApplication::openPreferences() {
-    m_SettingsDialog->show();
+    if (!m_SettingsUI)
+        m_SettingsUI = new UISettingsDialog(this);
+    m_SettingsUI->show();
 }
 
 // private slot
@@ -389,7 +406,7 @@ void UIApplication::colorspaceLIN() {
 void UIApplication::colorspaceLOG() {
     GradingNode::ptr g = m_Manager.nodeByName<GradingNode> ("fr.mikrosimage.dukex.grading");
     if (g.get() == NULL)
-        return;
+        return;!
     g->setColorspace(::duke::playlist::Display::LOG);
 }
 
@@ -399,6 +416,24 @@ void UIApplication::colorspaceSRGB() {
     if (g.get() == NULL)
         return;
     g->setColorspace(::duke::playlist::Display::SRGB);
+}
+
+void UIApplication::timeline() {
+    if (!m_TimelineUI) {
+        m_TimelineUI = new UITimeline(&m_Manager);
+        m_Session->addObserver(m_TimelineUI);
+        addDockWidget(Qt::BottomDockWidgetArea, m_TimelineUI);
+    }
+    m_TimelineUI->setVisible(!m_TimelineUI->isVisible());
+}
+
+void UIApplication::imageInfo() {
+    if (!m_ImageInfoUI) {
+        m_ImageInfoUI = new UIImageInfo(&m_Manager);
+        m_Session->addObserver(m_ImageInfoUI);
+        addDockWidget(Qt::RightDockWidgetArea, m_ImageInfoUI);
+    }
+    m_ImageInfoUI->setVisible(!m_ImageInfoUI->isVisible());
 }
 
 // private slot

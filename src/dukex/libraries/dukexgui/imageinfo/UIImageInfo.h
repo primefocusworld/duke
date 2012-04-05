@@ -7,7 +7,7 @@
 // forward declaration
 class NodeManager;
 
-class UIImageInfo : public QWidget, public IObserver {
+class UIImageInfo : public QDockWidget, public IObserver {
 
     Q_OBJECT
     Q_DISABLE_COPY(UIImageInfo)

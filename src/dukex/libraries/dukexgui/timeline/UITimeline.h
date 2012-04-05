@@ -14,7 +14,7 @@ class UITracksRuler;
 class UITimelineControls;
 class NodeManager;
 
-class UITimeline : public QWidget, public IObserver {
+class UITimeline : public QDockWidget, public IObserver {
 
     Q_OBJECT
     Q_DISABLE_COPY(UITimeline)

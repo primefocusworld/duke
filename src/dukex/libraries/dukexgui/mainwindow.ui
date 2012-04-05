@@ -135,6 +135,9 @@
      <addaction name="SRGBAction"/>
     </widget>
     <addaction name="menuColorspace"/>
+    <addaction name="separator"/>
+    <addaction name="timelineAction"/>
+    <addaction name="imageInfoAction"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuControl"/>
@@ -643,6 +646,22 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+,</string>
+   </property>
+  </action>
+  <action name="timelineAction">
+   <property name="text">
+    <string>&amp;Timeline</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
+   </property>
+  </action>
+  <action name="imageInfoAction">
+   <property name="text">
+    <string>Image &amp;Info</string>
+   </property>
+   <property name="shortcut">
+    <string>I</string>
    </property>
   </action>
  </widget>
