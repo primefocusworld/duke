@@ -1,4 +1,4 @@
-#include <plugin/TexturePool.h>
+#include <dukeengine/renderer/TexturePool.h>
 #include <iostream>
 #include <boost/integer_traits.hpp>
 #define BOOST_TEST_MODULE TexturePool
@@ -90,7 +90,6 @@ BOOST_AUTO_TEST_CASE( testDistanceComputation )
 BOOST_AUTO_TEST_CASE( testBestSuited )
 {
 	const PoolRequest initialRequest( PXF_R8G8B8A8 , false, 200, 200 );
-	const PoolRequest compatibleRequest( PXF_R8G8B8A8, false, 100, 100 );
 	const PoolRequest imcompatibleRequest( PXF_R8G8B8A8, false, 300, 300 );
 	const PoolRequest imcompatibleRequestWithMipMap( PXF_R8G8B8A8, true, 200, 200 );
 	const PoolRequest imcompatibleRequestWithAnotherFormat( PXF_B8G8R8A8, false, 200, 200 );
@@ -105,11 +104,6 @@ BOOST_AUTO_TEST_CASE( testBestSuited )
 	// resource should have returned to pool so we can get it again
 	{
 		TexturePool::ScopedTexturePtr pTexture( pool.get( initialRequest ) );
-		BOOST_CHECK( pTexture );
-		BOOST_CHECK( pTexture->getTexture<DummyResource>() == pResource );
-	}
-	{
-		TexturePool::ScopedTexturePtr pTexture( pool.get( compatibleRequest ) );
 		BOOST_CHECK( pTexture );
 		BOOST_CHECK( pTexture->getTexture<DummyResource>() == pResource );
 	}

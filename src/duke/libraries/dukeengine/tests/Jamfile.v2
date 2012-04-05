@@ -9,8 +9,11 @@ lib dukeengine_test_subset
 				[ glob ../dukeengine/file/*.cpp ]
 				../dukeengine/CmdLineOptions.cpp
 				../dukeengine/memory/MemoryUtils.cpp
+				../dukeengine/renderer/TexturePool.cpp
+				../dukeengine/renderer/IResource.cpp
 			:
 				<library>/dukeapi//dukeapi/<link>static
+				<include>../../dukeio
 			;
 
 for local l in [ glob *.cpp ] {
@@ -22,5 +25,6 @@ for local l in [ glob *.cpp ] {
             <define>BOOST_TEST_DYN_LINK=1
             <library>/boost//unit_test_framework
 			<library>dukeengine_test_subset/<link>static
+			<include>../../dukeio
 		;
 }
