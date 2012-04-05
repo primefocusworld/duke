@@ -11,12 +11,10 @@ project
 		<library>/user-config//cg/<link>shared
 		<library>/user-config//cggl/<link>shared
 		<library>/user-config//sfml/<link>shared
-		<library>/boost//iostreams/<link>shared
-		<library>/boost//chrono/<link>shared
+		<library>/boost//iostreams/<link>static
+		<library>/boost//chrono/<link>static
     : usage-requirements 
 		<library>/user-config//sfml/<link>shared
-		<library>/boost//iostreams/<link>shared
-		<library>/boost//chrono/<link>shared
 	;
 
 explicit dukeengine ;
