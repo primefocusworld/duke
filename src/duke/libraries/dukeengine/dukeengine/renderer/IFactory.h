@@ -14,60 +14,68 @@
 class IShaderBase;
 class ITextureBase;
 
-class IFactory : public boost::noncopyable
-{
+class IFactory : public boost::noncopyable {
 public:
-	IFactory();
-	virtual ~IFactory();
+    IFactory();
+    virtual ~IFactory();
 
-	template<class T>
-	Buffer<T> createVertexBuffer( unsigned long size, unsigned long flags, const T* data ) const;
-	template<class T>
-	Buffer<T> createIndexBuffer( unsigned long size, unsigned long flags, const T* data ) const;
+    template<class T>
+    Buffer<T> createVertexBuffer(unsigned long size, unsigned long flags, const T* data) const {
+        Buffer<T> buffer(createVB(size, sizeof(T), flags));
+        if (data)
+            buffer.fill(data, size);
+        return buffer;
+    }
 
-	// shader prototypes
-	PrototypeFactory& getPrototypeFactory();
+    template<class T>
+    Buffer<T> createIndexBuffer(unsigned long size, unsigned long flags, const T* data) const {
+        Buffer<T> buffer(createIB(size, sizeof(T), flags));
+        if (data)
+            buffer.fill(data, size);
+        return buffer;
+    }
 
-	// shaders
-	virtual IShaderBase* createShader( CGprogram program, TShaderType type ) const = 0;
+    // shader prototypes
+    PrototypeFactory& getPrototypeFactory();
 
-	// texture
-	virtual TPixelFormat getCompliantFormat(TPixelFormat format) const = 0;
-	virtual ITextureBase* createTexture( const ImageDescription& description, unsigned long flags = 0 ) const = 0;
-	CGcontext 	  getCgContext() const;
-	bool          hasCapability( TCapability capability ) const;
-	CGprofile     getShaderProfile( TShaderType Type ) const;
-	const char* * getShaderOptions( TShaderType Type ) const;
+    // shaders
+    virtual IShaderBase* createShader(CGprogram program, TShaderType type) const = 0;
 
-	// resource manager
-	ResourceManager& getResourceManager();
-	TexturePool&     getTexturePool();
+    // texture
+    virtual TPixelFormat getCompliantFormat(TPixelFormat format) const = 0;
+    virtual ITextureBase* createTexture(const ImageDescription& description, unsigned long flags = 0) const = 0;
+    CGcontext getCgContext() const;
+    bool hasCapability(TCapability capability) const;
+    CGprofile getShaderProfile(TShaderType Type) const;
+    const char* * getShaderOptions(TShaderType Type) const;
+
+    // resource manager
+    ResourceManager& getResourceManager();
+    TexturePool& getTexturePool();
 
 protected:
-	// buffers
-	virtual IBufferBase* createVB( unsigned long size, unsigned long stride, unsigned long flags ) const = 0;
-	virtual IBufferBase* createIB( unsigned long size, unsigned long stride, unsigned long flags ) const = 0;
+    // buffers
+    virtual IBufferBase* createVB(unsigned long size, unsigned long stride, unsigned long flags) const = 0;
+    virtual IBufferBase* createIB(unsigned long size, unsigned long stride, unsigned long flags) const = 0;
 
-	// capability map, each implementation have to fill it
-	typedef std::map<TCapability, bool> TCapabilityMap;
-	TCapabilityMap m_Capabilities;
+    // capability map, each implementation have to fill it
+    typedef std::map<TCapability, bool> TCapabilityMap;
+    TCapabilityMap m_Capabilities;
 
-	// profiles
-	CGprofile m_VSProfile;
-	CGprofile m_PSProfile;
-	const char** m_VSOptions;
-	const char** m_PSOptions;
-	virtual void checkCaps() = 0;
+    // profiles
+    CGprofile m_VSProfile;
+    CGprofile m_PSProfile;
+    const char** m_VSOptions;
+    const char** m_PSOptions;
+    virtual void checkCaps() = 0;
 
 private:
-	CGcontext m_Context;
-	ResourceManager m_ResourceManager;
-	TexturePool m_TexturePool;
-	PrototypeFactory m_PrototypeFactory;
+    CGcontext m_Context;
+    ResourceManager m_ResourceManager;
+    TexturePool m_TexturePool;
+    PrototypeFactory m_PrototypeFactory;
 
-	void add(const duke::protocol::FunctionPrototype &);
+    void add(const duke::protocol::FunctionPrototype &);
 };
-
-#include "IFactory.inl"
 
 #endif /* IFACTORY_H_ */

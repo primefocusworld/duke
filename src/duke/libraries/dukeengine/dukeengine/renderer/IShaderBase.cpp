@@ -21,7 +21,6 @@ void IShaderBase::appendParameter(const CGparameter param) {
     const string name = cgGetParameterName(param);
     if (name == "main")
         return;
-//    cerr << cgGetTypeString(cgGetParameterType(param)) << " " << name << endl;
     m_ParameterNames.push_back(name);
 }
 
