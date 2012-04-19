@@ -1,10 +1,15 @@
 #include "ProtoBufResource.h"
 #include <google/protobuf/message.h>
 
-ProtoBufResource::ProtoBufResource( const ::google::protobuf::Message& message ) : m_pMessage( message.New() )
-{
-	m_pMessage->CopyFrom( message );
+ProtoBufResource::ProtoBufResource(const boost::shared_ptr<google::protobuf::Message> & shared) :
+                m_pMessage(shared) {
 }
 
-ProtoBufResource::~ProtoBufResource() {}
+ProtoBufResource::ProtoBufResource(const ::google::protobuf::Message& message) :
+                m_pMessage(message.New()) {
+    m_pMessage->CopyFrom(message);
+}
+
+ProtoBufResource::~ProtoBufResource() {
+}
 

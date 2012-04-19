@@ -9,29 +9,29 @@ using namespace std;
 using namespace ::duke::protocol;
 
 Image::Image(IFactory& factory, const string& name, const ImageDescription& imageDescription) {
-    m_pImage = factory.getResourceManager().get<IImageBase> (::resource::IMAGE, name);
+    resource::tryGet(factory.getResourceManager(), name, m_pImage);
     if (!m_pImage) {
         m_pImage.reset(new IImageBase(imageDescription));
         if (!name.empty())
-            factory.getResourceManager().add(name, m_pImage);
+            resource::put(factory.getResourceManager(), name, m_pImage);
 
     }
     // now updating image data
     if (imageDescription.imageDataSize != 0) {
-        assert( m_pImage->m_Pixels.size() >= imageDescription.imageDataSize );
+        assert( m_pImage->m_Pixels.size() >= imageDescription.imageDataSize);
         memcpy(m_pImage->m_Pixels.data(), imageDescription.pImageData, imageDescription.imageDataSize);
     }
 }
 
 Image::Image(IFactory& factory, const string& name) {
-    m_pImage = factory.getResourceManager().safeGet<IImageBase> (::resource::IMAGE, name);
+    resource::tryGet(factory.getResourceManager(), name, m_pImage);
 }
 
 Image::~Image() {
 }
 
 const ImageDescription& Image::getImageDescription() const {
-    assert( m_pImage );
+    assert( m_pImage);
     return m_pImage->getImageDescription();
 }
 
@@ -62,7 +62,7 @@ void Image::dump(const string& filename) const {
     //    CloseHandle(file);
     ofstream file(filename.c_str(), ios_base::binary | ios_base::out | ios_base::trunc);
     file.write(header.data(), header.size());
-    file.write(reinterpret_cast<char*> (data.data()), data.size());
+    file.write(reinterpret_cast<char*>(data.data()), data.size());
     file.close();
 }
 

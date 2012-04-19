@@ -21,19 +21,19 @@ ImageDescription getImageDescriptionFrom(const ::duke::protocol::Texture& textur
 }
 
 DisplayableImage::DisplayableImage(IFactory& factory, const ::duke::protocol::Texture& texture) :
-    m_Image(factory, texture.name(), getImageDescriptionFrom(texture)) {
-    m_pTexture = factory.getResourceManager().get<ITextureBase> (::resource::TEXTURE, texture.name());
+                m_Image(factory, texture.name(), getImageDescriptionFrom(texture)) {
+    resource::tryGet(factory.getResourceManager(), texture.name(), m_pTexture);
     if (!m_pTexture) {
         m_pTexture.reset(factory.createTexture(getImageDescription()));
         if (!texture.name().empty())
-            factory.getResourceManager().add(texture.name(), m_pTexture);
+            resource::put(factory.getResourceManager(), texture.name(), m_pTexture);
     }
     updateTexture();
 }
 
 DisplayableImage::DisplayableImage(IFactory& factory, const std::string& name) :
-    m_Image(factory, name) {
-    m_pTexture = factory.getResourceManager().get<ITextureBase> (::resource::TEXTURE, name);
+                m_Image(factory, name) {
+    resource::tryGet(factory.getResourceManager(), name, m_pTexture);
 }
 
 const ImageDescription& DisplayableImage::getImageDescription() const {
@@ -46,8 +46,8 @@ DisplayableImage::~DisplayableImage() {
 void DisplayableImage::updateTexture() {
     IImageBase* pImage = m_Image.m_pImage.get();
 
-    assert( pImage );
-    assert( m_pTexture );
+    assert( pImage);
+    assert( m_pTexture);
     m_pTexture->update(pImage->m_Description, &pImage->m_Pixels[0]);
 }
 

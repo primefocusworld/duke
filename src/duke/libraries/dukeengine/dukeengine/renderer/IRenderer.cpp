@@ -63,11 +63,7 @@ private:
 template<typename T>
 inline void IRenderer::addResource(const ::google::protobuf::serialize::MessageHolder& holder) {
     const T msg = unpackTo<T>(holder);
-    getResourceManager().add( //
-                    msg.name(), //
-                    new ProtoBufResource(msg), //
-                    false //
-                    );
+    resource::put(getResourceManager(), msg.name(), boost::shared_ptr<ProtoBufResource>(new ProtoBufResource(msg)));
 }
 
 IRenderer::IRenderer(const duke::protocol::Renderer& renderer, sf::Window& window, IRendererHost& host) :
@@ -118,16 +114,11 @@ void IRenderer::consumeUntilEngine() {
         dump(pDescriptor, holder);
 
         if (isType<Shader>(pDescriptor)) {
-            const Shader shader = unpackTo<Shader>(holder); // fixme gchatelet : unpack to shared for addResource
-            getResourceManager().remove(::resource::SHADER, shader.name());
             addResource<Shader>(holder);
         } else if (isType<duke::protocol::Mesh>(pDescriptor)) {
-            using duke::protocol::Mesh;
-            const Mesh mesh = unpackTo<Mesh>(holder); // fixme gchatelet : unpack to shared for addResource
-            getResourceManager().remove(::resource::MESH, mesh.name());
-            addResource<Mesh>(holder);
+            addResource<duke::protocol::Mesh>(holder);
         } else if (isType<Texture>(pDescriptor)) {
-            const Texture texture = unpackTo<Texture>(holder); // fixme gchatelet : unpack to shared for addResource
+            const Texture texture = unpackTo<Texture>(holder);
             switch (holder.action()) {
                 case MessageHolder_Action_CREATE:
                 case MessageHolder_Action_UPDATE:
@@ -224,15 +215,14 @@ bool IRenderer::simulationStep() {
         return false;
     }
 
-    BOOST_FOREACH ( const DumpedImages::value_type &pair, m_Context.dumpedImages)
-            {
-                const string &name = pair.first;
-                Texture texture;
-                pair.second->dump(texture);
-                texture.set_name(name);
-                pack(texture, holder);
-                m_Host.pushEvent(holder);
-            }
+    BOOST_FOREACH ( const DumpedImages::value_type &pair, m_Context.dumpedImages) {
+        const string &name = pair.first;
+        Texture texture;
+        pair.second->dump(texture);
+        texture.set_name(name);
+        pack(texture, holder);
+        m_Host.pushEvent(holder);
+    }
     return m_Host.renderFinished(0);
 }
 
@@ -259,8 +249,7 @@ void IRenderer::displayClip(const ::duke::protocol::Clip& clip) {
         if (clip.has_grade()) {
             pGrading = &clip.grade();
         } else {
-            pResource = getResourceManager().safeGet<ProtoBufResource>(::resource::PROTOBUF, clip.gradename());
-            pGrading = pResource->get<duke::protocol::Grading>();
+            pGrading = resource::get<ProtoBufResource>(getResourceManager(), clip.gradename()).get<duke::protocol::Grading>();
         }
         RAIIContext gradingContext(m_Context, pGrading->name(), pGrading->has_name());
         for_each(pGrading->pass().begin(), pGrading->pass().end(), boost::bind(&IRenderer::displayPass, this, _1));
@@ -316,7 +305,8 @@ void IRenderer::displayPass(const ::duke::protocol::RenderPass& pass) {
                     overrideClipDimension(clipDescription, pass.rendertarget());
                 pRenderTarget.reset(new VolatileTexture(*this, clipDescription, TEX_RENTERTARGET));
                 m_Context.renderTargets[renderTargetName] = pRenderTarget;
-            }assert(pRenderTarget);
+            }
+            assert(pRenderTarget);
             pRenderTargetTexture = pRenderTarget->getTexture();
             //            cout << "rendering to " << renderTargetName << " : " << pRenderTargetTexture << endl;
         }
@@ -361,7 +351,7 @@ void IRenderer::displayPass(const ::duke::protocol::RenderPass& pass) {
 }
 
 void IRenderer::displayMeshWithName(const std::string& name) {
-    displayMesh(getResourceManager().safeGetProto<duke::protocol::Mesh>(name));
+    displayMesh(resource::getPB<duke::protocol::Mesh>(getResourceManager(), name));
 }
 
 void IRenderer::displayMesh(const ::duke::protocol::Mesh& mesh) {
@@ -369,7 +359,7 @@ void IRenderer::displayMesh(const ::duke::protocol::Mesh& mesh) {
 }
 
 void IRenderer::compileAndSetShader(const TShaderType& type, const string& name) {
-    ShaderFactory(*this, getResourceManager().safeGetProto<Shader>(name), m_Context, type);
+    ShaderFactory(*this, resource::getPB<Shader>(getResourceManager(), name), m_Context, type);
 }
 
 inline const ImageDescription& IRenderer::getSafeImageDescription(const ImageDescription* pImage) const {
@@ -382,12 +372,11 @@ const ImageDescription& IRenderer::getImageDescriptionFromClip(const string &cli
         return getSafeImageDescription(images.empty() ? NULL : &images[0]);
 
     size_t index = 0;
-    BOOST_FOREACH(const duke::protocol::Clip &clip ,getSetup().m_Clips)
-            {
-                if (clip.has_name() && clip.name() == clipName)
-                    return getSafeImageDescription(&images[index]);
-                ++index;
-            }
+    BOOST_FOREACH(const duke::protocol::Clip &clip ,getSetup().m_Clips) {
+        if (clip.has_name() && clip.name() == clipName)
+            return getSafeImageDescription(&images[index]);
+        ++index;
+    }
 
     cerr << HEADER + "no clip associated to " << clipName << endl;
     return m_EmptyImageDescription;

@@ -5,7 +5,7 @@
 using namespace std;
 
 IShaderBase::IShaderBase(CGprogram program, TShaderType type) :
-    IResource("shader"), m_Program(program), m_Type(type) {
+                m_Program(program), m_Type(type) {
     CGparameter param = cgGetFirstParameter(m_Program, CG_GLOBAL);
     while (param) {
         appendParameter(param);

@@ -20,12 +20,12 @@ using namespace ::duke::protocol;
 using namespace ::shader_factory;
 
 ShaderFactory::ShaderFactory(IRenderer& renderer, const ::duke::protocol::Shader& shader, RenderingContext& context, const TShaderType type) :
-        m_Renderer(renderer), m_Shader(shader), m_RenderingContext(context), m_Images(context.images()), m_Type(type), m_ResourceManager(m_Renderer.getResourceManager()) {
+                m_Renderer(renderer), m_Shader(shader), m_RenderingContext(context), m_Images(context.images()), m_Type(type), m_ResourceManager(m_Renderer.getResourceManager()) {
     const string name = m_Shader.name();
     const bool isPersistent = !name.empty();
 
     if (isPersistent)
-        m_pShader = m_ResourceManager.get<IShaderBase>(::resource::SHADER, name);
+        resource::tryGet(m_ResourceManager, name, m_pShader);
     if (!m_pShader) {
         string code;
         if (m_Type == SHADER_VERTEX || shader.has_code())
@@ -37,7 +37,7 @@ ShaderFactory::ShaderFactory(IRenderer& renderer, const ::duke::protocol::Shader
         }
         m_pShader.reset(renderer.createShader(createProgram(code, name), m_Type));
         if (isPersistent)
-            m_ResourceManager.add(name, m_pShader);
+            resource::put(m_ResourceManager, name, m_pShader);
     }
     assert( m_pShader->getType() == m_Type);
 //    cout << "set shader with name " << name << endl;
@@ -52,27 +52,28 @@ void ShaderFactory::applyParameters() {
         applyParameter(*itr);
 }
 
-TResourcePtr ShaderFactory::getParam(const string &name) const {
+ProtoBufResource& ShaderFactory::getParam(const string &name) const {
     for (ScopesRItr it = m_RenderingContext.scopes.rbegin(); it < m_RenderingContext.scopes.rend(); ++it) {
         const string scopedParamName = *it + '|' + name;
-        TResourcePtr pParam = m_ResourceManager.get<ProtoBufResource>(::resource::PROTOBUF, scopedParamName);
+        TResourcePtr pParam;
+        resource::tryGet(m_ResourceManager, scopedParamName, pParam);
         if (pParam != NULL)
-            return pParam;
+            return *pParam;
     }
-    return m_ResourceManager.safeGet<ProtoBufResource>(::resource::PROTOBUF, name);
+    return resource::get<ProtoBufResource>(m_ResourceManager, name);
 }
 
 void ShaderFactory::applyParameter(const string& paramName) {
-    const TResourcePtr pParam = getParam(paramName);
-    const Descriptor* pDescriptor = pParam->getRef<Message>().GetDescriptor();
+    const ProtoBufResource &param = getParam(paramName);
+    const Descriptor* pDescriptor = param.getRef<Message>().GetDescriptor();
 
     if (pDescriptor == StaticParameter::descriptor())
-        applyParameter(paramName, pParam->getRef<StaticParameter>());
+        applyParameter(paramName, param.getRef<StaticParameter>());
     else if (pDescriptor == AutomaticParameter::descriptor())
-        applyParameter(paramName, pParam->getRef<AutomaticParameter>());
+        applyParameter(paramName, param.getRef<AutomaticParameter>());
     else {
         cerr << "got unknown parameter type named : " << endl;
-        pParam->getRef<Message>().PrintDebugString();
+        param.getRef<Message>().PrintDebugString();
     }
 }
 
@@ -181,12 +182,12 @@ CGprogram ShaderFactory::createProgram(const string& code, const string &name) c
     const char** pProgramOptions = m_Renderer.getShaderOptions(m_Type);
     const CGprofile profile = m_Renderer.getShaderProfile(m_Type);
     const CGprogram cgProgram = cgCreateProgram(m_Renderer.getCgContext(), //context
-            CG_SOURCE, // compiling source
-            code.c_str(), // program
-            profile, // CG profile
-            "main", //entry point
-            pProgramOptions //args
-            );
+                    CG_SOURCE, // compiling source
+                    code.c_str(), // program
+                    profile, // CG profile
+                    "main", //entry point
+                    pProgramOptions //args
+                    );
 
     if (!cgIsProgramCompiled(cgProgram)) {
         cerr << "error while compiling the following code" << endl;

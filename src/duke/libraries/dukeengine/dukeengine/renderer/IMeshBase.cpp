@@ -2,8 +2,7 @@
 #include "IRenderer.h"
 
 IMeshBase::IMeshBase( TPrimitiveType type, Buffer<TVertex> vertexBuffer, Buffer<TIndex> indexBuffer )
-	: IResource( "mesh" ),
-	m_PrimitiveType( type ),
+	: m_PrimitiveType( type ),
 	m_VertexBuffer( vertexBuffer ),
 	m_IndexBuffer( indexBuffer ),
 	m_iPrimitiveCount( getPrimitiveCount() ) {}

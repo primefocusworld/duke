@@ -1,5 +1,5 @@
 #include "TexturePool.h"
-#include "IResource.h"
+#include "ResourceCache.h"
 #include "utils/PixelUtils.h"
 
 #include <boost/foreach.hpp>

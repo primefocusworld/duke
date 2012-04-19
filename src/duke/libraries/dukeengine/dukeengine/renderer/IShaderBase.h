@@ -2,12 +2,12 @@
 #define ISHADERBASE_H_
 
 #include "Enums.h"
-#include "IResource.h"
+#include "ResourceCache.h"
 #include "math/Matrix4.h"
 #include <Cg/cg.h>
 #include <string>
 
-class IShaderBase : public IResource
+class IShaderBase : public ::resource::IResource
 {
 public: IShaderBase( CGprogram program, TShaderType type );
 	virtual ~IShaderBase();
@@ -19,8 +19,6 @@ public: IShaderBase( CGprogram program, TShaderType type );
 	const std::vector<std::string>& getParameterNames() const;
 	CGparameter  getParameter( const std::string& name ) const;
 
-	virtual const ::resource::Type getResourceType() const { return ::resource::SHADER; }
-	virtual std::size_t getSize() const { return sizeof(IShaderBase); }
 protected:
 	virtual void setParameter( const CGparameter parameter, const float* value, const int size ) const = 0;
 	void appendParameter( const CGparameter );

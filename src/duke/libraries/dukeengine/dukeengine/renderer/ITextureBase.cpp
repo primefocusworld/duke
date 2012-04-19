@@ -2,8 +2,7 @@
 #include "utils/PixelUtils.h"
 
 ITextureBase::ITextureBase( const ImageDescription& description, const TPixelFormat texturePixelFormat, long usageFlag )
-	: IResource( "texture" ),
-	m_Description( description ),
+	: m_Description( description ),
 	m_TexturePixelFormat( texturePixelFormat ),
 	m_iUsageFlag( usageFlag ) {}
 

@@ -16,7 +16,7 @@ struct PoolRequest
 
 };
 
-#include "IResource.h"
+#include "ResourceCache.h"
 
 #include <functional>
 
@@ -38,7 +38,7 @@ class ScopedTexture;
 class TexturePool : public boost::noncopyable
 {
 public:
-    typedef ::boost::shared_ptr<IResource> ResourcePtr;
+    typedef ::resource::SharedResourcePtr ResourcePtr;
 private:
 	struct TextureHolder
 	{
@@ -79,13 +79,9 @@ public: ScopedTexture();
 	~ScopedTexture();
 
 	template<typename T>
-	T* getTexture() const;
+	T* getTexture() const{
+	    return m_pRecylingTexture ? dynamic_cast<T*>( m_pRecylingTexture->m_pResource.get() ) : NULL;
+	}
 };
-
-template<typename T>
-T* ScopedTexture::getTexture() const
-{
-	return m_pRecylingTexture ? dynamic_cast<T*>( m_pRecylingTexture->m_pResource.get() ) : NULL;
-}
 
 #endif /* TEXTUREPOOL_H_ */

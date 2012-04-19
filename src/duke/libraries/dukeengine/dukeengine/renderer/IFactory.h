@@ -3,7 +3,7 @@
 
 #include "Buffer.h"
 #include "Enums.h"
-#include "ResourceManager.h"
+#include "ResourceCache.h"
 #include "TexturePool.h"
 #include "math/Vector2.h"
 #include <dukeio/ImageDescription.h>
@@ -36,7 +36,7 @@ public:
     }
 
     // shader prototypes
-    PrototypeFactory& getPrototypeFactory();
+    PrototypeFactory& getPrototypeFactory(){return m_PrototypeFactory;}
 
     // shaders
     virtual IShaderBase* createShader(CGprogram program, TShaderType type) const = 0;
@@ -50,8 +50,8 @@ public:
     const char* * getShaderOptions(TShaderType Type) const;
 
     // resource manager
-    ResourceManager& getResourceManager();
-    TexturePool& getTexturePool();
+    resource::ResourceCache & getResourceManager(){return m_ResourceManager;}
+    TexturePool& getTexturePool(){return m_TexturePool;}
 
 protected:
     // buffers
@@ -71,7 +71,7 @@ protected:
 
 private:
     CGcontext m_Context;
-    ResourceManager m_ResourceManager;
+    resource::ResourceCache m_ResourceManager;
     TexturePool m_TexturePool;
     PrototypeFactory m_PrototypeFactory;
 

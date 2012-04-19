@@ -12,10 +12,9 @@ project
 		<library>/user-config//cggl/<link>shared
 		<library>/user-config//sfml/<link>shared
 		<library>/boost//chrono/<link>static
-		<library>/boost//iostreams/<link>static
-		<define>NO_COMPRESSION
-		<define>NO_BZIP2
+		<library>/boost//iostreams/<link>shared
     : usage-requirements 
+		<library>/boost//iostreams/<link>shared
 		<library>/user-config//sfml/<link>shared
 	;
 

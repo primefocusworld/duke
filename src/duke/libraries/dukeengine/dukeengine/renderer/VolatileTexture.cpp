@@ -11,7 +11,7 @@ VolatileTexture::VolatileTexture(IFactory& factory, const ImageDescription& desc
 
     m_pTexture = factory.getTexturePool().get(request);
     if (!m_pTexture) {
-        const ResourcePtr pTexture(factory.createTexture(description, flags));
+        const resource::SharedResourcePtr pTexture(factory.createTexture(description, flags));
         assert( pTexture );
         m_pTexture = factory.getTexturePool().putAndGet(request, pTexture);
     }

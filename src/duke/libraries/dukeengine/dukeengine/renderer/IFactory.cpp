@@ -78,14 +78,6 @@ CGcontext IFactory::getCgContext() const {
     return m_Context;
 }
 
-ResourceManager& IFactory::getResourceManager() {
-    return m_ResourceManager;
-}
-
-TexturePool& IFactory::getTexturePool() {
-    return m_TexturePool;
-}
-
 bool IFactory::hasCapability(TCapability capability) const {
     const TCapabilityMap::const_iterator entry = m_Capabilities.find(capability);
 
@@ -99,8 +91,4 @@ CGprofile IFactory::getShaderProfile(TShaderType Type) const {
 
 const char* * IFactory::getShaderOptions(TShaderType Type) const {
     return Type == SHADER_VERTEX ? m_VSOptions : m_PSOptions;
-}
-
-PrototypeFactory& IFactory::getPrototypeFactory() {
-    return m_PrototypeFactory;
 }

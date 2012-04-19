@@ -2,6 +2,7 @@
 #define SHADERFACTORY_H_
 
 #include "Enums.h"
+#include "ResourceCache.h"
 #include "IShaderBase.h"
 #include "RenderingContext.h"
 #include "ProtoBufResource.h"
@@ -29,12 +30,12 @@ public:
 	ShaderBasePtr getShader() const;
 
 private:
-	CGprogram       createProgram( const std::string&, const std::string &name) const;
-	TResourcePtr    getParam(const std::string &) const;
-	void            applyParameters();
-	void            applyParameter(const std::string &);
-	void            applyParameter(const std::string &, const ::duke::protocol::AutomaticParameter&);
-	void            applyParameter(const std::string &, const ::duke::protocol::StaticParameter&);
+	CGprogram         createProgram( const std::string&, const std::string &name) const;
+	ProtoBufResource& getParam(const std::string &) const;
+	void              applyParameters();
+	void              applyParameter(const std::string &);
+	void              applyParameter(const std::string &, const ::duke::protocol::AutomaticParameter&);
+	void              applyParameter(const std::string &, const ::duke::protocol::StaticParameter&);
 
 	ShaderBasePtr		m_pShader;
 
@@ -45,7 +46,7 @@ private:
 	RenderingContext					    &m_RenderingContext;
 	const ImageDescriptions					&m_Images;
 	const TShaderType 						m_Type;
-	ResourceManager                         &m_ResourceManager;
+	resource::ResourceCache                 &m_ResourceManager;
 };
 
 #endif /* SHADERFACTORY_H_ */

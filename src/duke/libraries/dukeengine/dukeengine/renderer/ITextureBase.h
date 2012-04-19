@@ -4,12 +4,12 @@
 #include "Enums.h"
 #include "math/Vector2.h"
 #include "math/Rect.h"
-#include "IResource.h"
+#include "ResourceCache.h"
 #include "Image.h"
 
 struct ImageSpec;
 
-class ITextureBase : public IResource
+class ITextureBase : public ::resource::IResource
 {
 public:
 	virtual ~ITextureBase();
@@ -21,9 +21,6 @@ public:
 	int          getHeight() const;
 	int          getDepth() const;
 	TPixelFormat getFormat() const;
-
-	virtual const ::resource::Type getResourceType() const { return ::resource::TEXTURE; }
-	virtual std::size_t getSize() const { return sizeof(ITextureBase); }
 
 protected:
 	friend class VolatileTexture;
