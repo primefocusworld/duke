@@ -352,6 +352,7 @@ void OGLRenderer::beginScene(bool shouldClean, uint32_t cleanColor, ITextureBase
                 break;
             default:
                 std::cerr << "GL error: FBO EXT not supported by GPU" << std::endl;
+                break;
         }
     }
 

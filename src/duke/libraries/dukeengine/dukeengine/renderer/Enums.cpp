@@ -20,8 +20,8 @@ TPrimitiveType Enums::Get(const ::duke::protocol::Mesh_MeshType& type) {
             return PT_TRIANGLEFAN;
         default:
             std::cerr << "invalid primitive type " << ::duke::protocol::Mesh_MeshType_Name(type) << std::endl;
+            return PT_POINTLIST;
     }
-    return PT_POINTLIST;
 }
 
 TPixelFormat Enums::Get(const ::duke::protocol::Texture_TextureFormat& format) {
@@ -36,8 +36,8 @@ TPixelFormat Enums::Get(const ::duke::protocol::Texture_TextureFormat& format) {
             return PXF_R32F;
         default:
             std::cerr << "invalid pixel format " << ::duke::protocol::Texture_TextureFormat_Name(format) << std::endl;
+            return PXF_UNDEFINED;
     }
-    return PXF_UNDEFINED;
 }
 
 ::duke::protocol::Texture_TextureFormat Enums::Get(const TPixelFormat& format) {
@@ -52,6 +52,6 @@ TPixelFormat Enums::Get(const ::duke::protocol::Texture_TextureFormat& format) {
             return ::duke::protocol::Texture_TextureFormat_R32F;
         default:
             std::cerr << "invalid pixel format " << FormatToString(format) << std::endl;
+            return ::duke::protocol::Texture_TextureFormat_R8G8B8A8;
     }
-    return ::duke::protocol::Texture_TextureFormat_R8G8B8A8;
 }

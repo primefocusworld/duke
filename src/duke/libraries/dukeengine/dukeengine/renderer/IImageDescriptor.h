@@ -6,6 +6,7 @@ struct ImageDescription;
 class IImageDescriptor
 {
 public:
+    virtual ~IImageDescriptor(){}
 	virtual const ImageDescription& getImageDescription() const = 0;
 };
 
