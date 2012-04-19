@@ -36,8 +36,8 @@ static duke::protocol::FunctionPrototype build(const char* name, const char* bod
 }
 
 void IFactory::add(const duke::protocol::FunctionPrototype &function) {
-    if (!m_PrototypeFactory.hasPrototype(function.signature().name()))
-        m_PrototypeFactory.setPrototype(function);
+    if (!prototypeFactory.hasPrototype(function.signature().name()))
+        prototypeFactory.setPrototype(function);
 }
 
 IFactory::IFactory() :
@@ -62,7 +62,7 @@ IFactory::IFactory() :
 
     try {
         const char * pFolder = "shader_prototypes";
-        m_PrototypeFactory.loadFromFolder(pFolder);
+        prototypeFactory.loadFromFolder(pFolder);
         std::cout << "[Shader] loading additional shaders from " << pFolder << std::endl;
     } catch (std::exception &e) {
         std::cout << "[Shader] using default shaders" << std::endl;

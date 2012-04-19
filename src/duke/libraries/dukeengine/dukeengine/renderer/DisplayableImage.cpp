@@ -22,18 +22,18 @@ ImageDescription getImageDescriptionFrom(const ::duke::protocol::Texture& textur
 
 DisplayableImage::DisplayableImage(IFactory& factory, const ::duke::protocol::Texture& texture) :
                 m_Image(factory, texture.name(), getImageDescriptionFrom(texture)) {
-    resource::tryGet(factory.getResourceManager(), texture.name(), m_pTexture);
+    resource::tryGet(factory.resourceCache, texture.name(), m_pTexture);
     if (!m_pTexture) {
         m_pTexture.reset(factory.createTexture(getImageDescription()));
         if (!texture.name().empty())
-            resource::put(factory.getResourceManager(), texture.name(), m_pTexture);
+            resource::put(factory.resourceCache, texture.name(), m_pTexture);
     }
     updateTexture();
 }
 
 DisplayableImage::DisplayableImage(IFactory& factory, const std::string& name) :
                 m_Image(factory, name) {
-    resource::tryGet(factory.getResourceManager(), name, m_pTexture);
+    resource::tryGet(factory.resourceCache, name, m_pTexture);
 }
 
 const ImageDescription& DisplayableImage::getImageDescription() const {

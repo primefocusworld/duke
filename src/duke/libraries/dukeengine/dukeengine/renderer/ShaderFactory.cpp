@@ -20,12 +20,12 @@ using namespace ::duke::protocol;
 using namespace ::shader_factory;
 
 ShaderFactory::ShaderFactory(IRenderer& renderer, const ::duke::protocol::Shader& shader, RenderingContext& context, const TShaderType type) :
-                m_Renderer(renderer), m_Shader(shader), m_RenderingContext(context), m_Images(context.images()), m_Type(type), m_ResourceManager(m_Renderer.getResourceManager()) {
+                m_Renderer(renderer), m_Shader(shader), m_RenderingContext(context), m_Images(context.images()), m_Type(type), m_ResourceCache(m_Renderer.resourceCache) {
     const string name = m_Shader.name();
     const bool isPersistent = !name.empty();
 
     if (isPersistent)
-        resource::tryGet(m_ResourceManager, name, m_pShader);
+        resource::tryGet(m_ResourceCache, name, m_pShader);
     if (!m_pShader) {
         string code;
         if (m_Type == SHADER_VERTEX || shader.has_code())
@@ -33,11 +33,11 @@ ShaderFactory::ShaderFactory(IRenderer& renderer, const ::duke::protocol::Shader
         else {
             // shader must have either a shading tree or code
             assert(shader.has_program());
-            code = shader_factory::compile(shader.program(), renderer.getPrototypeFactory());
+            code = shader_factory::compile(shader.program(), renderer.prototypeFactory);
         }
         m_pShader.reset(renderer.createShader(createProgram(code, name), m_Type));
         if (isPersistent)
-            resource::put(m_ResourceManager, name, m_pShader);
+            resource::put(m_ResourceCache, name, m_pShader);
     }
     assert( m_pShader->getType() == m_Type);
 //    cout << "set shader with name " << name << endl;
@@ -56,11 +56,11 @@ ProtoBufResource& ShaderFactory::getParam(const string &name) const {
     for (ScopesRItr it = m_RenderingContext.scopes.rbegin(); it < m_RenderingContext.scopes.rend(); ++it) {
         const string scopedParamName = *it + '|' + name;
         TResourcePtr pParam;
-        resource::tryGet(m_ResourceManager, scopedParamName, pParam);
+        resource::tryGet(m_ResourceCache, scopedParamName, pParam);
         if (pParam != NULL)
             return *pParam;
     }
-    return resource::get<ProtoBufResource>(m_ResourceManager, name);
+    return resource::get<ProtoBufResource>(m_ResourceCache, name);
 }
 
 void ShaderFactory::applyParameter(const string& paramName) {

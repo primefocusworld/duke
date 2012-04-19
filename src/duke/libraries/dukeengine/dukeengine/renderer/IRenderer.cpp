@@ -63,7 +63,7 @@ private:
 template<typename T>
 inline void IRenderer::addResource(const ::google::protobuf::serialize::MessageHolder& holder) {
     const T msg = unpackTo<T>(holder);
-    resource::put(getResourceManager(), msg.name(), boost::shared_ptr<ProtoBufResource>(new ProtoBufResource(msg)));
+    resource::put(resourceCache, msg.name(), boost::shared_ptr<ProtoBufResource>(new ProtoBufResource(msg)));
 }
 
 IRenderer::IRenderer(const duke::protocol::Renderer& renderer, sf::Window& window, IRendererHost& host) :
@@ -146,7 +146,7 @@ void IRenderer::consumeUntilEngine() {
                     m_Window.SetPosition(resizeEvent.x(), resizeEvent.y());
             }
         } else if (isType<FunctionPrototype>(pDescriptor)) {
-            getPrototypeFactory().setPrototype(unpackTo<FunctionPrototype>(holder));
+            prototypeFactory.setPrototype(unpackTo<FunctionPrototype>(holder));
         } else if (isType<Engine>(pDescriptor)) {
             m_EngineStatus.CopyFrom(unpackTo<Engine>(holder));
             if (m_EngineStatus.action() != Engine_Action_RENDER_STOP)
@@ -249,7 +249,7 @@ void IRenderer::displayClip(const ::duke::protocol::Clip& clip) {
         if (clip.has_grade()) {
             pGrading = &clip.grade();
         } else {
-            pGrading = resource::get<ProtoBufResource>(getResourceManager(), clip.gradename()).get<duke::protocol::Grading>();
+            pGrading = resource::get<ProtoBufResource>(resourceCache, clip.gradename()).get<duke::protocol::Grading>();
         }
         RAIIContext gradingContext(m_Context, pGrading->name(), pGrading->has_name());
         for_each(pGrading->pass().begin(), pGrading->pass().end(), boost::bind(&IRenderer::displayPass, this, _1));
@@ -351,15 +351,12 @@ void IRenderer::displayPass(const ::duke::protocol::RenderPass& pass) {
 }
 
 void IRenderer::displayMeshWithName(const std::string& name) {
-    displayMesh(resource::getPB<duke::protocol::Mesh>(getResourceManager(), name));
-}
-
-void IRenderer::displayMesh(const ::duke::protocol::Mesh& mesh) {
+    const ::duke::protocol::Mesh& mesh = resource::getPB<duke::protocol::Mesh>(resourceCache, name);
     ::Mesh(*this, mesh).render(*this);
 }
 
 void IRenderer::compileAndSetShader(const TShaderType& type, const string& name) {
-    ShaderFactory(*this, resource::getPB<Shader>(getResourceManager(), name), m_Context, type);
+    ShaderFactory(*this, resource::getPB<Shader>(resourceCache, name), m_Context, type);
 }
 
 inline const ImageDescription& IRenderer::getSafeImageDescription(const ImageDescription* pImage) const {

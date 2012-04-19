@@ -9,11 +9,11 @@ using namespace std;
 using namespace ::duke::protocol;
 
 Image::Image(IFactory& factory, const string& name, const ImageDescription& imageDescription) {
-    resource::tryGet(factory.getResourceManager(), name, m_pImage);
+    resource::tryGet(factory.resourceCache, name, m_pImage);
     if (!m_pImage) {
         m_pImage.reset(new IImageBase(imageDescription));
         if (!name.empty())
-            resource::put(factory.getResourceManager(), name, m_pImage);
+            resource::put(factory.resourceCache, name, m_pImage);
 
     }
     // now updating image data
@@ -24,7 +24,7 @@ Image::Image(IFactory& factory, const string& name, const ImageDescription& imag
 }
 
 Image::Image(IFactory& factory, const string& name) {
-    resource::tryGet(factory.getResourceManager(), name, m_pImage);
+    resource::tryGet(factory.resourceCache, name, m_pImage);
 }
 
 Image::~Image() {

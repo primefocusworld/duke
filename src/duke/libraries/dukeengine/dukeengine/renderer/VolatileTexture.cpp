@@ -9,11 +9,11 @@ VolatileTexture::VolatileTexture(IFactory& factory, const ImageDescription& desc
     m_Description(description) {
     const PoolRequest request(description.format, flags && TEX_MIPMAP > 0, description.width, description.height);
 
-    m_pTexture = factory.getTexturePool().get(request);
+    m_pTexture = factory.texturePool.get(request);
     if (!m_pTexture) {
         const resource::SharedResourcePtr pTexture(factory.createTexture(description, flags));
         assert( pTexture );
-        m_pTexture = factory.getTexturePool().putAndGet(request, pTexture);
+        m_pTexture = factory.texturePool.putAndGet(request, pTexture);
     }
     assert( getTexture() );
     if (!getTexture()->isRenderTarget()) // image not to be render to ? we must update it

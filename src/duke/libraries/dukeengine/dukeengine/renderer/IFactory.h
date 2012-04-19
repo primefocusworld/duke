@@ -35,9 +35,6 @@ public:
         return buffer;
     }
 
-    // shader prototypes
-    PrototypeFactory& getPrototypeFactory(){return m_PrototypeFactory;}
-
     // shaders
     virtual IShaderBase* createShader(CGprogram program, TShaderType type) const = 0;
 
@@ -48,10 +45,6 @@ public:
     bool hasCapability(TCapability capability) const;
     CGprofile getShaderProfile(TShaderType Type) const;
     const char* * getShaderOptions(TShaderType Type) const;
-
-    // resource manager
-    resource::ResourceCache & getResourceManager(){return m_ResourceManager;}
-    TexturePool& getTexturePool(){return m_TexturePool;}
 
 protected:
     // buffers
@@ -70,12 +63,12 @@ protected:
     virtual void checkCaps() = 0;
 
 private:
-    CGcontext m_Context;
-    resource::ResourceCache m_ResourceManager;
-    TexturePool m_TexturePool;
-    PrototypeFactory m_PrototypeFactory;
-
     void add(const duke::protocol::FunctionPrototype &);
+    CGcontext m_Context;
+public:
+    resource::ResourceCache resourceCache;
+    TexturePool texturePool;
+    PrototypeFactory prototypeFactory;
 };
 
 #endif /* IFACTORY_H_ */

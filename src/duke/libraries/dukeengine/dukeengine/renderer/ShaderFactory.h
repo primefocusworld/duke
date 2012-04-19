@@ -46,7 +46,7 @@ private:
 	RenderingContext					    &m_RenderingContext;
 	const ImageDescriptions					&m_Images;
 	const TShaderType 						m_Type;
-	resource::ResourceCache                 &m_ResourceManager;
+	resource::ResourceCache                 &m_ResourceCache;
 };
 
 #endif /* SHADERFACTORY_H_ */

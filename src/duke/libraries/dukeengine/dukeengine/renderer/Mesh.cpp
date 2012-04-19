@@ -7,7 +7,7 @@
 Mesh::Mesh(IFactory& factory, const ::duke::protocol::Mesh& mesh) {
     const std::string name(mesh.name());
 
-    resource::tryGet(factory.getResourceManager(), name, m_pMeshBase);
+    resource::tryGet(factory.resourceCache, name, m_pMeshBase);
 
     if (!m_pMeshBase) {
         const ::duke::protocol::VertexBuffer& vb = mesh.vertexbuffer();
@@ -35,7 +35,7 @@ Mesh::Mesh(IFactory& factory, const ::duke::protocol::Mesh& mesh) {
         } else
             m_pMeshBase.reset(new IMeshBase(Enums::Get(mesh.type()), vertexBuffer, NULL));
 
-        resource::put(factory.getResourceManager(), name, m_pMeshBase);
+        resource::put(factory.resourceCache, name, m_pMeshBase);
     }
 }
 
