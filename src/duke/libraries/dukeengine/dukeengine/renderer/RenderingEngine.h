@@ -2,7 +2,6 @@
 #define RENDERING_ENGINE_H_
 
 #include "Enums.h"
-#include "Mesh.h"
 #include "IRenderer.h"
 #include "Image.h"
 #include "RenderingContext.h"
@@ -29,9 +28,9 @@ private:
     void compileAndSetShader(const TShaderType&, const std::string&);
     const ImageDescription& getSafeImageDescription(const ImageDescription*) const;
     const ImageDescription& getImageDescriptionFromClip(const std::string &clipName) const;
-    void applyParameter(const ShaderBasePtr&, const std::string&);
-    void applyParameter(const ShaderBasePtr&, const std::string &, const ::duke::protocol::AutomaticParameter&);
-    void applyParameter(const ShaderBasePtr&, const std::string &, const ::duke::protocol::StaticParameter&);
+    void applyParameter(const ShaderPtr&, const std::string&);
+    void applyParameter(const ShaderPtr&, const std::string &, const ::duke::protocol::AutomaticParameter&);
+    void applyParameter(const ShaderPtr&, const std::string &, const ::duke::protocol::StaticParameter&);
 
     template<typename T>
     inline void addResource(const ::google::protobuf::serialize::MessageHolder&);
@@ -43,7 +42,7 @@ private:
     sf::Window &m_Window;
     const duke::protocol::Renderer m_Configuration;
     IRendererHost &m_Host;
-    IRenderer &m_Factory;
+    IRenderer &m_Renderer;
     sf::Event m_Event;
     unsigned long m_DisplayedFrameCount;
     ::duke::protocol::Engine m_EngineStatus;

@@ -28,6 +28,6 @@ protected:
 };
 
 #include <boost/shared_ptr.hpp>
-typedef ::boost::shared_ptr<IShaderBase> ShaderBasePtr;
+typedef ::boost::shared_ptr<IShaderBase> ShaderPtr;
 
 #endif /* ISHADERBASE_H_ */

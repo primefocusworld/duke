@@ -62,9 +62,9 @@ static CGprogram createProgram(IRenderer& renderer, const TShaderType type, cons
     return cgProgram;
 }
 
-ShaderBasePtr compile(IRenderer& renderer, const ::duke::protocol::Shader& shader, const TShaderType type) {
+ShaderPtr build(IRenderer& renderer, const ::duke::protocol::Shader& shader, const TShaderType type) {
     const string name = shader.name();
-    ShaderBasePtr pShader;
+    ShaderPtr pShader;
     const bool isPersistent = !name.empty();
 
     if (isPersistent)

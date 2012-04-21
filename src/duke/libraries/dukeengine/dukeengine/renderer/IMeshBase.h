@@ -28,4 +28,7 @@ private:
     unsigned long m_iPrimitiveCount;
 };
 
+#include <boost/shared_ptr.hpp>
+typedef ::boost::shared_ptr<IMeshBase> MeshPtr;
+
 #endif /* IMESHBASE_H_ */

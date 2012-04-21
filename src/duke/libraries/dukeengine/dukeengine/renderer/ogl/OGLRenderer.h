@@ -4,7 +4,6 @@
 #include <GL/glew.h>
 #include <player.pb.h>
 #include <dukeengine/renderer/IRenderer.h>
-#include <dukeengine/renderer/Mesh.h>
 
 class OGLRenderer : public IRenderer
 {

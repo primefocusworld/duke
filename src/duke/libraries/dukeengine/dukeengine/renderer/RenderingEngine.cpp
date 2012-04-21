@@ -4,6 +4,7 @@
 #include "ProtoBufResource.h"
 #include "utils/SfmlProtobufUtils.h"
 #include "ShaderFactory.h"
+#include "MeshFactory.h"
 
 #include <dukeapi/ProtobufSerialize.h>
 
@@ -64,11 +65,11 @@ private:
 template<typename T>
 inline void RenderingEngine::addResource(const ::google::protobuf::serialize::MessageHolder& holder) {
     const T msg = unpackTo<T>(holder);
-    resource::put(m_Factory.resourceCache, msg.name(), boost::shared_ptr<ProtoBufResource>(new ProtoBufResource(msg)));
+    resource::put(m_Renderer.resourceCache, msg.name(), boost::shared_ptr<ProtoBufResource>(new ProtoBufResource(msg)));
 }
 
 RenderingEngine::RenderingEngine(const duke::protocol::Renderer& renderer, sf::Window& window, IRendererHost& host, IRenderer& factory) :
-                m_Window(window), m_Configuration(renderer), m_Host(host), m_Factory(factory), m_DisplayedFrameCount(0), m_bRenderOccured(false) {
+                m_Window(window), m_Configuration(renderer), m_Host(host), m_Renderer(factory), m_DisplayedFrameCount(0), m_bRenderOccured(false) {
     m_EmptyImageDescription.width = 1;
     m_EmptyImageDescription.height = 1;
     m_EmptyImageDescription.depth = 0;
@@ -118,7 +119,7 @@ void RenderingEngine::consumeUntilEngine() {
             switch (holder.action()) {
                 case MessageHolder::CREATE:
                 case MessageHolder::UPDATE:
-                    DisplayableImage(m_Factory, texture);
+                    DisplayableImage(m_Renderer, texture);
                     break;
                 default: {
                     ostringstream msg;
@@ -142,7 +143,7 @@ void RenderingEngine::consumeUntilEngine() {
                     m_Window.SetPosition(resizeEvent.x(), resizeEvent.y());
             }
         } else if (isType<FunctionPrototype>(pDescriptor)) {
-            m_Factory.prototypeFactory.setPrototype(unpackTo<FunctionPrototype>(holder));
+            m_Renderer.prototypeFactory.setPrototype(unpackTo<FunctionPrototype>(holder));
         } else if (isType<Engine>(pDescriptor)) {
             m_EngineStatus.CopyFrom(unpackTo<Engine>(holder));
             if (m_EngineStatus.action() != Engine::RENDER_STOP)
@@ -223,7 +224,7 @@ bool RenderingEngine::simulationStep() {
 }
 
 void RenderingEngine::waitForBlankingAndWarn(bool presented) const {
-    m_Factory.waitForBlanking();
+    m_Renderer.waitForBlanking();
     m_Host.verticalBlanking(presented);
 }
 
@@ -245,7 +246,7 @@ void RenderingEngine::displayClip(const ::duke::protocol::Clip& clip) {
         if (clip.has_grade()) {
             pGrading = &clip.grade();
         } else {
-            pGrading = &resource::getPB<Grading>(m_Factory.resourceCache, clip.gradename());
+            pGrading = &resource::getPB<Grading>(m_Renderer.resourceCache, clip.gradename());
         }
         RAIIContext gradingContext(m_Context, pGrading->name(), pGrading->has_name());
         for_each(pGrading->pass().begin(), pGrading->pass().end(), boost::bind(&RenderingEngine::displayPass, this, _1));
@@ -299,7 +300,7 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
                 ImageDescription clipDescription = getImageDescriptionFromClip(clipName);
                 if (pass.has_rendertarget())
                     overrideClipDimension(clipDescription, pass.rendertarget());
-                pRenderTarget.reset(new VolatileTexture(m_Factory, clipDescription, TEX_RENTERTARGET));
+                pRenderTarget.reset(new VolatileTexture(m_Renderer, clipDescription, TEX_RENTERTARGET));
                 m_Context.renderTargets[renderTargetName] = pRenderTarget;
             }
             assert(pRenderTarget);
@@ -314,11 +315,11 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
             m_Context.setRenderTarget(m_Window.GetWidth(), m_Window.GetHeight());
 
         {
-            RAIIScene scenePass(m_Factory, m_bRenderOccured, pass.clean(), pass.cleancolor(), pRenderTargetTexture);
+            RAIIScene scenePass(m_Renderer, m_bRenderOccured, pass.clean(), pass.cleancolor(), pRenderTargetTexture);
             if (pass.has_effect() && pass.meshname_size() != 0) {
                 const Effect& effect = pass.effect();
                 // setting render state
-                m_Factory.setRenderState(effect);
+                m_Renderer.setRenderState(effect);
 
                 // setting shaders
                 assert(effect.has_vertexshadername());
@@ -348,20 +349,23 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
 }
 
 void RenderingEngine::displayMeshWithName(const std::string& name) {
-    const ::duke::protocol::Mesh& mesh = resource::getPB<duke::protocol::Mesh>(m_Factory.resourceCache, name);
-    ::Mesh(m_Factory, mesh).render(m_Factory);
+    const ::duke::protocol::Mesh& mesh = resource::getPB<duke::protocol::Mesh>(m_Renderer.resourceCache, name);
+    MeshPtr pMesh = build(m_Renderer, mesh);
+    assert(pMesh);
+
+    pMesh->render(m_Renderer);
 }
 
 void RenderingEngine::compileAndSetShader(const TShaderType& type, const string& name) {
-    const Shader &shader = resource::getPB<Shader>(m_Factory.resourceCache, name);
-    ShaderBasePtr pShader = compile(m_Factory, shader, type);
+    const Shader &shader = resource::getPB<Shader>(m_Renderer.resourceCache, name);
+    ShaderPtr pShader = build(m_Renderer, shader, type);
     assert(pShader);
 
     const vector<string> &params = pShader->getParameterNames();
     for_each(params.begin(), params.end(), //
              boost::bind(&RenderingEngine::applyParameter, this, boost::ref(pShader), _1));
 
-    m_Factory.setShader(pShader.get());
+    m_Renderer.setShader(pShader.get());
 }
 
 static ProtoBufResource& getParam(resource::ResourceCache& cache, const RenderingContext &context, const string &name) {
@@ -375,8 +379,8 @@ static ProtoBufResource& getParam(resource::ResourceCache& cache, const Renderin
     return resource::get<ProtoBufResource>(cache, name);
 }
 
-void RenderingEngine::applyParameter(const ShaderBasePtr &pShader, const string &paramName) {
-    const ProtoBufResource &param = getParam(m_Factory.resourceCache, m_Context, paramName);
+void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string &paramName) {
+    const ProtoBufResource &param = getParam(m_Renderer.resourceCache, m_Context, paramName);
     const Descriptor* pDescriptor = param.getRef<Message>().GetDescriptor();
 
     if (pDescriptor == StaticParameter::descriptor())
@@ -388,7 +392,7 @@ void RenderingEngine::applyParameter(const ShaderBasePtr &pShader, const string 
         param.getRef<Message>().PrintDebugString();
     }
 }
-void RenderingEngine::applyParameter(const ShaderBasePtr &pShader, const string& paramName, const AutomaticParameter& param) {
+void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& paramName, const AutomaticParameter& param) {
     float data[3] = { 1.f, 1.f, 1.f };
     switch (param.type()) {
         case AutomaticParameter::FLOAT3_TEX_DIM: {
@@ -405,7 +409,7 @@ void RenderingEngine::applyParameter(const ShaderBasePtr &pShader, const string&
                         break;
                     }
                     case SamplingSource::SUPPLIED: {
-                        const DisplayableImage image(m_Factory, sourceName);
+                        const DisplayableImage image(m_Renderer, sourceName);
                         imageDescriptionHolder = image.getImageDescription();
                         pImageDescription = &imageDescriptionHolder;
                         break;
@@ -440,7 +444,7 @@ void RenderingEngine::applyParameter(const ShaderBasePtr &pShader, const string&
     pShader->setParameter(paramName, data, sizeof(data) / sizeof(float));
 }
 
-void RenderingEngine::applyParameter(const ShaderBasePtr &pShader, const string& paramName, const StaticParameter& param) {
+void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& paramName, const StaticParameter& param) {
     switch (param.type()) {
         case StaticParameter::FLOAT:
             pShader->setParameter(paramName, param.floatvalue().data(), param.floatvalue_size());
@@ -454,11 +458,11 @@ void RenderingEngine::applyParameter(const ShaderBasePtr &pShader, const string&
 //            debugString << "setting sampler " << paramName;
             switch (samplingSource.type()) {
                 case SamplingSource::CLIP:
-                    pTexture.reset(new VolatileTexture(m_Factory, getImageDescriptionFromClip(sourceName)));
+                    pTexture.reset(new VolatileTexture(m_Renderer, getImageDescriptionFromClip(sourceName)));
 //                    debugString << " from clip texture";
                     break;
                 case SamplingSource::SUPPLIED:
-                    pTexture.reset(new DisplayableImage(m_Factory, sourceName));
+                    pTexture.reset(new DisplayableImage(m_Renderer, sourceName));
 //                    debugString << " from supplied texture";
                     break;
                 case SamplingSource::SURFACE: {
@@ -476,7 +480,7 @@ void RenderingEngine::applyParameter(const ShaderBasePtr &pShader, const string&
 //            debugString << " '" << sourceName << "'" << endl;
 //            cout << debugString.str();
             assert( pTexture);
-            m_Factory.setTexture(pShader->getParameter(paramName), param.samplerstate(), pTexture->getTexture());
+            m_Renderer.setTexture(pShader->getParameter(paramName), param.samplerstate(), pTexture->getTexture());
             m_Context.textures.push_back(pTexture);
             break;
         }

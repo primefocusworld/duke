@@ -3,7 +3,6 @@
 #include "OGLShader.h"
 #include "OGLEnum.h"
 #include "OGLTexture.h"
-#include <dukeengine/renderer/Mesh.h>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
