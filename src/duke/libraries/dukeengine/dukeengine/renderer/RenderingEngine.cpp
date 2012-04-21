@@ -112,8 +112,8 @@ void RenderingEngine::consumeUntilEngine() {
 
         if (isType<Shader>(pDescriptor)) {
             addResource<Shader>(holder);
-        } else if (isType<duke::protocol::Mesh>(pDescriptor)) {
-            addResource<duke::protocol::Mesh>(holder);
+        } else if (isType<Mesh>(pDescriptor)) {
+            addResource<Mesh>(holder);
         } else if (isType<Texture>(pDescriptor)) {
             const Texture texture = unpackTo<Texture>(holder);
             switch (holder.action()) {
@@ -137,8 +137,10 @@ void RenderingEngine::consumeUntilEngine() {
             const Event event = unpackTo<Event>(holder);
             if (event.type() == Event::RESIZED) {
                 const ResizeEvent &resizeEvent = event.resizeevent();
-                if (resizeEvent.has_height() && resizeEvent.has_width())
+                if (resizeEvent.has_height() && resizeEvent.has_width()){
                     m_Window.SetSize(resizeEvent.width(), resizeEvent.height());
+                    m_Renderer.windowResized(resizeEvent.width(), resizeEvent.height());
+                }
                 if (resizeEvent.has_x() && resizeEvent.has_y())
                     m_Window.SetPosition(resizeEvent.x(), resizeEvent.y());
             }
@@ -201,6 +203,8 @@ bool RenderingEngine::simulationStep() {
     try {
         Event event;
         while (m_Window.PollEvent(m_Event)) {
+            if(m_Event.Type == sf::Event::Resized)
+                m_Renderer.windowResized(m_Event.Size.Width, m_Event.Size.Height);
             event.Clear();
             // transcoding the event to protocol buffer
             Update(event, m_Event);
@@ -349,7 +353,7 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
 }
 
 void RenderingEngine::displayMeshWithName(const std::string& name) {
-    const ::duke::protocol::Mesh& mesh = resource::getPB<duke::protocol::Mesh>(m_Renderer.resourceCache, name);
+    const Mesh& mesh = resource::getPB<Mesh>(m_Renderer.resourceCache, name);
     MeshPtr pMesh = build(m_Renderer, mesh);
     assert(pMesh);
 
@@ -387,11 +391,10 @@ void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string &par
         applyParameter(pShader, paramName, param.getRef<StaticParameter>());
     else if (pDescriptor == AutomaticParameter::descriptor())
         applyParameter(pShader, paramName, param.getRef<AutomaticParameter>());
-    else {
-        cerr << "got unknown parameter type named : " << endl;
-        param.getRef<Message>().PrintDebugString();
-    }
+    else
+        cerr << "got unknown parameter type named : " << param.getRef<Message>().DebugString() ;
 }
+
 void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& paramName, const AutomaticParameter& param) {
     float data[3] = { 1.f, 1.f, 1.f };
     switch (param.type()) {
@@ -427,7 +430,6 @@ void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& par
             data[0] = pImageDescription ? pImageDescription->width : m_Context.renderTargetWidth();
             data[1] = pImageDescription ? pImageDescription->height : m_Context.renderTargetHeight();
             data[2] = data[0] / data[1];
-//            cout << "setting " << paramName << " to " << data[0] << " " << data[1] << " " << data[2] << endl;
             break;
         }
         case AutomaticParameter::FLOAT3_TIME: {
@@ -454,16 +456,12 @@ void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& par
             const SamplingSource &samplingSource = param.samplingsource();
             const string &sourceName = samplingSource.name();
             TexturePtr pTexture;
-//            ostringstream debugString;
-//            debugString << "setting sampler " << paramName;
             switch (samplingSource.type()) {
                 case SamplingSource::CLIP:
                     pTexture.reset(new VolatileTexture(m_Renderer, getImageDescriptionFromClip(sourceName)));
-//                    debugString << " from clip texture";
                     break;
                 case SamplingSource::SUPPLIED:
                     pTexture.reset(new DisplayableImage(m_Renderer, sourceName));
-//                    debugString << " from supplied texture";
                     break;
                 case SamplingSource::SURFACE: {
                     const RenderTargets &targets = m_Context.renderTargets;
@@ -471,14 +469,11 @@ void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& par
                     if (itr == targets.end())
                         throw runtime_error("unknown render target '" + sourceName + "' to sample from");
                     pTexture = itr->second;
-//                    debugString << " from surface";
                     break;
                 }
                 default:
                     cerr << "SamplingSource with type " << SamplingSource_Type_Name(samplingSource.type()) << " is not supported" << endl;
             }
-//            debugString << " '" << sourceName << "'" << endl;
-//            cout << debugString.str();
             assert( pTexture);
             m_Renderer.setTexture(pShader->getParameter(paramName), param.samplerstate(), pTexture->getTexture());
             m_Context.textures.push_back(pTexture);

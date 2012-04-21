@@ -38,6 +38,7 @@ public:
                             const ::google::protobuf::RepeatedPtrField<duke::protocol::SamplerState>& samplerStates, //
                             const ITextureBase* pTextureBase) const = 0;
 //    virtual Image dumpTexture(ITextureBase* pTextureBase) = 0;
+    virtual void windowResized(unsigned width, unsigned height) const = 0;
     virtual void waitForBlanking() const = 0;
     virtual void presentFrame() = 0;
     virtual void beginScene(bool shouldClean, uint32_t cleanColor, ITextureBase* pRenderTarget = NULL) = 0;

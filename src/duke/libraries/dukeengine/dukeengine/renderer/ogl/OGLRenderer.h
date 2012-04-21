@@ -12,6 +12,7 @@ protected:
 	virtual void endScene();
 	virtual void presentFrame();
     virtual void waitForBlanking() const;
+    virtual void windowResized(unsigned width, unsigned height) const;
 //	virtual Image dumpTexture( ITextureBase* pTextureBase );
 
 public:

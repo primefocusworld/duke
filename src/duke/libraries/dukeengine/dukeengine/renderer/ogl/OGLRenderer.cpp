@@ -320,10 +320,11 @@ void OGLRenderer::setShader(IShaderBase* shader) {
     }
 }
 
-void OGLRenderer::beginScene(bool shouldClean, uint32_t cleanColor, ITextureBase* pRenderTarget) {
-    //FIXME: call glViewport only when we receive a resizeEvent
-    //    glViewport(0, 0, m_Window.GetWidth(), m_Window.GetHeight());
+void OGLRenderer::windowResized(unsigned width, unsigned height) const{
+    glViewport(0, 0, width, height);
+}
 
+void OGLRenderer::beginScene(bool shouldClean, uint32_t cleanColor, ITextureBase* pRenderTarget) {
     if (pRenderTarget) {
         assert( pRenderTarget->isRenderTarget());
         OGLTexture* pTexture = dynamic_cast<OGLTexture*>(pRenderTarget);
