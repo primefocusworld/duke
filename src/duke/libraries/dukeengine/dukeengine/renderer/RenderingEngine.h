@@ -19,32 +19,15 @@
 class ITextureBase;
 class IBufferBase;
 
-class IRenderer : public IFactory {
+class RenderingEngine {
 public:
-    IRenderer(const duke::protocol::Renderer&, sf::Window&, IRendererHost&);
-    virtual ~IRenderer();
+    RenderingEngine(const duke::protocol::Renderer&, sf::Window&, IRendererHost&, IFactory& factory);
+    virtual ~RenderingEngine();
 
-    // to implement in derived classes
-    virtual void setShader(IShaderBase* shader) = 0;
-    virtual void setVertexBuffer(unsigned int stream, const IBufferBase* buffer, unsigned long stride) = 0;
-    virtual void setIndexBuffer(const IBufferBase* buffer) = 0;
-    virtual void drawPrimitives(TPrimitiveType meshType, unsigned long count) = 0;
-    virtual void drawIndexedPrimitives(TPrimitiveType meshType, unsigned long count) = 0;
-    virtual void setRenderState(const ::duke::protocol::Effect &renderState) const = 0;
-    virtual void setTexture(const CGparameter sampler, //
-                            const ::google::protobuf::RepeatedPtrField<duke::protocol::SamplerState>& samplerStates, //
-                            const ITextureBase* pTextureBase) const = 0;
-
-    virtual Image dumpTexture(ITextureBase* pTextureBase) = 0;
-    virtual void waitForBlanking() const = 0;
-    virtual void presentFrame() = 0;
     void loop();
 
 protected:
     friend struct RAIIScene;
-    // to implement in derived classes
-    virtual void beginScene(bool shouldClean, uint32_t cleanColor, ITextureBase* pRenderTarget = NULL) = 0;
-    virtual void endScene() = 0;
 
     // executes a simulation step : implements frame logic
     bool simulationStep();
@@ -62,6 +45,9 @@ private:
     friend class ShaderFactory;
     const ImageDescription& getSafeImageDescription(const ImageDescription*) const;
     const ImageDescription& getImageDescriptionFromClip(const std::string &clipName) const;
+    void applyParameter(const ShaderBasePtr&, const std::string&);
+    void applyParameter(const ShaderBasePtr&, const std::string &, const ::duke::protocol::AutomaticParameter&);
+    void applyParameter(const ShaderBasePtr&, const std::string &, const ::duke::protocol::StaticParameter&);
 
     template<typename T>
     inline void addResource(const ::google::protobuf::serialize::MessageHolder&);
@@ -70,8 +56,9 @@ private:
         return m_Host.m_Setup;
     }
 
-    const duke::protocol::Renderer m_Renderer;
+    const duke::protocol::Renderer m_Configuration;
     IRendererHost& m_Host;
+    IFactory& m_Factory;
     sf::Event m_Event;
     unsigned long m_DisplayedFrameCount;
     ::duke::protocol::Engine m_EngineStatus;

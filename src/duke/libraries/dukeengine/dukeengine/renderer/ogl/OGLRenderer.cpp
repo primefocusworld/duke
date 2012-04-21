@@ -47,8 +47,8 @@ int CheckGLError(const char* msg, const char* file, int line) {
     return retCode;
 }
 
-OGLRenderer::OGLRenderer(const duke::protocol::Renderer& Renderer, sf::Window& window, IRendererHost& host) :
-    IRenderer(Renderer, window, host), m_lastPBOUsed(0) {
+OGLRenderer::OGLRenderer(const duke::protocol::Renderer& Renderer) :
+                m_lastPBOUsed(0) {
 
     // Initializing OGL Extensions
     GLenum err = glewInit();
@@ -72,10 +72,10 @@ OGLRenderer::OGLRenderer(const duke::protocol::Renderer& Renderer, sf::Window& w
     glEnable(GL_TEXTURE_3D);
     glEnable(GL_DEPTH_TEST);
 
-    glShadeModel (GL_FLAT);
-    glDisable (GL_CULL_FACE);
-    glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-    glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
+    glShadeModel(GL_FLAT);
+    glDisable(GL_CULL_FACE);
+    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     // Setup a perspective projection
     glMatrixMode(GL_PROJECTION);
@@ -92,7 +92,7 @@ OGLRenderer::OGLRenderer(const duke::protocol::Renderer& Renderer, sf::Window& w
     cgGLSetOptimalOptions(m_VSProfile);
     cgGLSetOptimalOptions(m_PSProfile);
 
-    if(hasCapability(CAP_PIXEL_BUFFER_OBJECT)){
+    if (hasCapability(CAP_PIXEL_BUFFER_OBJECT)) {
         glGenBuffersARB(2, m_Pbo);
         glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, m_Pbo[0]);
         glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, m_Pbo[1]);
@@ -159,20 +159,20 @@ void OGLRenderer::checkCaps() {
 
 // IRenderer
 void OGLRenderer::setVertexBuffer(unsigned int stream, const IBufferBase* buffer, unsigned long stride) {
-    const OGLVertexBuffer* vertexBuffer = static_cast<const OGLVertexBuffer*> (buffer);
+    const OGLVertexBuffer* vertexBuffer = static_cast<const OGLVertexBuffer*>(buffer);
 
     glBindBufferARB(GL_ARRAY_BUFFER_ARB, vertexBuffer->getBuffer());
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, stride, 0);
 
-    glActiveTextureARB( GL_TEXTURE0_ARB);
+    glActiveTextureARB(GL_TEXTURE0_ARB);
     glClientActiveTextureARB(GL_TEXTURE0_ARB);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glTexCoordPointer(2, GL_FLOAT, stride, BUFFER_OFFSET( 12 ));
 }
 
 void OGLRenderer::setIndexBuffer(const IBufferBase* buffer) {
-    const OGLIndexBuffer* indexBuffer = static_cast<const OGLIndexBuffer*> (buffer);
+    const OGLIndexBuffer* indexBuffer = static_cast<const OGLIndexBuffer*>(buffer);
 
     glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, indexBuffer->getBuffer());
     glEnableClientState(GL_INDEX_ARRAY);
@@ -294,7 +294,7 @@ void OGLRenderer::setRenderState(const Effect &renderState) const {
 }
 
 void OGLRenderer::setTexture(const CGparameter sampler, const RepeatedPtrField<SamplerState>& samplerStates, const ITextureBase* pTextureBase) const {
-    const OGLTexture* oglTexture = static_cast<const OGLTexture*> (pTextureBase);
+    const OGLTexture* oglTexture = static_cast<const OGLTexture*>(pTextureBase);
 
     GLenum textureType;
     if (oglTexture->getDepth() <= 1)
@@ -309,7 +309,7 @@ void OGLRenderer::setTexture(const CGparameter sampler, const RepeatedPtrField<S
 }
 
 void OGLRenderer::setShader(IShaderBase* shader) {
-    OGLShader* glShader = static_cast<OGLShader*> (shader);
+    OGLShader* glShader = static_cast<OGLShader*>(shader);
 
     if (glShader) {
         cgGLBindProgram(glShader->getProgram());
@@ -324,12 +324,11 @@ void OGLRenderer::setShader(IShaderBase* shader) {
 
 void OGLRenderer::beginScene(bool shouldClean, uint32_t cleanColor, ITextureBase* pRenderTarget) {
     //FIXME: call glViewport only when we receive a resizeEvent
-    glViewport(0, 0, m_Window.GetWidth(), m_Window.GetHeight());
+    //    glViewport(0, 0, m_Window.GetWidth(), m_Window.GetHeight());
 
     if (pRenderTarget) {
-        assert( pRenderTarget->isRenderTarget() );
-        OGLTexture* pTexture = dynamic_cast<OGLTexture*> (pRenderTarget);
-
+        assert( pRenderTarget->isRenderTarget());
+        OGLTexture* pTexture = dynamic_cast<OGLTexture*>(pRenderTarget);
 
         // Bind the framebuffer object
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_Fbo);
@@ -373,24 +372,25 @@ void OGLRenderer::endScene() {
 }
 
 void OGLRenderer::presentFrame() {
-    m_Window.Display();
+    // FIXME implement
+    //    m_Window.Display();
 }
 
 void OGLRenderer::waitForBlanking() const {
 }
 
-Image OGLRenderer::dumpTexture(ITextureBase* pTextureBase) {
-    assert( pTextureBase );
-
-    OGLTexture* pTexture = dynamic_cast<OGLTexture*> (pTextureBase);
-    ImageDescription description;
-
-    description.width = pTexture->getWidth();
-    description.height = pTexture->getHeight();
-    description.format = pTexture->getFormat();
-    description.depth = pTexture->getDepth();
-
-    Image image(*this, "", description);
-    return image;
-}
+//Image OGLRenderer::dumpTexture(ITextureBase* pTextureBase) {
+//    assert( pTextureBase);
+//
+//    OGLTexture* pTexture = dynamic_cast<OGLTexture*>(pTextureBase);
+//    ImageDescription description;
+//
+//    description.width = pTexture->getWidth();
+//    description.height = pTexture->getHeight();
+//    description.format = pTexture->getFormat();
+//    description.depth = pTexture->getDepth();
+//
+//    Image image(*this, "", description);
+//    return image;
+//}
 

@@ -3,21 +3,20 @@
 
 #include <GL/glew.h>
 #include <player.pb.h>
-#include <dukeengine/renderer/IRenderer.h>
 #include <dukeengine/renderer/IFactory.h>
 #include <dukeengine/renderer/Mesh.h>
 
-class OGLRenderer : public IRenderer
+class OGLRenderer : public IFactory
 {
 protected:
 	virtual void beginScene( bool shouldClean, uint32_t cleanColor, ITextureBase* pRenderTarget = NULL );
 	virtual void endScene();
 	virtual void presentFrame();
     virtual void waitForBlanking() const;
-	virtual Image dumpTexture( ITextureBase* pTextureBase );
+//	virtual Image dumpTexture( ITextureBase* pTextureBase );
 
 public:
-	OGLRenderer( const duke::protocol::Renderer& Renderer, sf::Window& window, IRendererHost& host );
+	OGLRenderer( const duke::protocol::Renderer& Renderer);
 	~OGLRenderer();
 
 	// IFactory

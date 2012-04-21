@@ -5,7 +5,6 @@
 #include <boost/shared_ptr.hpp>
 
 class IFactory;
-class IRenderer;
 class IMeshBase;
 
 class Mesh
@@ -13,7 +12,7 @@ class Mesh
 public: Mesh( IFactory&, const ::duke::protocol::Mesh& );
 	virtual ~Mesh();
 
-	void render( IRenderer& ) const;
+	void render( IFactory& ) const;
 
 private:
 	::boost::shared_ptr<IMeshBase> m_pMeshBase;

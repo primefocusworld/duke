@@ -1,5 +1,5 @@
 #include "Mesh.h"
-#include "IRenderer.h"
+#include "IFactory.h"
 #include "IMeshBase.h"
 #include <iostream>
 #include <stdexcept>
@@ -42,7 +42,7 @@ Mesh::Mesh(IFactory& factory, const ::duke::protocol::Mesh& mesh) {
 Mesh::~Mesh() {
 }
 
-void Mesh::render(IRenderer& renderer) const {
+void Mesh::render(IFactory& renderer) const {
     if (m_pMeshBase)
         m_pMeshBase->render(renderer);
 }
