@@ -1,5 +1,5 @@
 #include "IImageBase.h"
-#include "utils/PixelFormatUtils.h"
+#include "../utils/PixelFormatUtils.h"
 
 static inline size_t computeBufferSize(const ImageDescription& desc) {
     const int width = desc.width;

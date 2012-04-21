@@ -1,7 +1,7 @@
 #ifndef MESHFACTORY_H_
 #define MESHFACTORY_H_
 
-#include "IMeshBase.h"
+#include <dukeengine/renderer/resource/IMeshBase.h>
 
 namespace duke {namespace protocol {class Mesh;}}
 

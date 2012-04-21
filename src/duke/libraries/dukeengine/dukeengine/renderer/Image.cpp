@@ -1,6 +1,7 @@
 #include "Image.h"
 #include "IRenderer.h"
 #include "Enums.h"
+#include "utils/ProtobufUtils.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>

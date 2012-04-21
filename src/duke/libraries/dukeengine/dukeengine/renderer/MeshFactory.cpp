@@ -1,5 +1,6 @@
 #include "MeshFactory.h"
 #include "IRenderer.h"
+#include "utils/ProtobufUtils.h"
 
 MeshPtr build(IRenderer& renderer, const ::duke::protocol::Mesh& mesh) {
     const std::string name(mesh.name());

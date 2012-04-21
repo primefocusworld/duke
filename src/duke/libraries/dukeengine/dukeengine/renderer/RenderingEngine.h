@@ -5,7 +5,7 @@
 #include "IRenderer.h"
 #include "Image.h"
 #include "RenderingContext.h"
-#include "IShaderBase.h"
+#include "resource/IShaderBase.h"
 
 #include <player.pb.h>
 

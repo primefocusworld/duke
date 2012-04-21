@@ -9,9 +9,6 @@
 
 namespace resource {
 
-IResource::~IResource() {
-}
-
 SharedResourcePtr ResourceCache::get(EResourceType type, const std::string & name) {
     assert(type < UNDEF);
     ResourceMap &map = m_Map[type];

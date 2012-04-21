@@ -1,6 +1,6 @@
 #include "VolatileTexture.h"
 #include "IRenderer.h"
-#include "ITextureBase.h"
+#include "resource/ITextureBase.h"
 #include <dukeio/ImageDescription.h>
 #include <iostream>
 #include <cassert>

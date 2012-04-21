@@ -1,7 +1,7 @@
 #ifndef SHADERFACTORY_H_
 #define SHADERFACTORY_H_
 
-#include "IShaderBase.h"
+#include <dukeengine/renderer/resource/IShaderBase.h>
 
 namespace duke {namespace protocol {class Shader;}}
 class IRenderer;

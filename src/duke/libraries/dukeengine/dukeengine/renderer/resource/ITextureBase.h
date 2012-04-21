@@ -1,13 +1,13 @@
 #ifndef TEXTUREBASE_H_
 #define TEXTUREBASE_H_
 
-#include "Enums.h"
-#include "ResourceCache.h"
-#include "Image.h"
+#include "IResource.h"
+#include <dukeengine/renderer/Enums.h>
+#include <dukeio/ImageDescription.h>
 
 struct ImageSpec;
 
-class ITextureBase : public ::resource::IResource
+class ITextureBase : public IResource
 {
 public:
 	virtual ~ITextureBase();

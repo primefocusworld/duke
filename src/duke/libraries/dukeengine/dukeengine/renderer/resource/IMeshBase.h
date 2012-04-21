@@ -1,13 +1,13 @@
 #ifndef IMESHBASE_H_
 #define IMESHBASE_H_
 
-#include "ResourceCache.h"
+#include "IResource.h"
 #include "Buffer.h"
-#include "Enums.h"
+#include <dukeengine/renderer/Enums.h>
 
 class IRenderer;
 
-class IMeshBase : public ::resource::IResource {
+class IMeshBase : public IResource {
 public:
     struct TVertex {
         float x, y, z;

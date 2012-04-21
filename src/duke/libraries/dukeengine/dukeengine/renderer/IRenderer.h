@@ -1,9 +1,9 @@
 #ifndef IRENDERER_H_
 #define IRENDERER_H_
 
-#include "Buffer.h"
+#include "resource/Buffer.h"
+#include "resource/ResourceCache.h"
 #include "Enums.h"
-#include "ResourceCache.h"
 #include "TexturePool.h"
 #include <dukeio/ImageDescription.h>
 #include <dukeapi/shading/PrototypeFactory.h>

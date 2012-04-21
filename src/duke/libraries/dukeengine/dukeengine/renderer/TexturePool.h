@@ -19,7 +19,7 @@ struct PoolRequest
 
 };
 
-#include "ResourceCache.h"
+#include "resource/ResourceCache.h"
 
 #include <functional>
 

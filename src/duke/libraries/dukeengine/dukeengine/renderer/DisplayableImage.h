@@ -3,7 +3,7 @@
 
 #include "Image.h"
 #include "ITextureProvider.h"
-#include "ITextureBase.h"
+#include "resource/ITextureBase.h"
 
 class DisplayableImage : public ITextureProvider
 {

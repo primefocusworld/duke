@@ -1,7 +1,8 @@
 #include "Enums.h"
 #include "DisplayableImage.h"
 #include "IRenderer.h"
-#include "ITextureBase.h"
+#include "resource/ITextureBase.h"
+#include "utils/ProtobufUtils.h"
 
 #include <iostream>
 using namespace std;

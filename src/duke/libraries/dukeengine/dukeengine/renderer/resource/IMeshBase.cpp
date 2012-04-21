@@ -1,5 +1,5 @@
 #include "IMeshBase.h"
-#include "IRenderer.h"
+#include <dukeengine/renderer/IRenderer.h>
 
 IMeshBase::IMeshBase( TPrimitiveType type, Buffer<TVertex> vertexBuffer, Buffer<TIndex> indexBuffer )
 	: m_PrimitiveType( type ),

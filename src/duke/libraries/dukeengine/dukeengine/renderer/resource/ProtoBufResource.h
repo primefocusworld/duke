@@ -1,12 +1,13 @@
 #ifndef PROTOBUFRESOURCE_H_
 #define PROTOBUFRESOURCE_H_
 
+#include "IResource.h"
 #include "ResourceCache.h"
 #include <google/protobuf/message.h>
 #include <boost/shared_ptr.hpp>
 #include <cassert>
 
-class ProtoBufResource : public ::resource::IResource {
+class ProtoBufResource : public IResource {
 public:
     ProtoBufResource(const boost::shared_ptr<google::protobuf::Message> & shared);
     ProtoBufResource(const ::google::protobuf::Message& message);

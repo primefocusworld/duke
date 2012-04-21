@@ -1,7 +1,7 @@
 #include "RenderingEngine.h"
 #include "VolatileTexture.h"
 #include "DisplayableImage.h"
-#include "ProtoBufResource.h"
+#include "resource/ProtoBufResource.h"
 #include "utils/SfmlProtobufUtils.h"
 #include "ShaderFactory.h"
 #include "MeshFactory.h"

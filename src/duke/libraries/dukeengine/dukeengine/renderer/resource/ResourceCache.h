@@ -8,6 +8,7 @@
 #ifndef RESOURCECACHE_H_
 #define RESOURCECACHE_H_
 
+#include "IResource.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 
@@ -21,11 +22,6 @@ namespace resource {
 
 enum EResourceType {
     MESH = 0, IMAGE = 1, SHADER = 2, TEXTURE = 3, PROTOBUF = 4, UNDEF = 5
-};
-
-class IResource {
-public:
-    virtual ~IResource();
 };
 
 typedef boost::shared_ptr<IResource> SharedResourcePtr;

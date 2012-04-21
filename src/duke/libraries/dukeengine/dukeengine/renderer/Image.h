@@ -3,11 +3,12 @@
 
 #include "Enums.h"
 #include "IImageDescriptor.h"
-#include "IImageBase.h"
+#include "resource/IImageBase.h"
 #include <boost/shared_ptr.hpp>
 #include <string>
 
 class IRenderer;
+namespace duke {namespace protocol {class Texture;}}
 
 class Image : public IImageDescriptor {
 private:

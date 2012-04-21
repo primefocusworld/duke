@@ -1,9 +1,9 @@
 #include "ShaderFactory.h"
-#include <dukeapi/shading/ShadingGraphCodeBuilder.h>
-#include "ProtoBufResource.h"
 #include "IRenderer.h"
 #include "DisplayableImage.h"
 #include "VolatileTexture.h"
+#include "resource/ProtoBufResource.h"
+#include <dukeapi/shading/ShadingGraphCodeBuilder.h>
 
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string/predicate.hpp>

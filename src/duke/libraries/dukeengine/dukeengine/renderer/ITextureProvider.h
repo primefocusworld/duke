@@ -9,7 +9,6 @@ class ITextureBase;
 class ITextureProvider : public IImageDescriptor
 {
 public:
-	virtual ~ITextureProvider()              = 0;
 	virtual ITextureBase* getTexture() const = 0;
 };
 

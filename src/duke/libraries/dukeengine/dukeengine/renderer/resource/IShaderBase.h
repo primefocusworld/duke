@@ -1,12 +1,13 @@
 #ifndef ISHADERBASE_H_
 #define ISHADERBASE_H_
 
-#include "Enums.h"
-#include "ResourceCache.h"
+#include "IResource.h"
+#include <dukeengine/renderer/Enums.h>
 #include <Cg/cg.h>
 #include <string>
+#include <vector>
 
-class IShaderBase : public ::resource::IResource
+class IShaderBase : public IResource
 {
 public: IShaderBase( CGprogram program, TShaderType type );
 	virtual ~IShaderBase();
