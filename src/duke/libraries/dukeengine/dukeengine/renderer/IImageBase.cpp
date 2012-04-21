@@ -1,14 +1,21 @@
 #include "IImageBase.h"
 #include "utils/PixelFormatUtils.h"
 
-IImageBase::IImageBase( const ImageDescription& imageDescription )
-	: m_Description( imageDescription ),
-	m_Pixels( m_Description.width * m_Description.height * (m_Description.depth==0?1:m_Description.depth) * bytesPerPixel( m_Description.format ) ) {}
+static inline size_t computeBufferSize(const ImageDescription& desc) {
+    const int width = desc.width;
+    const int height = desc.height;
+    const int depth = std::max(desc.depth, 1);
+    return width * height * depth * bytesPerPixel(desc.format);
+}
 
-IImageBase::~IImageBase() {}
+IImageBase::IImageBase(const ImageDescription& imageDescription) :
+                m_Description(imageDescription), m_Pixels(computeBufferSize(m_Description)) {
+}
 
-const ImageDescription& IImageBase::getImageDescription() const
-{
-	return m_Description;
+IImageBase::~IImageBase() {
+}
+
+const ImageDescription& IImageBase::getImageDescription() const {
+    return m_Description;
 }
 

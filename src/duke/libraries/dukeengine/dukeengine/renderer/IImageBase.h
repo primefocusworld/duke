@@ -18,8 +18,8 @@ public:
     virtual const ImageDescription& getImageDescription() const;
 private:
     const ImageDescription m_Description;
-    typedef std::vector<unsigned char> VECTOR;
-    VECTOR m_Pixels;
+    typedef std::vector<unsigned char> Pixels;
+    Pixels m_Pixels;
 };
 
 #endif /* IIMAGEBASE_H_ */

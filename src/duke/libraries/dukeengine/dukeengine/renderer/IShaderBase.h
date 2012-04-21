@@ -3,7 +3,6 @@
 
 #include "Enums.h"
 #include "ResourceCache.h"
-#include "math/Matrix4.h"
 #include <Cg/cg.h>
 #include <string>
 

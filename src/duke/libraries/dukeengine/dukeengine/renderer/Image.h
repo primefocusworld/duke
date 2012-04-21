@@ -2,7 +2,6 @@
 #define IMAGE_H_
 
 #include "Enums.h"
-#include "math/Vector2.h"
 #include "IImageDescriptor.h"
 #include "IImageBase.h"
 #include <boost/shared_ptr.hpp>

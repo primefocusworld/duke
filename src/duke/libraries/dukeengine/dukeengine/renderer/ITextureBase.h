@@ -2,8 +2,6 @@
 #define TEXTUREBASE_H_
 
 #include "Enums.h"
-#include "math/Vector2.h"
-#include "math/Rect.h"
 #include "ResourceCache.h"
 #include "Image.h"
 

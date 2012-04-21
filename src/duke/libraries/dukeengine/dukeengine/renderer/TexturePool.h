@@ -2,13 +2,16 @@
 #define TEXTUREPOOL_H_
 
 #include <dukeio/Formats.h>
-#include "math/Vector3.h"
 
 struct PoolRequest
 {
+    struct Dimension {
+        int x,y,z;
+        Dimension(int x,int y,int z) : x(x),y(y),z(z){}
+    };
 	const TPixelFormat format;
 	const bool mipmap;
-	const TVector3I dimension;
+	const Dimension dimension;
 	PoolRequest( const TPixelFormat& format, const bool mipmap, const int width, const int height, const int depth = 0 )
 		: format( format ),
 		mipmap( mipmap ),
@@ -57,7 +60,7 @@ public:
 	ScopedTexturePtr putAndGet( const PoolRequest& request, const ResourcePtr& pResource );
 	ScopedTexturePtr get( const PoolRequest& request );
 
-	static int computeDistance( const TVector3I& requestedDimension, const TVector3I& testDimension );
+	static int computeDistance( const PoolRequest::Dimension& requestedDimension, const PoolRequest::Dimension& testDimension );
 
 private:
 	friend class ScopedTexture;
