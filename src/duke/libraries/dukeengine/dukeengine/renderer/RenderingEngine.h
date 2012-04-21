@@ -43,6 +43,7 @@ private:
     const duke::protocol::Renderer m_Configuration;
     IRendererHost &m_Host;
     IRenderer &m_Renderer;
+    resource::ResourceCache &m_Cache;
     sf::Event m_Event;
     unsigned long m_DisplayedFrameCount;
     ::duke::protocol::Engine m_EngineStatus;

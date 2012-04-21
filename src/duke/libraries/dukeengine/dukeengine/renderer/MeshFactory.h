@@ -5,6 +5,6 @@
 
 namespace duke {namespace protocol {class Mesh;}}
 
-MeshPtr build(IRenderer& renderer, const ::duke::protocol::Mesh& mesh);
+IMeshBase* buildMesh(IRenderer& renderer, const ::duke::protocol::Mesh& mesh);
 
 #endif /* MESHFACTORY_H_ */

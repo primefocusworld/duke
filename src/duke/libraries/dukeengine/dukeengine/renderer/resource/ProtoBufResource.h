@@ -31,8 +31,8 @@ private:
 namespace resource {
 
 template<typename T>
-const T& getPB(ResourceCache& cache, const std::string & name) {
-    return get<ProtoBufResource>(cache, name).getRef<T>();
+inline const T& getPB(ResourceCache& cache, const std::string & name) {
+    return cache.get<ProtoBufResource>(name).getRef<T>();
 }
 
 } // namespace resource

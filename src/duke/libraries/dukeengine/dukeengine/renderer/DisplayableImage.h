@@ -5,6 +5,8 @@
 #include "ITextureProvider.h"
 #include "resource/ITextureBase.h"
 
+class IRenderer;
+
 class DisplayableImage : public ITextureProvider
 {
 public:

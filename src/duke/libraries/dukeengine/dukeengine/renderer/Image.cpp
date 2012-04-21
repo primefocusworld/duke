@@ -2,21 +2,21 @@
 #include "IRenderer.h"
 #include "Enums.h"
 #include "utils/ProtobufUtils.h"
+#include <boost/bind.hpp>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
 using namespace std;
+using namespace boost;
 using namespace ::duke::protocol;
 
-Image::Image(IRenderer& renderer, const string& name, const ImageDescription& imageDescription) {
-    resource::tryGet(renderer.resourceCache, name, m_pImage);
-    if (!m_pImage) {
-        m_pImage.reset(new IImageBase(imageDescription));
-        if (!name.empty())
-            resource::put(renderer.resourceCache, name, m_pImage);
+static inline IImageBase* builder(const ImageDescription& imageDescription) {
+    return new IImageBase(imageDescription);
+}
 
-    }
+Image::Image(resource::ResourceCache &cache, const string& name, const ImageDescription& imageDescription) {
+    m_pImage = cache.getOrBuild<IImageBase>(name, bind(&builder, cref(imageDescription)));
     // now updating image data
     if (imageDescription.imageDataSize != 0) {
         assert( m_pImage->m_Pixels.size() >= imageDescription.imageDataSize);
@@ -24,8 +24,8 @@ Image::Image(IRenderer& renderer, const string& name, const ImageDescription& im
     }
 }
 
-Image::Image(IRenderer& renderer, const string& name) {
-    resource::tryGet(renderer.resourceCache, name, m_pImage);
+Image::Image(resource::ResourceCache &cache, const string& name) {
+    cache.tryGet(name, m_pImage);
 }
 
 Image::~Image() {

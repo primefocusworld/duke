@@ -1,7 +1,6 @@
 #include "ShaderFactory.h"
 #include "IRenderer.h"
 #include "DisplayableImage.h"
-#include "VolatileTexture.h"
 #include "resource/ProtoBufResource.h"
 #include <dukeapi/shading/ShadingGraphCodeBuilder.h>
 
@@ -16,7 +15,6 @@ using namespace ::std;
 using namespace ::google::protobuf;
 using namespace ::duke::protocol;
 using namespace ::shader_factory;
-
 
 static CGprogram createProgram(IRenderer& renderer, const TShaderType type, const string& code, const string &name) {
     const char** pProgramOptions = renderer.getShaderOptions(type);
@@ -60,27 +58,16 @@ static CGprogram createProgram(IRenderer& renderer, const TShaderType type, cons
     return cgProgram;
 }
 
-ShaderPtr build(IRenderer& renderer, const ::duke::protocol::Shader& shader, const TShaderType type) {
-    const string name = shader.name();
-    ShaderPtr pShader;
-    const bool isPersistent = !name.empty();
+inline static std::string getCode(const ::duke::protocol::Shader& shader, const TShaderType type, PrototypeFactory &factory) {
+    // shader must have either a shading tree or code
+    if (type == SHADER_VERTEX || shader.has_code())
+        return shader.code();
+    assert(shader.has_program());
+    return shader_factory::compile(shader.program(), factory);
+}
 
-    if (isPersistent)
-        resource::tryGet(renderer.resourceCache, name, pShader);
-    if (!pShader) {
-        string code;
-        if (type == SHADER_VERTEX || shader.has_code())
-            code = shader.code();
-        else {
-            // shader must have either a shading tree or code
-            assert(shader.has_program());
-            code = shader_factory::compile(shader.program(), renderer.prototypeFactory);
-        }
-        CGprogram program = createProgram(renderer, type, code, name);
-        pShader.reset(renderer.createShader(program, type));
-        if (isPersistent)
-            resource::put(renderer.resourceCache, name, pShader);
-    }
-    assert( pShader->getType() == type);
-    return pShader;
+IShaderBase* buildShader(IRenderer& renderer, const ::duke::protocol::Shader& shader, const TShaderType type) {
+    const string code = getCode(shader, type, renderer.prototypeFactory);
+    CGprogram program = createProgram(renderer, type, code, shader.name());
+    return renderer.createShader(program, type);
 }

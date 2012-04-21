@@ -4,8 +4,11 @@
 #include "resource/ITextureBase.h"
 #include "utils/ProtobufUtils.h"
 
+#include <boost/bind.hpp>
 #include <iostream>
+
 using namespace std;
+using namespace boost;
 
 ImageDescription getImageDescriptionFrom(const ::duke::protocol::Texture& texture) {
     ImageDescription description;
@@ -22,19 +25,15 @@ ImageDescription getImageDescriptionFrom(const ::duke::protocol::Texture& textur
 }
 
 DisplayableImage::DisplayableImage(IRenderer& renderer, const ::duke::protocol::Texture& texture) :
-                m_Image(renderer, texture.name(), getImageDescriptionFrom(texture)) {
-    resource::tryGet(renderer.resourceCache, texture.name(), m_pTexture);
-    if (!m_pTexture) {
-        m_pTexture.reset(renderer.createTexture(getImageDescription()));
-        if (!texture.name().empty())
-            resource::put(renderer.resourceCache, texture.name(), m_pTexture);
-    }
+                m_Image(renderer.resourceCache, texture.name(), getImageDescriptionFrom(texture)) {
+    m_pTexture = renderer.resourceCache.getOrBuild<ITextureBase>(texture.name(), //
+                    bind(&IRenderer::createTexture, ref(renderer), getImageDescriptionFrom(texture), 0));
     updateTexture();
 }
 
-DisplayableImage::DisplayableImage(IRenderer& renderer, const std::string& name) :
-                m_Image(renderer, name) {
-    resource::tryGet(renderer.resourceCache, name, m_pTexture);
+DisplayableImage::DisplayableImage(IRenderer& renderer, const string& name) :
+                m_Image(renderer.resourceCache, name) {
+    renderer.resourceCache.tryGet(name, m_pTexture);
 }
 
 const ImageDescription& DisplayableImage::getImageDescription() const {

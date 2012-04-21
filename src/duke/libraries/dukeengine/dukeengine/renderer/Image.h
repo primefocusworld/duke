@@ -7,8 +7,8 @@
 #include <boost/shared_ptr.hpp>
 #include <string>
 
-class IRenderer;
 namespace duke {namespace protocol {class Texture;}}
+namespace resource {class ResourceCache;}
 
 class Image : public IImageDescriptor {
 private:
@@ -16,10 +16,10 @@ private:
 
 public:
     // create or update an image from ImageDescription
-    Image(IRenderer& renderer, const std::string& name, const ImageDescription& imageDescription);
+    Image(resource::ResourceCache&, const std::string& name, const ImageDescription& imageDescription);
 
     // fetch registered image with name
-    Image(IRenderer& renderer, const std::string& name);
+    Image(resource::ResourceCache&, const std::string& name);
 
     void dump(const std::string& filename) const;
     void dump(::duke::protocol::Texture &texture) const;

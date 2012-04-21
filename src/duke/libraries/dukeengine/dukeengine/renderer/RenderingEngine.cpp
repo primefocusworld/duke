@@ -12,12 +12,16 @@
 
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
+#include <boost/bind.hpp>
 
 #include <iostream>
 
 using namespace ::duke::protocol;
 using namespace ::google::protobuf;
 using namespace ::std;
+using ::boost::bind;
+using ::boost::ref;
+using ::boost::cref;
 
 using namespace google::protobuf::serialize;
 
@@ -65,11 +69,11 @@ private:
 template<typename T>
 inline void RenderingEngine::addResource(const ::google::protobuf::serialize::MessageHolder& holder) {
     const T msg = unpackTo<T>(holder);
-    resource::put(m_Renderer.resourceCache, msg.name(), boost::shared_ptr<ProtoBufResource>(new ProtoBufResource(msg)));
+    m_Renderer.resourceCache.put(msg.name(), boost::shared_ptr<ProtoBufResource>(new ProtoBufResource(msg)));
 }
 
 RenderingEngine::RenderingEngine(const duke::protocol::Renderer& renderer, sf::Window& window, IRendererHost& host, IRenderer& factory) :
-                m_Window(window), m_Configuration(renderer), m_Host(host), m_Renderer(factory), m_DisplayedFrameCount(0), m_bRenderOccured(false) {
+                m_Window(window), m_Configuration(renderer), m_Host(host), m_Renderer(factory), m_Cache(m_Renderer.resourceCache), m_DisplayedFrameCount(0), m_bRenderOccured(false) {
     m_EmptyImageDescription.width = 1;
     m_EmptyImageDescription.height = 1;
     m_EmptyImageDescription.depth = 0;
@@ -137,7 +141,7 @@ void RenderingEngine::consumeUntilEngine() {
             const Event event = unpackTo<Event>(holder);
             if (event.type() == Event::RESIZED) {
                 const ResizeEvent &resizeEvent = event.resizeevent();
-                if (resizeEvent.has_height() && resizeEvent.has_width()){
+                if (resizeEvent.has_height() && resizeEvent.has_width()) {
                     m_Window.SetSize(resizeEvent.width(), resizeEvent.height());
                     m_Renderer.windowResized(resizeEvent.width(), resizeEvent.height());
                 }
@@ -177,7 +181,7 @@ bool RenderingEngine::simulationStep() {
         if (renderAvailable) {
             try {
                 m_bRenderOccured = false;
-                for_each(getSetup().m_Clips.begin(), getSetup().m_Clips.end(), boost::bind(&RenderingEngine::displayClip, this, _1));
+                for_each(getSetup().m_Clips.begin(), getSetup().m_Clips.end(), bind(&RenderingEngine::displayClip, this, _1));
                 if (!m_bRenderOccured) {
                     ::boost::this_thread::sleep(::boost::posix_time::milliseconds(10));
                 } else {
@@ -203,7 +207,7 @@ bool RenderingEngine::simulationStep() {
     try {
         Event event;
         while (m_Window.PollEvent(m_Event)) {
-            if(m_Event.Type == sf::Event::Resized)
+            if (m_Event.Type == sf::Event::Resized)
                 m_Renderer.windowResized(m_Event.Size.Width, m_Event.Size.Height);
             event.Clear();
             // transcoding the event to protocol buffer
@@ -250,10 +254,10 @@ void RenderingEngine::displayClip(const ::duke::protocol::Clip& clip) {
         if (clip.has_grade()) {
             pGrading = &clip.grade();
         } else {
-            pGrading = &resource::getPB<Grading>(m_Renderer.resourceCache, clip.gradename());
+            pGrading = &resource::getPB<Grading>(m_Cache, clip.gradename());
         }
         RAIIContext gradingContext(m_Context, pGrading->name(), pGrading->has_name());
-        for_each(pGrading->pass().begin(), pGrading->pass().end(), boost::bind(&RenderingEngine::displayPass, this, _1));
+        for_each(pGrading->pass().begin(), pGrading->pass().end(), bind(&RenderingEngine::displayPass, this, _1));
     } catch (exception &ex) {
         cerr << HEADER + ex.what() << " occurred while displaying clip " << clip.DebugString() << endl;
     }
@@ -332,7 +336,7 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
                 compileAndSetShader(SHADER_PIXEL, effect.pixelshadername());
 
                 // render all meshes
-                for_each(pass.meshname().begin(), pass.meshname().end(), boost::bind(&RenderingEngine::displayMeshWithName, this, _1));
+                for_each(pass.meshname().begin(), pass.meshname().end(), bind(&RenderingEngine::displayMeshWithName, this, _1));
             }
         }
 
@@ -352,22 +356,21 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
     }
 }
 
-void RenderingEngine::displayMeshWithName(const std::string& name) {
-    const Mesh& mesh = resource::getPB<Mesh>(m_Renderer.resourceCache, name);
-    MeshPtr pMesh = build(m_Renderer, mesh);
+void RenderingEngine::displayMeshWithName(const string& name) {
+    const Mesh& mesh = resource::getPB<Mesh>(m_Cache, name);
+    MeshPtr pMesh = m_Cache.getOrBuild<IMeshBase>(name, bind(&buildMesh, ref(m_Renderer), cref(mesh)));
     assert(pMesh);
-
     pMesh->render(m_Renderer);
 }
 
 void RenderingEngine::compileAndSetShader(const TShaderType& type, const string& name) {
-    const Shader &shader = resource::getPB<Shader>(m_Renderer.resourceCache, name);
-    ShaderPtr pShader = build(m_Renderer, shader, type);
+    const Shader &shader = resource::getPB<Shader>(m_Cache, name);
+    ShaderPtr pShader = m_Cache.getOrBuild<IShaderBase>(name, bind(&buildShader, ref(m_Renderer), cref(shader), type));
     assert(pShader);
 
     const vector<string> &params = pShader->getParameterNames();
     for_each(params.begin(), params.end(), //
-             boost::bind(&RenderingEngine::applyParameter, this, boost::ref(pShader), _1));
+             bind(&RenderingEngine::applyParameter, this, ref(pShader), _1));
 
     m_Renderer.setShader(pShader.get());
 }
@@ -376,11 +379,11 @@ static ProtoBufResource& getParam(resource::ResourceCache& cache, const Renderin
     for (ScopesRItr it = context.scopes.rbegin(); it < context.scopes.rend(); ++it) {
         const string scopedParamName = *it + '|' + name;
         TResourcePtr pParam;
-        resource::tryGet(cache, scopedParamName, pParam);
+        cache.tryGet(scopedParamName, pParam);
         if (pParam != NULL)
             return *pParam;
     }
-    return resource::get<ProtoBufResource>(cache, name);
+    return cache.get<ProtoBufResource>(name);
 }
 
 void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string &paramName) {
@@ -392,7 +395,7 @@ void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string &par
     else if (pDescriptor == AutomaticParameter::descriptor())
         applyParameter(pShader, paramName, param.getRef<AutomaticParameter>());
     else
-        cerr << "got unknown parameter type named : " << param.getRef<Message>().DebugString() ;
+        cerr << "got unknown parameter type named : " << param.getRef<Message>().DebugString();
 }
 
 void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& paramName, const AutomaticParameter& param) {
