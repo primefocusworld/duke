@@ -1,13 +1,13 @@
 #include "Mesh.h"
-#include "IFactory.h"
+#include "IRenderer.h"
 #include "IMeshBase.h"
 #include <iostream>
 #include <stdexcept>
 
-Mesh::Mesh(IFactory& factory, const ::duke::protocol::Mesh& mesh) {
+Mesh::Mesh(IRenderer& renderer, const ::duke::protocol::Mesh& mesh) {
     const std::string name(mesh.name());
 
-    resource::tryGet(factory.resourceCache, name, m_pMeshBase);
+    resource::tryGet(renderer.resourceCache, name, m_pMeshBase);
 
     if (!m_pMeshBase) {
         const ::duke::protocol::VertexBuffer& vb = mesh.vertexbuffer();
@@ -22,7 +22,7 @@ Mesh::Mesh(IFactory& factory, const ::duke::protocol::Mesh& mesh) {
             vertexStruct.v = vertex.data(4);
             vertices.push_back(vertexStruct);
         }
-        Buffer<IMeshBase::TVertex> vertexBuffer(factory.createVertexBuffer(vertices.size(), BUF_STATIC, vertices.data()));
+        Buffer<IMeshBase::TVertex> vertexBuffer(renderer.createVertexBuffer(vertices.size(), BUF_STATIC, vertices.data()));
         if (mesh.has_indexbuffer()) {
             const ::duke::protocol::IndexBuffer& ib = mesh.indexbuffer();
             const int indicesCount = ib.index_size();
@@ -30,19 +30,19 @@ Mesh::Mesh(IFactory& factory, const ::duke::protocol::Mesh& mesh) {
             indices.reserve(indicesCount);
             for (int i = 0; i < indicesCount; i++)
                 indices.push_back(ib.index(i));
-            Buffer<IMeshBase::TIndex> indexBuffer(factory.createIndexBuffer(indicesCount, BUF_STATIC, indices.data()));
+            Buffer<IMeshBase::TIndex> indexBuffer(renderer.createIndexBuffer(indicesCount, BUF_STATIC, indices.data()));
             m_pMeshBase.reset(new IMeshBase(Enums::Get(mesh.type()), vertexBuffer, indexBuffer));
         } else
             m_pMeshBase.reset(new IMeshBase(Enums::Get(mesh.type()), vertexBuffer, NULL));
 
-        resource::put(factory.resourceCache, name, m_pMeshBase);
+        resource::put(renderer.resourceCache, name, m_pMeshBase);
     }
 }
 
 Mesh::~Mesh() {
 }
 
-void Mesh::render(IFactory& renderer) const {
+void Mesh::render(IRenderer& renderer) const {
     if (m_pMeshBase)
         m_pMeshBase->render(renderer);
 }

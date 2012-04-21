@@ -9,7 +9,7 @@
 #include <boost/shared_ptr.hpp>
 #include <string>
 
-class IFactory;
+class IRenderer;
 
 class Image : public IImageDescriptor {
 private:
@@ -17,10 +17,10 @@ private:
 
 public:
     // create or update an image from ImageDescription
-    Image(IFactory& factory, const std::string& name, const ImageDescription& imageDescription);
+    Image(IRenderer& renderer, const std::string& name, const ImageDescription& imageDescription);
 
     // fetch registered image with name
-    Image(IFactory& factory, const std::string& name);
+    Image(IRenderer& renderer, const std::string& name);
 
     void dump(const std::string& filename) const;
     void dump(::duke::protocol::Texture &texture) const;

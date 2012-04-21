@@ -1,19 +1,19 @@
 #include "VolatileTexture.h"
-#include "IFactory.h"
+#include "IRenderer.h"
 #include "ITextureBase.h"
 #include <dukeio/ImageDescription.h>
 #include <iostream>
 #include <cassert>
 
-VolatileTexture::VolatileTexture(IFactory& factory, const ImageDescription& description, const unsigned flags) :
+VolatileTexture::VolatileTexture(IRenderer& renderer, const ImageDescription& description, const unsigned flags) :
     m_Description(description) {
     const PoolRequest request(description.format, flags && TEX_MIPMAP > 0, description.width, description.height);
 
-    m_pTexture = factory.texturePool.get(request);
+    m_pTexture = renderer.texturePool.get(request);
     if (!m_pTexture) {
-        const resource::SharedResourcePtr pTexture(factory.createTexture(description, flags));
+        const resource::SharedResourcePtr pTexture(renderer.createTexture(description, flags));
         assert( pTexture );
-        m_pTexture = factory.texturePool.putAndGet(request, pTexture);
+        m_pTexture = renderer.texturePool.putAndGet(request, pTexture);
     }
     assert( getTexture() );
     if (!getTexture()->isRenderTarget()) // image not to be render to ? we must update it

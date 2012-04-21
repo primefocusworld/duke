@@ -1,7 +1,7 @@
 #include "ShaderFactory.h"
 #include <dukeapi/shading/ShadingGraphCodeBuilder.h>
 #include "ProtoBufResource.h"
-#include "IFactory.h"
+#include "IRenderer.h"
 #include "DisplayableImage.h"
 #include "VolatileTexture.h"
 
@@ -20,10 +20,10 @@ using namespace ::duke::protocol;
 using namespace ::shader_factory;
 
 
-static CGprogram createProgram(IFactory& factory, const TShaderType type, const string& code, const string &name) {
-    const char** pProgramOptions = factory.getShaderOptions(type);
-    const CGprofile profile = factory.getShaderProfile(type);
-    const CGprogram cgProgram = cgCreateProgram(factory.getCgContext(), //context
+static CGprogram createProgram(IRenderer& renderer, const TShaderType type, const string& code, const string &name) {
+    const char** pProgramOptions = renderer.getShaderOptions(type);
+    const CGprofile profile = renderer.getShaderProfile(type);
+    const CGprogram cgProgram = cgCreateProgram(renderer.getCgContext(), //context
                     CG_SOURCE, // compiling source
                     code.c_str(), // program
                     profile, // CG profile
@@ -62,13 +62,13 @@ static CGprogram createProgram(IFactory& factory, const TShaderType type, const 
     return cgProgram;
 }
 
-ShaderBasePtr compile(IFactory& factory, const ::duke::protocol::Shader& shader, const TShaderType type) {
+ShaderBasePtr compile(IRenderer& renderer, const ::duke::protocol::Shader& shader, const TShaderType type) {
     const string name = shader.name();
     ShaderBasePtr pShader;
     const bool isPersistent = !name.empty();
 
     if (isPersistent)
-        resource::tryGet(factory.resourceCache, name, pShader);
+        resource::tryGet(renderer.resourceCache, name, pShader);
     if (!pShader) {
         string code;
         if (type == SHADER_VERTEX || shader.has_code())
@@ -76,12 +76,12 @@ ShaderBasePtr compile(IFactory& factory, const ::duke::protocol::Shader& shader,
         else {
             // shader must have either a shading tree or code
             assert(shader.has_program());
-            code = shader_factory::compile(shader.program(), factory.prototypeFactory);
+            code = shader_factory::compile(shader.program(), renderer.prototypeFactory);
         }
-        CGprogram program = createProgram(factory, type, code, name);
-        pShader.reset(factory.createShader(program, type));
+        CGprogram program = createProgram(renderer, type, code, name);
+        pShader.reset(renderer.createShader(program, type));
         if (isPersistent)
-            resource::put(factory.resourceCache, name, pShader);
+            resource::put(renderer.resourceCache, name, pShader);
     }
     assert( pShader->getType() == type);
     return pShader;

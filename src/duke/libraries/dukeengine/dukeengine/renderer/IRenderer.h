@@ -1,5 +1,5 @@
-#ifndef IFACTORY_H_
-#define IFACTORY_H_
+#ifndef IRENDERER_H_
+#define IRENDERER_H_
 
 #include "Buffer.h"
 #include "Enums.h"
@@ -13,10 +13,10 @@
 class IShaderBase;
 class ITextureBase;
 
-class IFactory : public boost::noncopyable {
+class IRenderer : public boost::noncopyable {
 public:
-    IFactory();
-    virtual ~IFactory();
+    IRenderer();
+    virtual ~IRenderer();
 
     template<class T> Buffer<T> createVertexBuffer(unsigned long size, unsigned long flags, const T* data) const;
     template<class T> Buffer<T> createIndexBuffer(unsigned long size, unsigned long flags, const T* data) const;
@@ -69,7 +69,7 @@ public:
 };
 
 template<class T>
-Buffer<T> IFactory::createVertexBuffer(unsigned long size, unsigned long flags, const T* data) const {
+Buffer<T> IRenderer::createVertexBuffer(unsigned long size, unsigned long flags, const T* data) const {
     Buffer<T> buffer(createVB(size, sizeof(T), flags));
     if (data)
         buffer.fill(data, size);
@@ -77,11 +77,11 @@ Buffer<T> IFactory::createVertexBuffer(unsigned long size, unsigned long flags, 
 }
 
 template<class T>
-Buffer<T> IFactory::createIndexBuffer(unsigned long size, unsigned long flags, const T* data) const {
+Buffer<T> IRenderer::createIndexBuffer(unsigned long size, unsigned long flags, const T* data) const {
     Buffer<T> buffer(createIB(size, sizeof(T), flags));
     if (data)
         buffer.fill(data, size);
     return buffer;
 }
 
-#endif /* IFACTORY_H_ */
+#endif /* IRENDERER_H_ */

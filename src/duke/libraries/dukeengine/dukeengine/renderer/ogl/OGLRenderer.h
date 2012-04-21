@@ -3,10 +3,10 @@
 
 #include <GL/glew.h>
 #include <player.pb.h>
-#include <dukeengine/renderer/IFactory.h>
+#include <dukeengine/renderer/IRenderer.h>
 #include <dukeengine/renderer/Mesh.h>
 
-class OGLRenderer : public IFactory
+class OGLRenderer : public IRenderer
 {
 protected:
 	virtual void beginScene( bool shouldClean, uint32_t cleanColor, ITextureBase* pRenderTarget = NULL );

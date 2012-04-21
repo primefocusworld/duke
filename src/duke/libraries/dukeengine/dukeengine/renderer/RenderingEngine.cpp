@@ -27,7 +27,7 @@ const string HEADER = "[RenderingEngine] ";
  * RAII to enforce end scene is paired with begin scene
  */
 struct RAIIScene {
-    RAIIScene(IFactory& renderer, bool &renderOccured, bool shouldClean, uint32_t cleanColor, ITextureBase* pRenderTarget = NULL) :
+    RAIIScene(IRenderer& renderer, bool &renderOccured, bool shouldClean, uint32_t cleanColor, ITextureBase* pRenderTarget = NULL) :
                     m_Renderer(renderer), m_bRenderOccured(renderOccured) {
         m_Renderer.beginScene(shouldClean, cleanColor, pRenderTarget);
     }
@@ -36,7 +36,7 @@ struct RAIIScene {
         m_bRenderOccured = true;
     }
 private:
-    IFactory &m_Renderer;
+    IRenderer &m_Renderer;
     bool &m_bRenderOccured;
 };
 
@@ -67,7 +67,7 @@ inline void RenderingEngine::addResource(const ::google::protobuf::serialize::Me
     resource::put(m_Factory.resourceCache, msg.name(), boost::shared_ptr<ProtoBufResource>(new ProtoBufResource(msg)));
 }
 
-RenderingEngine::RenderingEngine(const duke::protocol::Renderer& renderer, sf::Window& window, IRendererHost& host, IFactory& factory) :
+RenderingEngine::RenderingEngine(const duke::protocol::Renderer& renderer, sf::Window& window, IRendererHost& host, IRenderer& factory) :
                 m_Window(window), m_Configuration(renderer), m_Host(host), m_Factory(factory), m_DisplayedFrameCount(0), m_bRenderOccured(false) {
     m_EmptyImageDescription.width = 1;
     m_EmptyImageDescription.height = 1;
@@ -76,9 +76,6 @@ RenderingEngine::RenderingEngine(const duke::protocol::Renderer& renderer, sf::W
     m_EmptyImageDescription.imageDataSize = sizeof(emptyImageData);
     m_EmptyImageDescription.format = PXF_R8G8B8A8;
     m_EngineStatus.set_action(Engine::RENDER_START);
-}
-
-RenderingEngine::~RenderingEngine() {
 }
 
 void RenderingEngine::loop() {
@@ -489,6 +486,7 @@ void RenderingEngine::applyParameter(const ShaderBasePtr &pShader, const string&
         }
     }
 }
+
 inline const ImageDescription& RenderingEngine::getSafeImageDescription(const ImageDescription* pImage) const {
     return (pImage == NULL || pImage->blank()) ? m_EmptyImageDescription : *pImage;
 }

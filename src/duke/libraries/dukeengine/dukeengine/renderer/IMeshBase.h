@@ -5,7 +5,7 @@
 #include "Buffer.h"
 #include "Enums.h"
 
-class IFactory;
+class IRenderer;
 
 class IMeshBase : public ::resource::IResource {
 public:
@@ -18,7 +18,7 @@ public:
     IMeshBase(TPrimitiveType type, Buffer<TVertex> vertexBuffer, Buffer<TIndex> indexBuffer);
     virtual ~IMeshBase();
 
-    void render(IFactory&) const;
+    void render(IRenderer&) const;
 
 private:
     unsigned long getPrimitiveCount() const;

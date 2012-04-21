@@ -1,5 +1,5 @@
 #include "Image.h"
-#include "IFactory.h"
+#include "IRenderer.h"
 #include "Enums.h"
 #include <iostream>
 #include <fstream>
@@ -8,12 +8,12 @@
 using namespace std;
 using namespace ::duke::protocol;
 
-Image::Image(IFactory& factory, const string& name, const ImageDescription& imageDescription) {
-    resource::tryGet(factory.resourceCache, name, m_pImage);
+Image::Image(IRenderer& renderer, const string& name, const ImageDescription& imageDescription) {
+    resource::tryGet(renderer.resourceCache, name, m_pImage);
     if (!m_pImage) {
         m_pImage.reset(new IImageBase(imageDescription));
         if (!name.empty())
-            resource::put(factory.resourceCache, name, m_pImage);
+            resource::put(renderer.resourceCache, name, m_pImage);
 
     }
     // now updating image data
@@ -23,8 +23,8 @@ Image::Image(IFactory& factory, const string& name, const ImageDescription& imag
     }
 }
 
-Image::Image(IFactory& factory, const string& name) {
-    resource::tryGet(factory.resourceCache, name, m_pImage);
+Image::Image(IRenderer& renderer, const string& name) {
+    resource::tryGet(renderer.resourceCache, name, m_pImage);
 }
 
 Image::~Image() {

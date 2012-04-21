@@ -12,6 +12,6 @@
 #include <vector>
 #include <string>
 
-ShaderBasePtr compile(IFactory& renderer, const ::duke::protocol::Shader& shader, const TShaderType type);
+ShaderBasePtr compile(IRenderer& renderer, const ::duke::protocol::Shader& shader, const TShaderType type);
 
 #endif /* SHADERFACTORY_H_ */

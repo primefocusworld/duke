@@ -157,7 +157,6 @@ void OGLRenderer::checkCaps() {
     m_Capabilities[CAP_PIXEL_BUFFER_OBJECT] = GLEW_ARB_pixel_buffer_object;
 }
 
-// IRenderer
 void OGLRenderer::setVertexBuffer(unsigned int stream, const IBufferBase* buffer, unsigned long stride) {
     const OGLVertexBuffer* vertexBuffer = static_cast<const OGLVertexBuffer*>(buffer);
 

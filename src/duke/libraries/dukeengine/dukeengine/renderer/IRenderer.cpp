@@ -1,4 +1,4 @@
-#include "IFactory.h"
+#include "IRenderer.h"
 #include <iostream>
 
 void cgErrorCallback() {
@@ -35,12 +35,12 @@ static duke::protocol::FunctionPrototype build(const char* name, const char* bod
     return f;
 }
 
-void IFactory::add(const duke::protocol::FunctionPrototype &function) {
+void IRenderer::add(const duke::protocol::FunctionPrototype &function) {
     if (!prototypeFactory.hasPrototype(function.signature().name()))
         prototypeFactory.setPrototype(function);
 }
 
-IFactory::IFactory() :
+IRenderer::IRenderer() :
         m_VSProfile(CG_PROFILE_UNKNOWN), m_PSProfile(CG_PROFILE_UNKNOWN), m_Context(cgCreateContext()) {
     //	cgSetErrorCallback(cgErrorCallback);
     m_VSOptions = EMPTY;
@@ -69,26 +69,26 @@ IFactory::IFactory() :
     }
 }
 
-IFactory::~IFactory() {
+IRenderer::~IRenderer() {
     if (m_Context)
         cgDestroyContext(m_Context);
 }
 
-CGcontext IFactory::getCgContext() const {
+CGcontext IRenderer::getCgContext() const {
     return m_Context;
 }
 
-bool IFactory::hasCapability(TCapability capability) const {
+bool IRenderer::hasCapability(TCapability capability) const {
     const TCapabilityMap::const_iterator entry = m_Capabilities.find(capability);
 
     assert( entry != m_Capabilities.end());
     return entry->second;
 }
 
-CGprofile IFactory::getShaderProfile(TShaderType Type) const {
+CGprofile IRenderer::getShaderProfile(TShaderType Type) const {
     return Type == SHADER_VERTEX ? m_VSProfile : m_PSProfile;
 }
 
-const char* * IFactory::getShaderOptions(TShaderType Type) const {
+const char* * IRenderer::getShaderOptions(TShaderType Type) const {
     return Type == SHADER_VERTEX ? m_VSOptions : m_PSOptions;
 }

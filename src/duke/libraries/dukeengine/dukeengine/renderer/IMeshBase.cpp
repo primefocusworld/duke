@@ -1,5 +1,5 @@
 #include "IMeshBase.h"
-#include "IFactory.h"
+#include "IRenderer.h"
 
 IMeshBase::IMeshBase( TPrimitiveType type, Buffer<TVertex> vertexBuffer, Buffer<TIndex> indexBuffer )
 	: m_PrimitiveType( type ),
@@ -9,7 +9,7 @@ IMeshBase::IMeshBase( TPrimitiveType type, Buffer<TVertex> vertexBuffer, Buffer<
 
 IMeshBase::~IMeshBase() {}
 
-void IMeshBase::render( IFactory& renderer ) const
+void IMeshBase::render( IRenderer& renderer ) const
 {
 	renderer.setVertexBuffer( 0, m_VertexBuffer.getBuffer(), sizeof( TVertex ) );
 	if( m_IndexBuffer.size() != 0 )

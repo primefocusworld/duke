@@ -1,6 +1,6 @@
 #include "Enums.h"
 #include "DisplayableImage.h"
-#include "IFactory.h"
+#include "IRenderer.h"
 #include "ITextureBase.h"
 
 #include <iostream>
@@ -20,20 +20,20 @@ ImageDescription getImageDescriptionFrom(const ::duke::protocol::Texture& textur
     return description;
 }
 
-DisplayableImage::DisplayableImage(IFactory& factory, const ::duke::protocol::Texture& texture) :
-                m_Image(factory, texture.name(), getImageDescriptionFrom(texture)) {
-    resource::tryGet(factory.resourceCache, texture.name(), m_pTexture);
+DisplayableImage::DisplayableImage(IRenderer& renderer, const ::duke::protocol::Texture& texture) :
+                m_Image(renderer, texture.name(), getImageDescriptionFrom(texture)) {
+    resource::tryGet(renderer.resourceCache, texture.name(), m_pTexture);
     if (!m_pTexture) {
-        m_pTexture.reset(factory.createTexture(getImageDescription()));
+        m_pTexture.reset(renderer.createTexture(getImageDescription()));
         if (!texture.name().empty())
-            resource::put(factory.resourceCache, texture.name(), m_pTexture);
+            resource::put(renderer.resourceCache, texture.name(), m_pTexture);
     }
     updateTexture();
 }
 
-DisplayableImage::DisplayableImage(IFactory& factory, const std::string& name) :
-                m_Image(factory, name) {
-    resource::tryGet(factory.resourceCache, name, m_pTexture);
+DisplayableImage::DisplayableImage(IRenderer& renderer, const std::string& name) :
+                m_Image(renderer, name) {
+    resource::tryGet(renderer.resourceCache, name, m_pTexture);
 }
 
 const ImageDescription& DisplayableImage::getImageDescription() const {

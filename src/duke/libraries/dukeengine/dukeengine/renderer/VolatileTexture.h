@@ -5,11 +5,11 @@
 #include "TexturePool.h"
 #include <string>
 
-class IFactory;
+class IRenderer;
 
 class VolatileTexture : public ITextureProvider {
 public:
-    VolatileTexture(IFactory& factory, const ImageDescription& spec, const unsigned flags = 0);
+    VolatileTexture(IRenderer& renderer, const ImageDescription& spec, const unsigned flags = 0);
     virtual ~VolatileTexture();
 
     virtual ITextureBase* getTexture() const;
