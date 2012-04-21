@@ -1,9 +1,9 @@
 #include "IImageBase.h"
-#include "utils/PixelUtils.h"
+#include "utils/PixelFormatUtils.h"
 
 IImageBase::IImageBase( const ImageDescription& imageDescription )
 	: m_Description( imageDescription ),
-	m_Pixels( m_Description.width * m_Description.height * (m_Description.depth==0?1:m_Description.depth) * GetBytesPerPixel( m_Description.format ) ) {}
+	m_Pixels( m_Description.width * m_Description.height * (m_Description.depth==0?1:m_Description.depth) * bytesPerPixel( m_Description.format ) ) {}
 
 IImageBase::~IImageBase() {}
 

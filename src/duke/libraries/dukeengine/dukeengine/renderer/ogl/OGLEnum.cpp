@@ -1,6 +1,6 @@
 #include "OGLEnum.h"
 
-#include <dukeengine/renderer/utils/PixelUtils.h>
+#include <dukeengine/renderer/utils/PixelFormatUtils.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -43,7 +43,7 @@ GLint OGLEnum::GetFormat(TPixelFormat _format) {
         case PXF_R32F:
             return GL_R;
         case PXF_UNDEFINED:
-            std::cerr << "Unsupported Format for OpenGL " << FormatToString(_format) << std::endl;
+            std::cerr << "Unsupported Format for OpenGL " << toString(_format) << std::endl;
             break;
     }
     assert(false);
@@ -77,7 +77,7 @@ GLint OGLEnum::GetInternalFormat(TPixelFormat _format) {
             return 4;
         case PXF_UNDEFINED:
         default:
-            std::cerr << "Unsupported Internal Format for OpenGL " << FormatToString(_format) << std::endl;
+            std::cerr << "Unsupported Internal Format for OpenGL " << toString(_format) << std::endl;
             break;
     }
     assert(false);
@@ -106,7 +106,7 @@ GLint OGLEnum::GetType(TPixelFormat _format) {
         case PXF_R32F:
             return GL_FLOAT;
         case PXF_UNDEFINED:
-            std::cerr << "Unsupported Format for OpenGL " << FormatToString(_format) << std::endl;
+            std::cerr << "Unsupported Format for OpenGL " << toString(_format) << std::endl;
             break;
     }
     assert(false);

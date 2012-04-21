@@ -1,7 +1,7 @@
 #include "OGLTexture.h"
 #include "OGLRenderer.h"
 #include "OGLEnum.h"
-#include <dukeengine/renderer/utils/PixelUtils.h>
+#include <dukeengine/renderer/utils/PixelFormatUtils.h>
 #ifndef __APPLE__
 #include <GL/gl.h>
 #else
@@ -35,7 +35,7 @@ void OGLTexture::update(const ImageDescription& description, const unsigned char
     OGLRenderer &r = const_cast<OGLRenderer&> (m_Renderer);
     if (r.hasCapability(CAP_PIXEL_BUFFER_OBJECT)) {
 
-        const int imageLineSize = description.width * GetBytesPerPixel(getFormat());
+        const int imageLineSize = description.width * bytesPerPixel(getFormat());
         const int dataSize = imageLineSize * description.height;
 
         glBindTexture(GL_TEXTURE_2D, m_Texture);

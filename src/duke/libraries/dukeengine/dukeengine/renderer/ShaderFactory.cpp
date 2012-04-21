@@ -5,8 +5,6 @@
 #include "DisplayableImage.h"
 #include "VolatileTexture.h"
 
-#include "utils/PixelUtils.h"
-
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 

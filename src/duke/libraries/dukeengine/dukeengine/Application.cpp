@@ -7,6 +7,7 @@
 #include <dukeapi/sequence/PlaylistHelper.h>
 
 #include <dukeengine/renderer/ogl/OGLRenderer.h>
+#include <dukeengine/renderer/utils/PixelFormatUtils.h>
 #include <dukeengine/image/ImageToolbox.h>
 
 #include <google/protobuf/descriptor.h>

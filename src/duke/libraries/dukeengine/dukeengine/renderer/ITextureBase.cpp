@@ -1,5 +1,4 @@
 #include "ITextureBase.h"
-#include "utils/PixelUtils.h"
 
 ITextureBase::ITextureBase( const ImageDescription& description, const TPixelFormat texturePixelFormat, long usageFlag )
 	: m_Description( description ),

@@ -1,5 +1,5 @@
 #include "Enums.h"
-#include "utils/PixelUtils.h"
+#include "utils/PixelFormatUtils.h"
 
 #include <stdexcept>
 #include <iostream>
@@ -51,7 +51,7 @@ TPixelFormat Enums::Get(const ::duke::protocol::Texture_TextureFormat& format) {
         case PXF_R32F:
             return ::duke::protocol::Texture_TextureFormat_R32F;
         default:
-            std::cerr << "invalid pixel format " << FormatToString(format) << std::endl;
+            std::cerr << "invalid pixel format " << toString(format) << std::endl;
             return ::duke::protocol::Texture_TextureFormat_R8G8B8A8;
     }
 }

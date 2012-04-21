@@ -1,6 +1,7 @@
 #include "TexturePool.h"
 #include "ResourceCache.h"
-#include "utils/PixelUtils.h"
+
+#include "utils/PixelFormatUtils.h"
 
 #include <boost/foreach.hpp>
 #include <boost/integer_traits.hpp>
@@ -21,7 +22,7 @@ TexturePool::~TexturePool()
 			for( RecyclingTexturePtrList::const_iterator pTextureHolder = ptrList.begin(); pTextureHolder != ptrList.end(); ++pTextureHolder )
 			{
 			    const PoolRequest& request( ( *pTextureHolder )->m_Request );
-				std::cout << " - " << request.dimension.x << "x" << request.dimension.y << "\t" << FormatToString( request.format ) << std::endl;
+				std::cout << " - " << request.dimension.x << "x" << request.dimension.y << "\t" << toString( request.format ) << std::endl;
 			}
 		}
 	}
