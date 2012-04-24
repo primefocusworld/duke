@@ -2,12 +2,11 @@
 #define IIMAGEBASE_H_
 
 #include "IResource.h"
-#include <dukeengine/renderer/IImageDescriptor.h>
 #include <dukeengine/renderer/Enums.h>
 #include <dukeio/ImageDescription.h>
 #include <vector>
 
-class IImageBase : public IResource, public IImageDescriptor {
+class IImageBase : public IResource {
     friend class Image;
     friend class DisplayableImage;
 
