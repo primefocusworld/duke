@@ -4,6 +4,8 @@
 #include <player.pb.h>
 #include <SFML/Window/Event.hpp>
 
+#include <iostream>
+
 inline ::duke::protocol::Event_Type Get(const ::sf::Event::EventType& eventType) {
     using namespace ::duke::protocol;
 

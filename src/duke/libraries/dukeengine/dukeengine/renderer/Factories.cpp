@@ -1,5 +1,6 @@
 #include "Factories.h"
 #include "resource/IImageBase.h"
+#include "resource/ProtoBufResource.h"
 #include "IRenderer.h"
 
 #include "utils/ProtobufUtils.h"
@@ -7,6 +8,7 @@
 #include <player.pb.h>
 #include <dukeapi/shading/ShadingGraphCodeBuilder.h>
 
+#include <iostream>
 #include <fstream>
 #include <sstream>
 
@@ -130,6 +132,32 @@ IMeshBase* buildMesh(IRenderer& renderer, const ::duke::protocol::Mesh& mesh) {
         return new IMeshBase(Enums::Get(mesh.type()), vertexBuffer, indexBuffer);
     } else
         return new IMeshBase(Enums::Get(mesh.type()), vertexBuffer, NULL);
+}
+
+MeshPtr getNamedMesh(IRenderer& renderer, const std::string& meshName) {
+    using duke::protocol::Mesh;
+    resource::ResourceCache &cache = renderer.resourceCache;
+    MeshPtr pMesh;
+    if (!cache.tryGet(meshName, pMesh)) {
+        const Mesh& mesh = resource::getPB<Mesh>(cache, meshName);
+        pMesh.reset(buildMesh(renderer, mesh));
+        cache.put(meshName, pMesh);
+    }
+    assert(pMesh);
+    return pMesh;
+}
+
+ShaderPtr getNamedShader(IRenderer& renderer, const std::string& shaderName, const TShaderType& type) {
+    using duke::protocol::Shader;
+    resource::ResourceCache &cache = renderer.resourceCache;
+    ShaderPtr pShader;
+    if (!cache.tryGet(shaderName, pShader)) {
+        const Shader &shader = resource::getPB<Shader>(cache, shaderName);
+        pShader.reset(buildShader(renderer, shader, type));
+        cache.put(shaderName, pShader);
+    }
+    assert(pShader);
+    return pShader;
 }
 
 void dump(const IImageBase* pImage, const string& filename) {

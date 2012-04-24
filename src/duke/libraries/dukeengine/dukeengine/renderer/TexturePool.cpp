@@ -6,6 +6,7 @@
 #include <boost/foreach.hpp>
 #include <boost/integer_traits.hpp>
 
+#include <iostream>
 #include <cassert>
 
 TexturePool::TexturePool() {

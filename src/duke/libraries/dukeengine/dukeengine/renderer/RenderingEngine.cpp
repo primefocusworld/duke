@@ -355,15 +355,11 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
 }
 
 void RenderingEngine::displayMeshWithName(const string& name) {
-    const Mesh& mesh = resource::getPB<Mesh>(m_Cache, name);
-    MeshPtr pMesh = m_Cache.getOrBuild<IMeshBase>(name, bind(&buildMesh, ref(m_Renderer), cref(mesh)));
-    assert(pMesh);
-    pMesh->render(m_Renderer);
+    getNamedMesh(m_Renderer, name)->render(m_Renderer);
 }
 
 void RenderingEngine::compileAndSetShader(const TShaderType& type, const string& name) {
-    const Shader &shader = resource::getPB<Shader>(m_Cache, name);
-    ShaderPtr pShader = m_Cache.getOrBuild<IShaderBase>(name, bind(&buildShader, ref(m_Renderer), cref(shader), type));
+    ShaderPtr pShader = getNamedShader(m_Renderer, name, type);
     assert(pShader);
 
     const vector<string> &params = pShader->getParameterNames();
@@ -479,8 +475,9 @@ void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& par
                 }
                 default:
                     cerr << "SamplingSource with type " << SamplingSource_Type_Name(samplingSource.type()) << " is not supported" << endl;
+                    return;
             }
-            assert( pTexture);
+            assert(pTexture);
             m_Renderer.setTexture(pShader->getParameter(paramName), param.samplerstate(), pTexture);
             break;
         }

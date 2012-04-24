@@ -11,6 +11,8 @@
 
 #include <SFML/Window/Window.hpp>
 
+#include <iostream>
+
 #define SFML_WINDOW_TITLE "Duke Player"
 
 using namespace std;
