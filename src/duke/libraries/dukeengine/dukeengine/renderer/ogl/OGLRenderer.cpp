@@ -144,7 +144,7 @@ TPixelFormat OGLRenderer::getCompliantFormat(TPixelFormat format) const {
     }
 }
 
-ITextureBase* OGLRenderer::createTexture(const ImageDescription& description, unsigned long usageFlags) const {
+ITextureBase* OGLRenderer::createTexture(const ImageDescription& description, unsigned long usageFlags) {
     if (description.format == PXF_UNDEFINED)
         return NULL;
     return (new OGLTexture(description, usageFlags, *this));

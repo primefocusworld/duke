@@ -3,7 +3,6 @@
 
 #include "Enums.h"
 #include "IRenderer.h"
-#include "Image.h"
 #include "RenderingContext.h"
 #include "resource/IShaderBase.h"
 

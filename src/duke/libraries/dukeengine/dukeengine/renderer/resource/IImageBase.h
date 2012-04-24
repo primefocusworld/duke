@@ -16,10 +16,15 @@ public:
     virtual ~IImageBase();
 
     virtual const ImageDescription& getImageDescription() const;
+
+    typedef std::vector<unsigned char> Pixels;
+    const Pixels& pixels() const;
 private:
     const ImageDescription m_Description;
-    typedef std::vector<unsigned char> Pixels;
     Pixels m_Pixels;
 };
+
+#include <boost/shared_ptr.hpp>
+typedef ::boost::shared_ptr<IImageBase> ImagePtr;
 
 #endif /* IIMAGEBASE_H_ */

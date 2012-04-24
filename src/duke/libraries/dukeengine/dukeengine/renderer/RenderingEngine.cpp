@@ -1,10 +1,8 @@
 #include "RenderingEngine.h"
 #include "VolatileTexture.h"
-#include "DisplayableImage.h"
+#include "Factories.h"
 #include "resource/ProtoBufResource.h"
 #include "utils/SfmlProtobufUtils.h"
-#include "ShaderFactory.h"
-#include "MeshFactory.h"
 
 #include <dukeapi/ProtobufSerialize.h>
 
@@ -123,7 +121,7 @@ void RenderingEngine::consumeUntilEngine() {
             switch (holder.action()) {
                 case MessageHolder::CREATE:
                 case MessageHolder::UPDATE:
-                    DisplayableImage(m_Renderer, texture);
+                    putImage(m_Cache, texture);
                     break;
                 default: {
                     ostringstream msg;
@@ -223,7 +221,7 @@ bool RenderingEngine::simulationStep() {
     BOOST_FOREACH ( const DumpedImages::value_type &pair, m_Context.dumpedImages) {
         const string &name = pair.first;
         Texture texture;
-        pair.second->dump(texture);
+        dump(pair.second.get(), texture);
         texture.set_name(name);
         pack(texture, holder);
         m_Host.pushEvent(holder);
@@ -294,25 +292,25 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
         RAIIContext passContext(m_Context, pass.name(), pass.has_name());
 
         // preparing render target
-        TexturePtr pRenderTarget;
         ITextureBase *pRenderTargetTexture = NULL;
         if (pass.target() == RenderPass::TEXTURETARG) {
             assert(pass.has_rendertargetname());
             const string &renderTargetName = pass.rendertargetname();
             RenderTargets::const_iterator itr = m_Context.renderTargets.find(renderTargetName);
             if (itr != m_Context.renderTargets.end()) {
-                pRenderTarget = itr->second;
+                pRenderTargetTexture = itr->second.getTexture();
             } else {
                 assert(pass.has_rendertargetdimfromclipname());
                 const string& clipName = pass.rendertargetdimfromclipname();
                 ImageDescription clipDescription = getImageDescriptionFromClip(clipName);
                 if (pass.has_rendertarget())
                     overrideClipDimension(clipDescription, pass.rendertarget());
-                pRenderTarget.reset(new VolatileTexture(m_Renderer, clipDescription, TEX_RENTERTARGET));
-                m_Context.renderTargets[renderTargetName] = pRenderTarget;
+
+                VolatileTexture volatileTexture(m_Renderer, clipDescription, TEX_RENTERTARGET);
+                pRenderTargetTexture = volatileTexture.getTexture();
+                m_Context.renderTargets[renderTargetName] = volatileTexture;
             }
-            assert(pRenderTarget);
-            pRenderTargetTexture = pRenderTarget->getTexture();
+            assert(pRenderTargetTexture);
             //            cout << "rendering to " << renderTargetName << " : " << pRenderTargetTexture << endl;
         }
 
@@ -415,15 +413,18 @@ void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& par
                         break;
                     }
                     case SamplingSource::SUPPLIED: {
-                        const DisplayableImage image(m_Renderer, sourceName);
-                        imageDescriptionHolder = image.getImageDescription();
+                        ImagePtr pImage;
+                        m_Cache.tryGet<IImageBase>(sourceName, pImage);
+                        if (!pImage)
+                            throw std::runtime_error(string("no supplied image named : ") + sourceName);
+                        imageDescriptionHolder = pImage->getImageDescription();
                         pImageDescription = &imageDescriptionHolder;
                         break;
                     }
                     case SamplingSource::SURFACE: {
                         RenderTargets::const_iterator itr = m_Context.renderTargets.find(sourceName);
                         if (itr != m_Context.renderTargets.end())
-                            pImageDescription = &(itr->second->getImageDescription());
+                            pImageDescription = &(itr->second.getImageDescription());
                         break;
                     }
                     default:
@@ -458,28 +459,29 @@ void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& par
             assert(param.has_samplingsource());
             const SamplingSource &samplingSource = param.samplingsource();
             const string &sourceName = samplingSource.name();
-            TexturePtr pTexture;
+            ITextureBase* pTexture;
             switch (samplingSource.type()) {
                 case SamplingSource::CLIP:
-                    pTexture.reset(new VolatileTexture(m_Renderer, getImageDescriptionFromClip(sourceName)));
+                    m_Context.volatileTextures.push_back(VolatileTexture(m_Renderer, getImageDescriptionFromClip(sourceName)));
+                    pTexture = m_Context.volatileTextures.back().getTexture();
                     break;
                 case SamplingSource::SUPPLIED:
-                    pTexture.reset(new DisplayableImage(m_Renderer, sourceName));
+                    m_Context.textures.push_back(getNamedTexture(m_Renderer, sourceName));
+                    pTexture = m_Context.textures.back().get();
                     break;
                 case SamplingSource::SURFACE: {
                     const RenderTargets &targets = m_Context.renderTargets;
                     const RenderTargets::const_iterator itr = targets.find(sourceName);
                     if (itr == targets.end())
                         throw runtime_error("unknown render target '" + sourceName + "' to sample from");
-                    pTexture = itr->second;
+                    pTexture = itr->second.getTexture();
                     break;
                 }
                 default:
                     cerr << "SamplingSource with type " << SamplingSource_Type_Name(samplingSource.type()) << " is not supported" << endl;
             }
             assert( pTexture);
-            m_Renderer.setTexture(pShader->getParameter(paramName), param.samplerstate(), pTexture->getTexture());
-            m_Context.textures.push_back(pTexture);
+            m_Renderer.setTexture(pShader->getParameter(paramName), param.samplerstate(), pTexture);
             break;
         }
         default: {

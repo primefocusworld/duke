@@ -24,7 +24,7 @@ public:
 	virtual IBufferBase*  createIB( unsigned long size, unsigned long stride, unsigned long flags ) const;
 	virtual IShaderBase*  createShader( CGprogram program, TShaderType type ) const;
 	virtual TPixelFormat  getCompliantFormat(TPixelFormat format) const;
-	virtual ITextureBase* createTexture( const ImageDescription& description, long unsigned int ) const;
+	virtual ITextureBase* createTexture( const ImageDescription& description, long unsigned int );
 	virtual void          checkCaps();
 
 	// IRenderer

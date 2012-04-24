@@ -26,7 +26,7 @@ public:
     const char* * getShaderOptions(TShaderType Type) const;
 
     virtual IShaderBase* createShader(CGprogram program, TShaderType type) const = 0;
-    virtual ITextureBase* createTexture(const ImageDescription& description, unsigned long flags = 0) const = 0;
+    virtual ITextureBase* createTexture(const ImageDescription& description, unsigned long flags = 0) = 0;
     virtual void setShader(IShaderBase* shader) = 0;
     virtual void setVertexBuffer(unsigned int stream, const IBufferBase* buffer, unsigned long stride) = 0;
     virtual void setIndexBuffer(const IBufferBase* buffer) = 0;
