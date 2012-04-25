@@ -65,7 +65,7 @@ private:
  * templated helper to add a protobuf resource in the resource manager
  */
 template<typename T>
-inline void RenderingEngine::addResource(const ::google::protobuf::serialize::MessageHolder& holder) {
+void RenderingEngine::addResource(const ::google::protobuf::serialize::MessageHolder& holder) {
     const T msg = unpackTo<T>(holder);
     m_Renderer.resourceCache.put(msg.name(), boost::shared_ptr<ProtoBufResource>(new ProtoBufResource(msg)));
 }
@@ -312,7 +312,6 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
                 m_Context.renderTargets[renderTargetName] = volatileTexture;
             }
             assert(pRenderTargetTexture);
-            //            cout << "rendering to " << renderTargetName << " : " << pRenderTargetTexture << endl;
         }
 
         // setting render target dimensions

@@ -21,7 +21,11 @@ SharedResourcePtr ResourceCache::get(EResourceType type, const std::string & nam
 void ResourceCache::put(EResourceType type, const std::string & name, const SharedResourcePtr &pResource) {
     assert(type < UNDEF);
     ResourceMap &map = m_Map[type];
-    map.insert(std::make_pair(name, pResource));
+    ResourceMap::iterator itr = map.find(name);
+    if (itr != map.end())
+        itr->second = pResource;
+    else
+        map.insert(std::make_pair(name, pResource));
 }
 
 static const char* const toString(EResourceType type) {
