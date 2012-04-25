@@ -5,7 +5,7 @@
 #include <boost/program_options.hpp>
 
 //forward declaration
-struct IMessageIO;
+class IMessageIO;
 class ImageDecoderFactoryImpl;
 
 /**

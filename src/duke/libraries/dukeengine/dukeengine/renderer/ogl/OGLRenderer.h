@@ -4,8 +4,6 @@
 #include <GL/glew.h>
 #include <player.pb.h>
 #include <dukeengine/renderer/IRenderer.h>
-#include <dukeengine/renderer/IFactory.h>
-#include <dukeengine/renderer/Mesh.h>
 
 class OGLRenderer : public IRenderer
 {
@@ -14,10 +12,11 @@ protected:
 	virtual void endScene();
 	virtual void presentFrame();
     virtual void waitForBlanking() const;
-	virtual Image dumpTexture( ITextureBase* pTextureBase );
+    virtual void windowResized(unsigned width, unsigned height) const;
+//	virtual Image dumpTexture( ITextureBase* pTextureBase );
 
 public:
-	OGLRenderer( const duke::protocol::Renderer& Renderer, sf::Window& window, IRendererHost& host );
+	OGLRenderer( const duke::protocol::Renderer& Renderer);
 	~OGLRenderer();
 
 	// IFactory
@@ -25,7 +24,7 @@ public:
 	virtual IBufferBase*  createIB( unsigned long size, unsigned long stride, unsigned long flags ) const;
 	virtual IShaderBase*  createShader( CGprogram program, TShaderType type ) const;
 	virtual TPixelFormat  getCompliantFormat(TPixelFormat format) const;
-	virtual ITextureBase* createTexture( const ImageDescription& description, long unsigned int ) const;
+	virtual ITextureBase* createTexture( const ImageDescription& description, long unsigned int );
 	virtual void          checkCaps();
 
 	// IRenderer

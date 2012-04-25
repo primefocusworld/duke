@@ -1,30 +1,32 @@
 #ifndef IRENDERER_H_
 #define IRENDERER_H_
 
+#include "resource/Buffer.h"
+#include "resource/ResourceCache.h"
 #include "Enums.h"
-#include "Mesh.h"
-#include "IFactory.h"
-#include "Image.h"
-#include "RenderingContext.h"
-#include "IShaderBase.h"
+#include "TexturePool.h"
+#include <dukeio/ImageDescription.h>
+#include <dukeapi/shading/PrototypeFactory.h>
+#include <boost/utility.hpp>
+#include <Cg/cg.h>
 
-#include <player.pb.h>
-
-#include <dukeengine/RenderInterface.h>
-
-#include <SFML/System.hpp>
-#include <SFML/Window/Event.hpp>
-#include <SFML/Window/Window.hpp>
-
+class IShaderBase;
 class ITextureBase;
-class IBufferBase;
 
-class IRenderer : public IFactory {
+class IRenderer : public boost::noncopyable {
 public:
-    IRenderer(const duke::protocol::Renderer&, sf::Window&, IRendererHost&);
+    IRenderer();
     virtual ~IRenderer();
 
-    // to implement in derived classes
+    template<class T> Buffer<T> createVertexBuffer(unsigned long size, unsigned long flags, const T* data) const;
+    template<class T> Buffer<T> createIndexBuffer(unsigned long size, unsigned long flags, const T* data) const;
+    CGcontext getCgContext() const;
+    bool hasCapability(TCapability capability) const;
+    CGprofile getShaderProfile(TShaderType Type) const;
+    const char* * getShaderOptions(TShaderType Type) const;
+
+    virtual IShaderBase* createShader(CGprogram program, TShaderType type) const = 0;
+    virtual ITextureBase* createTexture(const ImageDescription& description, unsigned long flags = 0) = 0;
     virtual void setShader(IShaderBase* shader) = 0;
     virtual void setVertexBuffer(unsigned int stream, const IBufferBase* buffer, unsigned long stride) = 0;
     virtual void setIndexBuffer(const IBufferBase* buffer) = 0;
@@ -34,51 +36,51 @@ public:
     virtual void setTexture(const CGparameter sampler, //
                             const ::google::protobuf::RepeatedPtrField<duke::protocol::SamplerState>& samplerStates, //
                             const ITextureBase* pTextureBase) const = 0;
-
-    virtual Image dumpTexture(ITextureBase* pTextureBase) = 0;
+//    virtual Image dumpTexture(ITextureBase* pTextureBase) = 0;
+    virtual void windowResized(unsigned width, unsigned height) const = 0;
     virtual void waitForBlanking() const = 0;
     virtual void presentFrame() = 0;
-    void loop();
-
-protected:
-    friend struct RAIIScene;
-    // to implement in derived classes
     virtual void beginScene(bool shouldClean, uint32_t cleanColor, ITextureBase* pRenderTarget = NULL) = 0;
     virtual void endScene() = 0;
 
-    // executes a simulation step : implements frame logic
-    bool simulationStep();
+protected:
+    // buffers
+    virtual IBufferBase* createVB(unsigned long size, unsigned long stride, unsigned long flags) const = 0;
+    virtual IBufferBase* createIB(unsigned long size, unsigned long stride, unsigned long flags) const = 0;
 
-    sf::Window& m_Window;
+    // capability map, each implementation have to fill it
+    typedef std::map<TCapability, bool> TCapabilityMap;
+    TCapabilityMap m_Capabilities;
+
+    // profiles
+    CGprofile m_VSProfile;
+    CGprofile m_PSProfile;
+    const char** m_VSOptions;
+    const char** m_PSOptions;
+    virtual void checkCaps() = 0;
 
 private:
-    friend class SfmlWindow;
-    void waitForBlankingAndWarn(bool presented) const;
-    void consumeUntilEngine();
-    void displayClip(const ::duke::protocol::Clip&);
-    void displayPass(const ::duke::protocol::RenderPass&);
-    void displayMesh(const ::duke::protocol::Mesh&);
-    void displayMeshWithName(const std::string& name);
-    void compileAndSetShader(const TShaderType&, const std::string&);
-    friend class ShaderFactory;
-    const ImageDescription& getSafeImageDescription(const ImageDescription*) const;
-    const ImageDescription& getImageDescriptionFromClip(const std::string &clipName) const;
-
-    template<typename T>
-    inline void addResource(const ::google::protobuf::serialize::MessageHolder&);
-
-    inline const Setup& getSetup() const {
-        return m_Host.m_Setup;
-    }
-
-    const duke::protocol::Renderer m_Renderer;
-    IRendererHost& m_Host;
-    sf::Event m_Event;
-    unsigned long m_DisplayedFrameCount;
-    ::duke::protocol::Engine m_EngineStatus;
-    ImageDescription m_EmptyImageDescription;
-    bool m_bRenderOccured;
-    RenderingContext m_Context;
+    void add(const duke::protocol::FunctionPrototype &);
+    CGcontext m_Context;
+public:
+    resource::ResourceCache resourceCache;
+    PrototypeFactory prototypeFactory;
 };
+
+template<class T>
+Buffer<T> IRenderer::createVertexBuffer(unsigned long size, unsigned long flags, const T* data) const {
+    Buffer<T> buffer(createVB(size, sizeof(T), flags));
+    if (data)
+        buffer.fill(data, size);
+    return buffer;
+}
+
+template<class T>
+Buffer<T> IRenderer::createIndexBuffer(unsigned long size, unsigned long flags, const T* data) const {
+    Buffer<T> buffer(createIB(size, sizeof(T), flags));
+    if (data)
+        buffer.fill(data, size);
+    return buffer;
+}
 
 #endif /* IRENDERER_H_ */

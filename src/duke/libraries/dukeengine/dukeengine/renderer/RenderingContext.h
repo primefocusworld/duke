@@ -1,8 +1,9 @@
 #ifndef RENDERINGCONTEXT_H_
 #define RENDERINGCONTEXT_H_
 
-#include "ITextureProvider.h"
-#include "Image.h"
+#include "resource/IImageBase.h"
+#include "resource/ITextureBase.h"
+#include "TexturePool.h"
 #include <dukeio/ImageDescription.h>
 #include <vector>
 #include <string>
@@ -10,13 +11,11 @@
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
 
-typedef ::boost::shared_ptr<ITextureProvider> TexturePtr;
-typedef ::boost::unordered_map<std::string, TexturePtr> RenderTargets;
-
-typedef ::boost::shared_ptr<Image> ImagePtr;
+typedef ::boost::unordered_map<std::string, VolatileTexture> RenderTargets;
 typedef ::boost::unordered_map<std::string, ImagePtr> DumpedImages;
 
 typedef std::vector<TexturePtr> Textures;
+typedef std::vector<VolatileTexture> VolatileTextures;
 
 typedef std::vector<ImageDescription> ImageDescriptions;
 typedef std::vector<std::string> Scopes;
@@ -34,6 +33,7 @@ public:
     DumpedImages dumpedImages;
     RenderTargets renderTargets;
     Textures textures;
+    VolatileTextures volatileTextures;
 
     RenderingContext() :
         pImages(NULL), frameCount(0), rtWidth(0), rtHeight(0) {
@@ -48,6 +48,7 @@ public:
         scopes.clear();
         renderTargets.clear();
         textures.clear();
+        volatileTextures.clear();
         dumpedImages.clear();
     }
 

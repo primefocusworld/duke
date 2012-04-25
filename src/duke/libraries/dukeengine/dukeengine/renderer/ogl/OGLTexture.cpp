@@ -1,7 +1,7 @@
 #include "OGLTexture.h"
 #include "OGLRenderer.h"
 #include "OGLEnum.h"
-#include <dukeengine/renderer/utils/PixelUtils.h>
+#include <dukeengine/renderer/utils/PixelFormatUtils.h>
 #ifndef __APPLE__
 #include <GL/gl.h>
 #else
@@ -10,18 +10,18 @@
 #include <stdexcept>
 #include <cassert>
 
-OGLTexture::OGLTexture(const ImageDescription& description, unsigned long usageFlag, const OGLRenderer& renderer) :
-    ITextureBase(description, renderer.getCompliantFormat(description.format), usageFlag), m_Texture(0), m_Renderer(renderer) {
+OGLTexture::OGLTexture(const ImageDescription& description, unsigned long usageFlag, OGLRenderer& renderer) :
+                ITextureBase(description, renderer.getCompliantFormat(description.format), usageFlag), m_Texture(0), m_Renderer(renderer), //
+                oglFormat(OGLEnum::GetFormat(getFormat())), oglType(OGLEnum::GetType(getFormat())) {
 
     glGenTextures(1, &m_Texture);
-    TPixelFormat format = getFormat();
 
     if (getDepth() <= 1) {
         glBindTexture(GL_TEXTURE_2D, m_Texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, OGLEnum::GetInternalFormat(format), getWidth(), getHeight(), 0, OGLEnum::GetFormat(format), OGLEnum::GetType(format), NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, OGLEnum::GetInternalFormat(getFormat()), getWidth(), getHeight(), 0, oglFormat, oglType, NULL);
     } else {
         glBindTexture(GL_TEXTURE_3D, m_Texture);
-        glTexImage3D(GL_TEXTURE_3D, 0, OGLEnum::GetInternalFormat(format), getWidth(), getHeight(), getDepth(), 0, OGLEnum::GetFormat(format), OGLEnum::GetType(format), NULL);
+        glTexImage3D(GL_TEXTURE_3D, 0, OGLEnum::GetInternalFormat(getFormat()), getWidth(), getHeight(), getDepth(), 0, oglFormat, oglType, NULL);
     }
 }
 
@@ -30,35 +30,31 @@ OGLTexture::~OGLTexture() {
         glDeleteTextures(1, &m_Texture);
 }
 
-void OGLTexture::update(const ImageDescription& description, const unsigned char* pData) {
+void OGLTexture::update(const unsigned char* pData) {
+    if (m_Renderer.hasCapability(CAP_PIXEL_BUFFER_OBJECT)) {
 
-    OGLRenderer &r = const_cast<OGLRenderer&> (m_Renderer);
-    if (r.hasCapability(CAP_PIXEL_BUFFER_OBJECT)) {
-
-        const int imageLineSize = description.width * GetBytesPerPixel(getFormat());
-        const int dataSize = imageLineSize * description.height;
+        const int imageLineSize = getWidth() * bytesPerPixel(getFormat());
+        const int dataSize = imageLineSize * getHeight();
 
         glBindTexture(GL_TEXTURE_2D, m_Texture);
-        glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, r.getPBO());
+        glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, m_Renderer.getPBO());
         glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, dataSize, pData, GL_STREAM_DRAW_ARB);
-        if (description.depth <= 1) {
+        if (getDepth() <= 1) {
             glBindTexture(GL_TEXTURE_2D, m_Texture);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, description.width, description.height, OGLEnum::GetFormat(description.format), OGLEnum::GetType(description.format), 0);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, getWidth(), getHeight(), oglFormat, oglType, 0);
         } else {
             glBindTexture(GL_TEXTURE_3D, m_Texture);
-            glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, description.width, description.height, description.depth, OGLEnum::GetFormat(description.format),
-                            OGLEnum::GetType(description.format), 0);
+            glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, getWidth(), getHeight(), getDepth(), oglFormat, oglType, 0);
         }
         glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 
     } else {
-        if (description.depth <= 1) {
+        if (getDepth() <= 1) {
             glBindTexture(GL_TEXTURE_2D, m_Texture);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, description.width, description.height, OGLEnum::GetFormat(description.format), OGLEnum::GetType(description.format), pData);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, getWidth(), getHeight(), oglFormat, oglType, pData);
         } else {
             glBindTexture(GL_TEXTURE_3D, m_Texture);
-            glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, description.width, description.height, description.depth, OGLEnum::GetFormat(description.format),
-                            OGLEnum::GetType(description.format), pData);
+            glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, getWidth(), getHeight(), getDepth(), oglFormat, oglType, pData);
         }
     }
 

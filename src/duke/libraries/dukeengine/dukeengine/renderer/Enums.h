@@ -50,12 +50,4 @@ enum TShaderType
 	SHADER_VERTEX, SHADER_PIXEL
 };
 
-#include <player.pb.h>
-struct Enums
-{
-	static TPrimitiveType Get( const ::duke::protocol::Mesh_MeshType& type );
-	static TPixelFormat   Get( const ::duke::protocol::Texture_TextureFormat& format );
-	static ::duke::protocol::Texture_TextureFormat   Get( const TPixelFormat& format );
-};
-
 #endif /* ENUMS_H_ */

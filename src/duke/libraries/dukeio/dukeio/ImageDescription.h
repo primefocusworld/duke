@@ -5,13 +5,7 @@
 #include <cstddef>
 #include <cstdarg>
 
-enum ImageSpecFlag {
-    IS_FLAG_UPSIDE_DOWN = 1 << 0, ///< the image should be flipped over the horizontal axis
-    IS_LAST
-///< last enum marker
-};
-
-typedef struct ImageDescription {
+struct ImageDescription {
     // spatial attributes
     int width; ///< width of the pixel data window
     int height; ///< height of the pixel data window
@@ -31,6 +25,6 @@ typedef struct ImageDescription {
     bool blank() const {
         return width == 0 && height == 0 && depth == 0 && format == PXF_UNDEFINED;
     }
-} ImageDescription;
+};
 
 #endif /* IMAGEDESCRIPTION_H_ */

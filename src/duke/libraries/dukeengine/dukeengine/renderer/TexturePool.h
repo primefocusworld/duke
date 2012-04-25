@@ -1,91 +1,58 @@
+/*
+ * TexturePool.h
+ *
+ *  Created on: Apr 25, 2012
+ *      Author: Guillaume Chatelet
+ */
+
 #ifndef TEXTUREPOOL_H_
 #define TEXTUREPOOL_H_
 
-#include <dukeio/Formats.h>
-#include "math/Vector3.h"
+#include "resource/ResourceCache.h"
+#include "resource/ITextureBase.h"
+#include <dukeengine/renderer/Enums.h>
+#include <dukeio/ImageDescription.h>
 
-struct PoolRequest
-{
-	const TPixelFormat format;
-	const bool mipmap;
-	const TVector3I dimension;
-	PoolRequest( const TPixelFormat& format, const bool mipmap, const int width, const int height, const int depth = 0 )
-		: format( format ),
-		mipmap( mipmap ),
-		dimension( width, height, depth ) {}
-
-};
-
-#include "IResource.h"
-
-#include <functional>
-
-struct PoolRequestLess : public std::binary_function<PoolRequest, PoolRequest, bool>
-{
-	bool operator()( const PoolRequest& first, const PoolRequest& second ) const
-	{
-		return first.format < second.format ? true : ( first.format == second.format && !first.mipmap && second.mipmap );
-	}
-
-};
-
-class ScopedTexture;
-
-#include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
+
+#include <vector>
+#include <string>
 #include <map>
-#include <list>
-class TexturePool : public boost::noncopyable
-{
+
+class IRenderer;
+struct VolatileTexture;
+
+class TexturePool {
+    struct Slot {
+        std::string name;
+        size_t refs;
+        Slot():refs(0){}
+        Slot(const std::string &name):name(name), refs(0){}
+        void addRef(){++refs;}
+        void release(){assert(refs>0);--refs;}
+    };
+    typedef boost::shared_ptr<Slot> SharedSlot;
+    typedef std::vector<SharedSlot> SlotPtrList;
+    typedef std::map<std::string, SlotPtrList> SlotMap;
+    SlotMap m_Map;
+    IRenderer& m_Renderer;
+    friend struct VolatileTexture;
+    static inline bool freeSlot(const TexturePool::SharedSlot &);
 public:
-    typedef ::boost::shared_ptr<IResource> ResourcePtr;
-private:
-	struct TextureHolder
-	{
-		const PoolRequest m_Request;
-		ResourcePtr m_pResource;
-		TextureHolder( const PoolRequest&, const ResourcePtr& );
-	};
-	typedef ::boost::shared_ptr<TextureHolder> TextureHolderPtr;
-
-public:
-	TexturePool();
-	~TexturePool();
-
-	typedef ::boost::shared_ptr<ScopedTexture> ScopedTexturePtr;
-	void             put( const PoolRequest& request, const ResourcePtr& pResource );
-	ScopedTexturePtr putAndGet( const PoolRequest& request, const ResourcePtr& pResource );
-	ScopedTexturePtr get( const PoolRequest& request );
-
-	static int computeDistance( const TVector3I& requestedDimension, const TVector3I& testDimension );
-
-private:
-	friend class ScopedTexture;
-	void put( TextureHolderPtr pRecylingTexture );
-	typedef std::list<TextureHolderPtr> RecyclingTexturePtrList;
-	typedef std::map<PoolRequest, RecyclingTexturePtrList, PoolRequestLess> MAP;
-	MAP m_Map;
+    TexturePool(IRenderer& renderer) : m_Renderer(renderer){}
+    VolatileTexture get(const ImageDescription& desc, int flags = 0);
 };
 
-class ScopedTexture : public ::boost::noncopyable
-{
+struct VolatileTexture{
+    VolatileTexture(){}
+    VolatileTexture(const VolatileTexture& other);
+    ~VolatileTexture();
+    ITextureBase* getTexture() const {return pTexture.get();}
 private:
-	friend class TexturePool;
-	TexturePool* const m_pPool;
-	const TexturePool::TextureHolderPtr m_pRecylingTexture;
-	ScopedTexture( TexturePool* const pPool, TexturePool::TextureHolderPtr pRecylingTexture );
-
-public: ScopedTexture();
-	~ScopedTexture();
-
-	template<typename T>
-	T* getTexture() const;
+    friend class TexturePool;
+    TexturePool::SharedSlot pSlot;
+    TexturePtr pTexture;
+    VolatileTexture(TexturePool::SharedSlot pSlot, const TexturePtr &pTexture);
 };
-
-template<typename T>
-T* ScopedTexture::getTexture() const
-{
-	return m_pRecylingTexture ? dynamic_cast<T*>( m_pRecylingTexture->m_pResource.get() ) : NULL;
-}
 
 #endif /* TEXTUREPOOL_H_ */
