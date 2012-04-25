@@ -46,7 +46,7 @@ int CheckGLError(const char* msg, const char* file, int line) {
     return retCode;
 }
 
-OGLRenderer::OGLRenderer(const duke::protocol::Renderer& Renderer) :
+OGLRenderer::OGLRenderer() :
                 m_lastPBOUsed(0) {
 
     // Initializing OGL Extensions
@@ -54,11 +54,6 @@ OGLRenderer::OGLRenderer(const duke::protocol::Renderer& Renderer) :
     if (err != GLEW_OK) {
         std::ostringstream msg;
         msg << "OGLRenderer: " << glewGetErrorString(err) << std::endl;
-        throw std::invalid_argument(msg.str());
-    }
-    if (Renderer.refreshrate() != 0 && Renderer.refreshrate() < 57) {
-        std::ostringstream msg;
-        msg << "Cannot force refresh rate to " << Renderer.refreshrate() << "Hz because it's less than 57Hz";
         throw std::invalid_argument(msg.str());
     }
 
@@ -80,7 +75,6 @@ OGLRenderer::OGLRenderer(const duke::protocol::Renderer& Renderer) :
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glMatrixMode(GL_MODELVIEW);
-    glViewport(0, 0, Renderer.width(), Renderer.height());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     checkCaps();
@@ -320,7 +314,7 @@ void OGLRenderer::setShader(IShaderBase* shader) {
     }
 }
 
-void OGLRenderer::windowResized(unsigned width, unsigned height) const{
+void OGLRenderer::windowResized(unsigned width, unsigned height) const {
     glViewport(0, 0, width, height);
 }
 

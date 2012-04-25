@@ -5,17 +5,17 @@
 #include "IRenderer.h"
 #include "RenderingContext.h"
 #include "resource/IShaderBase.h"
+#include "ogl/OGLRenderer.h"
 
 #include <player.pb.h>
 
 #include <dukeengine/RenderInterface.h>
 
-#include <SFML/Window/Event.hpp>
-#include <SFML/Window/Window.hpp>
+#include <QGLWidget>
 
-class RenderingEngine {
+class RenderingEngine : public QGLWidget {
 public:
-    RenderingEngine(const duke::protocol::Renderer&, sf::Window&, IRendererHost&, IRenderer& factory);
+    RenderingEngine(IRendererHost&, const QGLFormat& format, QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
     void loop();
 private:
     bool simulationStep();
@@ -38,12 +38,9 @@ private:
         return m_Host.m_Setup;
     }
 
-    sf::Window &m_Window;
-    const duke::protocol::Renderer m_Configuration;
     IRendererHost &m_Host;
-    IRenderer &m_Renderer;
+    OGLRenderer m_Renderer;
     resource::ResourceCache &m_Cache;
-    sf::Event m_Event;
     unsigned long m_DisplayedFrameCount;
     ::duke::protocol::Engine m_EngineStatus;
     ImageDescription m_EmptyImageDescription;

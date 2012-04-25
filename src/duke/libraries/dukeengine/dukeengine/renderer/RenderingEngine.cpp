@@ -70,9 +70,10 @@ void RenderingEngine::addResource(const ::google::protobuf::serialize::MessageHo
     m_Renderer.resourceCache.put(msg.name(), boost::shared_ptr<ProtoBufResource>(new ProtoBufResource(msg)));
 }
 
-RenderingEngine::RenderingEngine(const duke::protocol::Renderer& renderer, sf::Window& window, IRendererHost& host, IRenderer& factory) :
-                m_Window(window), m_Configuration(renderer), m_Host(host), m_Renderer(factory), m_Cache(m_Renderer.resourceCache), m_DisplayedFrameCount(0), m_bRenderOccured(
-                                false), m_TexturePool(m_Renderer) {
+RenderingEngine::RenderingEngine(IRendererHost& host, const QGLFormat& format, QWidget* parent, const QGLWidget* shareWidget, Qt::WindowFlags f) :
+                QGLWidget(format, parent, shareWidget, f), m_Host(host), m_Cache(m_Renderer.resourceCache), m_DisplayedFrameCount(0), m_bRenderOccured(false), m_TexturePool(
+                                m_Renderer) {
+    setAutoFillBackground(false);
     m_EmptyImageDescription.width = 1;
     m_EmptyImageDescription.height = 1;
     m_EmptyImageDescription.depth = 0;
@@ -141,11 +142,11 @@ void RenderingEngine::consumeUntilEngine() {
             if (event.type() == Event::RESIZED) {
                 const ResizeEvent &resizeEvent = event.resizeevent();
                 if (resizeEvent.has_height() && resizeEvent.has_width()) {
-                    m_Window.SetSize(resizeEvent.width(), resizeEvent.height());
+                    QGLWidget::resize(resizeEvent.width(), resizeEvent.height());
                     m_Renderer.windowResized(resizeEvent.width(), resizeEvent.height());
                 }
                 if (resizeEvent.has_x() && resizeEvent.has_y())
-                    m_Window.SetPosition(resizeEvent.x(), resizeEvent.y());
+                    QGLWidget::move(resizeEvent.x(), resizeEvent.y());
             }
         } else if (isType<FunctionPrototype>(pDescriptor)) {
             m_Renderer.prototypeFactory.setPrototype(unpackTo<FunctionPrototype>(holder));
@@ -175,7 +176,7 @@ bool RenderingEngine::simulationStep() {
     // rendering clips
     {
         const bool renderRequested = m_EngineStatus.action() != Engine::RENDER_STOP;
-        const bool renderAvailable = renderRequested && m_Window.IsOpened();
+        const bool renderAvailable = renderRequested && QGLWidget::isValid();
 
         if (renderAvailable) {
             try {
@@ -187,7 +188,7 @@ bool RenderingEngine::simulationStep() {
                     IRendererHost::PresentStatus status;
                     while ((status = m_Host.getPresentStatus()) == IRendererHost::SKIP_NEXT_BLANKING)
                         waitForBlankingAndWarn(false);
-                    m_Window.Display();
+                    QGLWidget::swapBuffers();
                     if (status == IRendererHost::PRESENT_NEXT_BLANKING)
                         waitForBlankingAndWarn(true);
                 }
@@ -202,31 +203,31 @@ bool RenderingEngine::simulationStep() {
     }
 
     // Sending back messages if needed
-    MessageHolder holder;
-    try {
-        Event event;
-        while (m_Window.PollEvent(m_Event)) {
-            if (m_Event.Type == sf::Event::Resized)
-                m_Renderer.windowResized(m_Event.Size.Width, m_Event.Size.Height);
-            event.Clear();
-            // transcoding the event to protocol buffer
-            Update(event, m_Event);
-            pack(event, holder);
-            m_Host.pushEvent(holder);
-        }
-    } catch (exception& e) {
-        cerr << HEADER + "Unexpected error while dispatching events : " + e.what() << endl;
-        return false;
-    }
-
-    BOOST_FOREACH ( const DumpedImages::value_type &pair, m_Context.dumpedImages) {
-        const string &name = pair.first;
-        Texture texture;
-        dump(pair.second.get(), texture);
-        texture.set_name(name);
-        pack(texture, holder);
-        m_Host.pushEvent(holder);
-    }
+//    MessageHolder holder;
+//    try {
+//        Event event;
+//        while (m_Window.PollEvent(m_Event)) {
+//            if (m_Event.Type == sf::Event::Resized)
+//                m_Renderer.windowResized(m_Event.Size.Width, m_Event.Size.Height);
+//            event.Clear();
+//            // transcoding the event to protocol buffer
+//            Update(event, m_Event);
+//            pack(event, holder);
+//            m_Host.pushEvent(holder);
+//        }
+//    } catch (exception& e) {
+//        cerr << HEADER + "Unexpected error while dispatching events : " + e.what() << endl;
+//        return false;
+//    }
+//
+//    BOOST_FOREACH ( const DumpedImages::value_type &pair, m_Context.dumpedImages) {
+//        const string &name = pair.first;
+//        Texture texture;
+//        dump(pair.second.get(), texture);
+//        texture.set_name(name);
+//        pack(texture, holder);
+//        m_Host.pushEvent(holder);
+//    }
     return m_Host.renderFinished(0);
 }
 
@@ -245,7 +246,7 @@ void RenderingEngine::displayClip(const ::duke::protocol::Clip& clip) {
             cerr << HEADER + "clip has both grade and gradeName set : picking grade" << endl;
 
         // allocating context
-        m_Context.set(getSetup().m_Images, m_DisplayedFrameCount, m_Window.GetWidth(), m_Window.GetHeight());
+        m_Context.set(getSetup().m_Images, m_DisplayedFrameCount, QWidget::width(), QWidget::height());
         RAIIContext clipContext(m_Context, clip.name(), clip.has_name());
 
         TResourcePtr pResource;
@@ -318,7 +319,7 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
         if (pRenderTargetTexture)
             m_Context.setRenderTarget(pRenderTargetTexture->getWidth(), pRenderTargetTexture->getHeight());
         else
-            m_Context.setRenderTarget(m_Window.GetWidth(), m_Window.GetHeight());
+            m_Context.setRenderTarget(QWidget::width(), QWidget::height());
 
         {
             RAIIScene scenePass(m_Renderer, m_bRenderOccured, pass.clean(), pass.cleancolor(), pRenderTargetTexture);

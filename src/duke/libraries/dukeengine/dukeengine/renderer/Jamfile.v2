@@ -9,9 +9,8 @@ project
     	<library>/duke/sub/dukeplugins//dukeplugin/<link>static	# header only library
     	<library>/dukeapi//dukeapi/<link>static					# embedded
 		<library>/user-config//cg
-		<library>/user-config//sfml
     : usage-requirements 
-		<include>.. 
+    	<include>.. 
 		<library>/user-config//cg/<link>shared
 	;
 
