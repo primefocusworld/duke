@@ -28,7 +28,7 @@ string& replaceAll(string& context, const string& from, const string& to) {
 void PrototypeFactory::loadFromFolder(const char* directory) {
     const path dir_path(directory);
 #ifdef DEBUG
-    cout << "[PrototypeFactory] reading from path \""<< dir_path << '"' << endl;
+    cout << "[PrototypeFactory] reading from path " << dir_path << endl;
 #endif
     directory_iterator end_itr; // default construction yields past-the-end
     for (directory_iterator itr(dir_path); itr != end_itr; ++itr) {
