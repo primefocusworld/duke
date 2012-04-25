@@ -64,7 +64,6 @@ private:
     CGcontext m_Context;
 public:
     resource::ResourceCache resourceCache;
-    TexturePool texturePool;
     PrototypeFactory prototypeFactory;
 };
 

@@ -49,6 +49,7 @@ private:
     ImageDescription m_EmptyImageDescription;
     bool m_bRenderOccured;
     RenderingContext m_Context;
+    TexturePool m_TexturePool;
 };
 
 #endif /* RENDERING_ENGINE_H_ */

@@ -31,6 +31,7 @@ inline EResourceType TYPE();
 typedef boost::shared_ptr<IResource> SharedResourcePtr;
 
 struct ResourceCache {
+    ~ResourceCache();
     SharedResourcePtr get(EResourceType type, const std::string & name);
 
     void put(EResourceType type, const std::string & name, const SharedResourcePtr &pResource);

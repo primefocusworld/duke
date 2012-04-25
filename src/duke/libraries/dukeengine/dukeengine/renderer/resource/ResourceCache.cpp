@@ -24,4 +24,34 @@ void ResourceCache::put(EResourceType type, const std::string & name, const Shar
     map.insert(std::make_pair(name, pResource));
 }
 
+static const char* const toString(EResourceType type) {
+    switch (type) {
+        case MESH:
+            return "MESH";
+        case IMAGE:
+            return "IMAGE";
+        case SHADER:
+            return "SHADER";
+        case TEXTURE:
+            return "TEXTURE";
+        case PROTOBUF:
+            return "PROTOBUF";
+        case UNDEF:
+        default:
+            return "UNDEF";
+    }
+}
+
+ResourceCache::~ResourceCache() {
+#ifdef DEBUG
+    std::cout << "[ResourceCache] dumping cached resources" << std::endl;
+    for (int i = 0; i < UNDEF; ++i) {
+        std::cout << toString(EResourceType(i)) << " :" << std::endl;
+        ResourceMap &map = m_Map[i];
+        ResourceMap::const_iterator itr(map.begin()), end(map.end());
+        for (; itr != end; ++itr)
+            std::cout << "- '" << itr->first << "'" << std::endl;
+    }
+#endif
+}
 } /* namespace resource */

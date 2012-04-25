@@ -3,7 +3,7 @@
 
 #include "resource/IImageBase.h"
 #include "resource/ITextureBase.h"
-#include "VolatileTexture.h"
+#include "TexturePool.h"
 #include <dukeio/ImageDescription.h>
 #include <vector>
 #include <string>

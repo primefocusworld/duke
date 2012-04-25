@@ -1,95 +1,65 @@
+/*
+ * TexturePool.cpp
+ *
+ *  Created on: Apr 25, 2012
+ *      Author: Guillaume Chatelet
+ */
+
 #include "TexturePool.h"
-#include "resource/ResourceCache.h"
-
 #include "utils/PixelFormatUtils.h"
+#include "IRenderer.h"
+#include <sstream>
 
-#include <boost/foreach.hpp>
-#include <boost/integer_traits.hpp>
+using namespace std;
 
-#include <iostream>
-#include <cassert>
-
-TexturePool::TexturePool() {
+static string makeKey(const TPixelFormat& format, bool mipmap, int width, int height, int depth) {
+    ostringstream ss;
+    ss << toString(format) << '_' << width << '.' << height << '.' << depth << '(' << mipmap << ')';
+    return ss.str();
 }
 
-TexturePool::~TexturePool() {
-    if (!m_Map.empty()) {
-        std::cout << "TexturePool : freeing resources\n";
+inline bool TexturePool::freeSlot(const SharedSlot &pSlot) {
+    return pSlot->refs == 0;
+}
 
-        for (MAP::const_iterator pEntry = m_Map.begin(); pEntry != m_Map.end(); ++pEntry) {
-            const RecyclingTexturePtrList& ptrList(pEntry->second);
-            for (RecyclingTexturePtrList::const_iterator pTextureHolder = ptrList.begin(); pTextureHolder != ptrList.end(); ++pTextureHolder) {
-                const PoolRequest& request((*pTextureHolder)->m_Request);
-                std::cout << " - " << request.dimension.x << "x" << request.dimension.y << "\t" << toString(request.format) << std::endl;
-            }
-        }
+VolatileTexture TexturePool::get(const ImageDescription& desc, int flags) {
+    string key = makeKey(desc.format, flags && TEX_MIPMAP > 0, desc.width, desc.height, desc.depth);
+    SlotPtrList &ptrList = m_Map[key];
+    SlotPtrList::iterator slotItr = std::find_if(ptrList.begin(), ptrList.end(), &TexturePool::freeSlot);
+    TexturePtr pTexture;
+    SharedSlot pSlot;
+    if (slotItr == ptrList.end()) {
+        ostringstream ss;
+        ss << key << '_' << ptrList.size();
+        const string name = ss.str();
+        pTexture.reset(m_Renderer.createTexture(desc, flags));
+        m_Renderer.resourceCache.put(name, pTexture);
+        pSlot.reset(new Slot(name));
+        ptrList.push_back(pSlot);
+    } else {
+        pSlot = *slotItr;
+        m_Renderer.resourceCache.tryGet<ITextureBase>(pSlot->name, pTexture);
     }
+    assert(pSlot);
+    assert(pTexture);
+    if (!pTexture->isRenderTarget()) // image not to be render to ? we must update it
+        pTexture->update(reinterpret_cast<const unsigned char*>(desc.pImageData));
+    return VolatileTexture(pSlot, pTexture);
 }
 
-TexturePool::TextureHolder::TextureHolder(const PoolRequest& request, const ResourcePtr& pResource) :
-                m_Request(request), m_pResource(pResource) {
+VolatileTexture::VolatileTexture(const VolatileTexture& other) :
+                pSlot(other.pSlot), pTexture(other.pTexture) {
+    pSlot->addRef();
 }
 
-ScopedTexture::ScopedTexture() :
-                m_pPool(NULL) {
+VolatileTexture::~VolatileTexture() {
+    if (pSlot)
+        pSlot->release();
 }
 
-ScopedTexture::ScopedTexture(TexturePool* const pPool, TexturePool::TextureHolderPtr pRecylingTexture) :
-                m_pPool(pPool), m_pRecylingTexture(pRecylingTexture) {
-    assert( m_pPool);
+VolatileTexture::VolatileTexture(TexturePool::SharedSlot pSlot, const TexturePtr &pTexture) :
+                pSlot(pSlot), pTexture(pTexture) {
+    assert(pTexture);
+    assert(pSlot);
+    pSlot->addRef();
 }
-
-ScopedTexture::~ScopedTexture() {
-    if (m_pRecylingTexture != NULL)
-        m_pPool->put(m_pRecylingTexture->m_Request, m_pRecylingTexture->m_pResource);
-}
-
-void TexturePool::put(const PoolRequest& request, const ResourcePtr& pResource) {
-    put(TextureHolderPtr(new TextureHolder(request, pResource)));
-}
-
-TexturePool::ScopedTexturePtr TexturePool::putAndGet(const PoolRequest& request, const ResourcePtr& pResource) {
-    return ScopedTexturePtr(new ScopedTexture(this, TextureHolderPtr(new TextureHolder(request, pResource))));
-}
-
-void TexturePool::put(TextureHolderPtr pRecylingTexture) {
-    assert( pRecylingTexture != NULL);
-    m_Map[pRecylingTexture->m_Request].push_front(pRecylingTexture);
-}
-
-int TexturePool::computeDistance(const PoolRequest::Dimension& requested, const PoolRequest::Dimension& actual) {
-    if (requested.x > actual.x || requested.y > actual.y || requested.z > actual.z)
-        return boost::integer_traits<int>::const_max;
-    const int x = requested.x - actual.x;
-    const int y = requested.y - actual.y;
-    const int z = requested.z - actual.z;
-    return x*x+y*y+z*z;
-}
-
-TexturePool::ScopedTexturePtr TexturePool::get(const PoolRequest& request) {
-    const MAP::iterator mapItr = m_Map.find(request);
-
-    if (mapItr == m_Map.end() || mapItr->second.empty())
-        return ScopedTexturePtr();
-    RecyclingTexturePtrList& list = mapItr->second;
-    RecyclingTexturePtrList::iterator bestMatchItr = list.end();
-//	int bestMatchDistance                          = boost::integer_traits<int>::const_max;
-    for (RecyclingTexturePtrList::iterator itr = list.begin(); itr != list.end(); ++itr) {
-        const int distance = computeDistance(request.dimension, (*itr)->m_Request.dimension);
-        if (distance == 0) {
-            bestMatchItr = itr;
-            break;
-        }
-//		if( distance < bestMatchDistance )
-//		{
-//			bestMatchDistance = distance;
-//			bestMatchItr      = itr;
-//		}
-    }
-    if (bestMatchItr == list.end())
-        return ScopedTexturePtr();
-    TextureHolderPtr ptr(*bestMatchItr);
-    list.erase(bestMatchItr);
-    return ScopedTexturePtr(new ScopedTexture(this, ptr));
-}
-

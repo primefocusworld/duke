@@ -1,5 +1,5 @@
 #include "RenderingEngine.h"
-#include "VolatileTexture.h"
+#include "TexturePool.h"
 #include "Factories.h"
 #include "resource/ProtoBufResource.h"
 #include "utils/SfmlProtobufUtils.h"
@@ -71,7 +71,8 @@ inline void RenderingEngine::addResource(const ::google::protobuf::serialize::Me
 }
 
 RenderingEngine::RenderingEngine(const duke::protocol::Renderer& renderer, sf::Window& window, IRendererHost& host, IRenderer& factory) :
-                m_Window(window), m_Configuration(renderer), m_Host(host), m_Renderer(factory), m_Cache(m_Renderer.resourceCache), m_DisplayedFrameCount(0), m_bRenderOccured(false) {
+                m_Window(window), m_Configuration(renderer), m_Host(host), m_Renderer(factory), m_Cache(m_Renderer.resourceCache), m_DisplayedFrameCount(0), m_bRenderOccured(
+                                false), m_TexturePool(m_Renderer) {
     m_EmptyImageDescription.width = 1;
     m_EmptyImageDescription.height = 1;
     m_EmptyImageDescription.depth = 0;
@@ -306,7 +307,7 @@ void RenderingEngine::displayPass(const ::duke::protocol::RenderPass& pass) {
                 if (pass.has_rendertarget())
                     overrideClipDimension(clipDescription, pass.rendertarget());
 
-                VolatileTexture volatileTexture(m_Renderer, clipDescription, TEX_RENTERTARGET);
+                VolatileTexture volatileTexture(m_TexturePool.get(clipDescription, TEX_RENTERTARGET));
                 pRenderTargetTexture = volatileTexture.getTexture();
                 m_Context.renderTargets[renderTargetName] = volatileTexture;
             }
@@ -420,7 +421,7 @@ void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& par
                     case SamplingSource::SURFACE: {
                         RenderTargets::const_iterator itr = m_Context.renderTargets.find(sourceName);
                         if (itr != m_Context.renderTargets.end())
-                            pImageDescription = &(itr->second.getImageDescription());
+                            pImageDescription = &(itr->second.getTexture()->getImageDescription());
                         break;
                     }
                     default:
@@ -458,7 +459,7 @@ void RenderingEngine::applyParameter(const ShaderPtr &pShader, const string& par
             ITextureBase* pTexture;
             switch (samplingSource.type()) {
                 case SamplingSource::CLIP:
-                    m_Context.volatileTextures.push_back(VolatileTexture(m_Renderer, getImageDescriptionFromClip(sourceName)));
+                    m_Context.volatileTextures.push_back(m_TexturePool.get(getImageDescriptionFromClip(sourceName)));
                     pTexture = m_Context.volatileTextures.back().getTexture();
                     break;
                 case SamplingSource::SUPPLIED:
