@@ -25,6 +25,7 @@ public:
     CGprofile getShaderProfile(TShaderType Type) const;
     const char* * getShaderOptions(TShaderType Type) const;
 
+    virtual void initializeGL() = 0;
     virtual IShaderBase* createShader(CGprogram program, TShaderType type) const = 0;
     virtual ITextureBase* createTexture(const ImageDescription& description, unsigned long flags = 0) = 0;
     virtual void setShader(IShaderBase* shader) = 0;

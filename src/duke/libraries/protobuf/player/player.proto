@@ -28,6 +28,7 @@ message Event {
 		JOYBUTTONRELEASED 				= 13;
 		JOYMOVED						= 14;
 		TEXTENTERED 					= 15;
+		UNKNOWN							= 16;
 	}
 	required Type type 					= 1;
 	optional KeyEvent keyEvent 			= 2;

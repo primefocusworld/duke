@@ -12,11 +12,19 @@
 #include <dukeengine/RenderInterface.h>
 
 #include <QGLWidget>
+#include <QTimer>
 
 class RenderingEngine : public QGLWidget {
+    Q_OBJECT
 public:
     RenderingEngine(IRendererHost&, const QGLFormat& format, QWidget* parent = 0, const QGLWidget* shareWidget = 0, Qt::WindowFlags f = 0);
-    void loop();
+    virtual ~RenderingEngine();
+protected:
+    virtual void initializeGL();
+    virtual void resizeGL(int width, int height);
+    virtual bool event ( QEvent * e );
+protected slots:
+    virtual void updateGL();
 private:
     bool simulationStep();
     void waitForBlankingAndWarn(bool presented) const;
@@ -47,6 +55,7 @@ private:
     bool m_bRenderOccured;
     RenderingContext m_Context;
     TexturePool m_TexturePool;
+    QTimer m_RefreshTimer;
 };
 
 #endif /* RENDERING_ENGINE_H_ */

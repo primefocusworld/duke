@@ -2,11 +2,14 @@
 #include "TexturePool.h"
 #include "Factories.h"
 #include "resource/ProtoBufResource.h"
-#include "utils/SfmlProtobufUtils.h"
+#include "utils/QtEventToProtobuf.h"
 
 #include <dukeapi/ProtobufSerialize.h>
 
 #include <google/protobuf/descriptor.h>
+
+#include <QEvent>
+#include <QCoreApplication>
 
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
@@ -83,20 +86,43 @@ RenderingEngine::RenderingEngine(IRendererHost& host, const QGLFormat& format, Q
     m_EngineStatus.set_action(Engine::RENDER_START);
 }
 
-void RenderingEngine::loop() {
-    bool bLastFrame = false;
-    while (!bLastFrame) {
-        // calling a simulation step
-        try {
-            bLastFrame = simulationStep();
-        } catch (exception& e) {
-            cerr << HEADER + "Unexpected error : " + e.what() << endl;
-            boost::this_thread::sleep(boost::posix_time::millisec(200));
-        } catch (...) {
-            cerr << HEADER + "Unexpected error." << endl;
-        }
-        ++m_DisplayedFrameCount;
+RenderingEngine::~RenderingEngine() {
+}
+
+void RenderingEngine::initializeGL() {
+    m_Renderer.initializeGL();
+    QObject::connect(&m_RefreshTimer, SIGNAL(timeout()), this, SLOT(updateGL()));
+    m_RefreshTimer.start(0);
+}
+
+void RenderingEngine::resizeGL(int width, int height) {
+    m_Renderer.windowResized(width, height);
+}
+
+void RenderingEngine::updateGL() {
+    try {
+        if (simulationStep())
+            QCoreApplication::instance()->quit();
+    } catch (exception& e) {
+        cerr << HEADER + "Unexpected error : " + e.what() << endl;
+        boost::this_thread::sleep(boost::posix_time::millisec(200));
+    } catch (...) {
+        cerr << HEADER + "Unexpected error." << endl;
     }
+    ++m_DisplayedFrameCount;
+}
+
+bool RenderingEngine::event(QEvent * pEvent) {
+    assert(pEvent);
+
+    Event event;
+    if (Update(event, *pEvent)) {
+        MessageHolder holder;
+        pack(event, holder);
+        m_Host.pushEvent(holder);
+    }
+
+    return QWidget::event(pEvent);
 }
 
 static void dump(const google::protobuf::Descriptor* pDescriptor, const google::protobuf::serialize::MessageHolder &holder) {
@@ -202,24 +228,6 @@ bool RenderingEngine::simulationStep() {
             m_EngineStatus.set_action(Engine::RENDER_STOP);
     }
 
-    // Sending back messages if needed
-//    MessageHolder holder;
-//    try {
-//        Event event;
-//        while (m_Window.PollEvent(m_Event)) {
-//            if (m_Event.Type == sf::Event::Resized)
-//                m_Renderer.windowResized(m_Event.Size.Width, m_Event.Size.Height);
-//            event.Clear();
-//            // transcoding the event to protocol buffer
-//            Update(event, m_Event);
-//            pack(event, holder);
-//            m_Host.pushEvent(holder);
-//        }
-//    } catch (exception& e) {
-//        cerr << HEADER + "Unexpected error while dispatching events : " + e.what() << endl;
-//        return false;
-//    }
-//
 //    BOOST_FOREACH ( const DumpedImages::value_type &pair, m_Context.dumpedImages) {
 //        const string &name = pair.first;
 //        Texture texture;

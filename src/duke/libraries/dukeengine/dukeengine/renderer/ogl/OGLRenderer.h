@@ -19,6 +19,7 @@ public:
 	virtual void          checkCaps();
 
 	// IRenderer
+	virtual void initializeGL();
 	virtual void setShader( IShaderBase* shader );
 	virtual void setVertexBuffer( unsigned int stream, const IBufferBase* buffer, unsigned long stride );
 	virtual void setIndexBuffer( const IBufferBase* buffer );

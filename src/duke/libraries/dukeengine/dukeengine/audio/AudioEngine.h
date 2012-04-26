@@ -1,14 +1,12 @@
 #ifndef AUDIOENGINE_H
 #define AUDIOENGINE_H
 
-#include <SFML/Audio.hpp>
 #include <boost/chrono.hpp>
 #include <player.pb.h>
 
 namespace duke {namespace protocol {class Playlist;}}
 
 class AudioEngine {
-
 public:
     AudioEngine();
     ~AudioEngine();
@@ -23,7 +21,8 @@ public:
     void sync(::boost::chrono::high_resolution_clock::duration d);
 
 private:
-    sf::Music m_Music;
+// TODO replace with phonon from Qt
+//    sf::Music m_Music;
     bool bFileLoaded;
 };
 

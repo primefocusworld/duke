@@ -49,6 +49,14 @@ int CheckGLError(const char* msg, const char* file, int line) {
 OGLRenderer::OGLRenderer() :
                 m_lastPBOUsed(0) {
 
+}
+
+OGLRenderer::~OGLRenderer() {
+    if (m_Pbo)
+        glDeleteBuffersARB(2, m_Pbo);
+}
+
+void OGLRenderer::initializeGL() {
     // Initializing OGL Extensions
     GLenum err = glewInit();
     if (err != GLEW_OK) {
@@ -95,11 +103,6 @@ OGLRenderer::OGLRenderer() :
     // Create a framebuffer object
     glGenFramebuffersEXT(1, &m_Fbo);
     glGenRenderbuffersEXT(1, &m_RenderBuffer);
-}
-
-OGLRenderer::~OGLRenderer() {
-    if (m_Pbo)
-        glDeleteBuffersARB(2, m_Pbo);
 }
 
 // IFactory
