@@ -39,19 +39,19 @@ private:
     void consumeDebug(const ::duke::protocol::Debug&) const;
     void consumeScene(const ::duke::protocol::Scene&);
     void consumePlaybackState(const ::duke::protocol::PlaybackState&);
-    void consumeTransport(const ::duke::protocol::Transport&, const ::google::protobuf::serialize::MessageHolder_Action);
-    void consumeInfo(::duke::protocol::Info, const ::google::protobuf::serialize::MessageHolder_Action);
-    void consumeCache(const ::duke::protocol::Cache&, const ::google::protobuf::serialize::MessageHolder_Action);
+    void consumeTransport(const ::duke::protocol::Transport&, const ::google::protobuf::serialize::MessageHolder::Action);
+    void consumeInfo(::duke::protocol::Info, const ::google::protobuf::serialize::MessageHolder::Action);
+    void consumeCache(const ::duke::protocol::Cache&, const ::google::protobuf::serialize::MessageHolder::Action);
     void updatePlaybackState();
-    void updateInfoPlaybackState(::duke::protocol::Info_PlaybackState &) const ;
-    void updateInfoCacheState(::duke::protocol::Info_CacheState &cache) const ;
-    void updateInfoImages(::google::protobuf::RepeatedPtrField<duke::protocol::Info_ImageInfo> &imageInfos) const ;
+    void updateInfoPlaybackState(::duke::protocol::Info::PlaybackState &) const ;
+    void updateInfoCacheState(::duke::protocol::Info::CacheState &cache) const ;
+    void updateInfoImages(::google::protobuf::RepeatedPtrField<duke::protocol::Info::ImageInfo> &imageInfos) const ;
     void updateInfoExtensions(::google::protobuf::RepeatedPtrField<std::string> &extensions) const ;
 
     void applyTransport(const ::duke::protocol::Transport&);
     void consumeUntilRenderOrQuit();
     bool handleQuitMessage(const ::google::protobuf::serialize::SharedHolder&);
-    std::string dumpInfo(const ::duke::protocol::Debug_Content& debug) const;
+    std::string dumpInfo(const ::duke::protocol::Debug::Content& debug) const;
 
     void updatePlayback();
 

@@ -1,7 +1,7 @@
 /*
  * PlaylistBuilder.cpp
  *
- *  Created on: 7 févr. 2012
+ *  Created on: 7 fï¿½vr. 2012
  *      Author: Guillaume Chatelet
  */
 
@@ -57,7 +57,7 @@ Clip& TrackBuilder::addImage(const char *filename, const Range &record) {
     Clip *pClip = track.add_clip();
     set(pClip->mutable_record(), record);
     Media &media = *pClip->mutable_media();
-    media.set_type(Media_Type_SINGLE_IMAGE);
+    media.set_type(Media::SINGLE_IMAGE);
     media.set_filename(filename);
     return *pClip;
 }

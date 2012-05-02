@@ -22,19 +22,19 @@ struct TrackBuilder {
     Clip& addImage(const char *filename, const Range &record);
 
     inline Clip& addMovie(const char *filename, const Range &record, const Range &source) {
-        return addMedia(filename, record, source, Media_Type_MOVIE_CONTAINER);
+        return addMedia(filename, record, source, Media::MOVIE_CONTAINER);
     }
 
     inline Clip& addMovie(const char *filename, const Range &record, const unsigned int offset) {
-        return addMedia(filename, record, offset, Media_Type_MOVIE_CONTAINER);
+        return addMedia(filename, record, offset, Media::MOVIE_CONTAINER);
     }
 
     inline Clip& addSequence(const char *filename, const Range &record, const Range &source) {
-        return addMedia(filename, record, source, Media_Type_IMAGE_SEQUENCE);
+        return addMedia(filename, record, source, Media::IMAGE_SEQUENCE);
     }
 
     inline Clip& addSequence(const char *filename, const Range &record, const unsigned int offset) {
-        return addMedia(filename, record, offset, Media_Type_IMAGE_SEQUENCE);
+        return addMedia(filename, record, offset, Media::IMAGE_SEQUENCE);
     }
     unsigned int currentRecord()const{return currentRec;}
 private:

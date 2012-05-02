@@ -1,3 +1,5 @@
+import path ;
+
 project
 	: requirements
 		<library>/dukexcore//dukexcore/<link>static			# embedded
@@ -14,5 +16,5 @@ project
 explicit dukexgui ;
 lib dukexgui
     : 
-        [ glob-tree *.ui *.cpp *.qrc *.h : IUIBuilder.h IUIPluginInterfaces.h UIPluginLoader.h timeline/TimelineTypes.h timeline/UIGraphicsMovieItem.h ]
+        [ glob-tree *.ui *.cpp *.qrc *.h : IUIBuilder.h IUIPluginInterfaces.h UIPluginLoader.h ]
 	;

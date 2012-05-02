@@ -6,7 +6,6 @@
 
 #include <dukeapi/sequence/PlaylistHelper.h>
 
-#include <dukeengine/renderer/ogl/OGLRenderer.h>
 #include <dukeengine/renderer/utils/PixelFormatUtils.h>
 #include <dukeengine/image/ImageToolbox.h>
 
@@ -15,7 +14,6 @@
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include <boost/foreach.hpp>
-#include <boost/thread/locks.hpp>
 #include <boost/chrono.hpp>
 
 #include <iostream>
@@ -84,7 +82,7 @@ bool Application::handleQuitMessage(const ::google::protobuf::serialize::SharedH
         m_iReturnCode = EXIT_FAILURE;
         return true;
     }
-    if (pHolder->action() == MessageHolder_Action_CLOSE_CONNECTION) {
+    if (pHolder->action() == MessageHolder::CLOSE_CONNECTION) {
         m_iReturnCode = pHolder->return_value();
         return true;
     }
@@ -116,11 +114,11 @@ static inline uint32_t cueClipAbsolute(const PlaylistHelper &helper, unsigned in
     return clips[clipIndex].first;
 }
 
-static inline uint32_t cueClip(const Transport_Cue& cue, const PlaylistHelper &helper, unsigned int current) {
+static inline uint32_t cueClip(const Transport::Cue& cue, const PlaylistHelper &helper, unsigned int current) {
     return cue.cuerelative() ? cueClipRelative(helper, current, cue.value()) : cueClipAbsolute(helper, current, cue.value());
 }
 
-static inline uint32_t cueFrame(const Transport_Cue& cue, const PlaylistHelper &helper, int32_t current) {
+static inline uint32_t cueFrame(const Transport::Cue& cue, const PlaylistHelper &helper, int32_t current) {
     if (cue.cuerelative())
         return helper.range.offsetLoopFrame(current, cue.value()).first;
     else
@@ -131,7 +129,7 @@ static inline uint32_t getFrameFromCueMessage(const Transport_Cue& cue, const Pl
     return cue.cueclip() ? cueClip(cue, helper, current) : cueFrame(cue, helper, current);
 }
 
-static inline playback::PlaybackType get(PlaybackState_PlaybackMode mode) {
+static inline playback::PlaybackType get(PlaybackState::PlaybackMode mode) {
     switch (mode) {
         case PlaybackState::RENDER:
             return playback::RENDER;
@@ -168,7 +166,6 @@ void Application::consumePlaybackState(const PlaybackState &playbackState) {
 void Application::updatePlaybackState() {
     using namespace boost::chrono;
     const high_resolution_clock::duration nsPerFrame = playback::nsPerFrame(m_PlaybackState.frameratenumerator(), m_PlaybackState.frameratedenominator());
-//    cout << HEADER << "frame time " << duration_cast<milliseconds>(nsPerFrame) << endl;
     m_Playback.init(m_Playlist.range, m_PlaybackState.loop(), nsPerFrame);
     m_Playback.setType(get(m_PlaybackState.playbackmode()));
 }
@@ -241,9 +238,9 @@ void Application::consumeDebug(const Debug &debug) const {
         ::boost::this_thread::sleep(::boost::posix_time::seconds(debug.pause()));
 }
 
-void Application::consumeTransport(const Transport &transport, const MessageHolder_Action action) {
+void Application::consumeTransport(const Transport &transport, const MessageHolder::Action action) {
     switch (action) {
-        case MessageHolder_Action_CREATE: {
+        case MessageHolder::CREATE: {
             applyTransport(transport);
             if (transport.has_autonotifyonframechange())
                 m_bAutoNotifyOnFrameChange = transport.autonotifyonframechange();
@@ -251,9 +248,9 @@ void Application::consumeTransport(const Transport &transport, const MessageHold
                 return;
             break;
         }
-        case MessageHolder_Action_RETRIEVE: {
+        case MessageHolder::RETRIEVE: {
             Transport transport;
-            transport.set_type(::Transport_TransportType_CUE);
+            transport.set_type(::Transport::CUE);
             Transport_Cue *cue = transport.mutable_cue();
             cue->set_value(m_Playback.frame());
             push(m_IO, transport);
@@ -301,7 +298,7 @@ struct CacheStateGatherer {
     }
 };
 
-void Application::updateInfoCacheState(Info_CacheState &infos) const {
+void Application::updateInfoCacheState(Info::CacheState &infos) const {
     if (!m_Cache.enabled())
         return;
     image::WorkUnitIds ids;
@@ -311,12 +308,12 @@ void Application::updateInfoCacheState(Info_CacheState &infos) const {
     gatherer.update();
 }
 
-void Application::updateInfoPlaybackState(Info_PlaybackState &infos) const {
+void Application::updateInfoPlaybackState(Info::PlaybackState &infos) const {
     infos.set_frame(m_Playback.frame());
     infos.set_fps(m_FrameTimings.frequency());
 }
 
-void Application::updateInfoImages(RepeatedPtrField<Info_ImageInfo> &infos) const {
+void Application::updateInfoImages(RepeatedPtrField<Info::ImageInfo> &infos) const {
     if (m_FileBufferHolder.getImages().empty())
         return;
     MediaFrames frames;
@@ -343,28 +340,28 @@ void Application::updateInfoExtensions(RepeatedPtrField<string> &extensions) con
         *extensions.Add() = *pExtensions;
 }
 
-void Application::consumeInfo(Info info, const MessageHolder_Action action) {
+void Application::consumeInfo(Info info, const MessageHolder::Action action) {
     switch (info.content()) {
-        case Info_Content_PLAYBACKSTATE:
+        case Info::PLAYBACKSTATE:
             updateInfoPlaybackState(*info.mutable_playbackstate());
             break;
-        case Info_Content_CACHESTATE:
+        case Info::CACHESTATE:
             updateInfoCacheState(*info.mutable_cachestate());
             break;
-        case Info_Content_IMAGEINFO:
+        case Info::IMAGEINFO:
             updateInfoImages(*info.mutable_image());
             break;
-        case Info_Content_EXTENSIONS:
+        case Info::EXTENSIONS:
             updateInfoExtensions(*info.mutable_extension());
             break;
         default:
             return;
     }
     switch (action) {
-        case MessageHolder_Action_CREATE:
+        case MessageHolder::CREATE:
             info.PrintDebugString();
             break;
-        case MessageHolder_Action_RETRIEVE: {
+        case MessageHolder::RETRIEVE: {
             pushEvent(pack(info));
             break;
         }
@@ -373,10 +370,10 @@ void Application::consumeInfo(Info info, const MessageHolder_Action action) {
     }
 }
 
-void Application::consumeCache(const Cache &cache, const MessageHolder_Action action) {
-    if (action == MessageHolder_Action_CREATE) {
+void Application::consumeCache(const Cache &cache, const MessageHolder::Action action) {
+    if (action == MessageHolder::CREATE) {
         m_Cache.init(m_Playlist, cache);
-    } else if (action == MessageHolder_Action_RETRIEVE) {
+    } else if (action == MessageHolder::RETRIEVE) {
         m_Cache.configuration().PrintDebugString();
         pushEvent(pack(m_Cache.configuration()));
     }
@@ -476,7 +473,7 @@ bool Application::renderFinished(unsigned msToPresent) {
         const uint32_t newFrame = m_Playback.frame();
         if (m_PreviousFrame != newFrame && m_bAutoNotifyOnFrameChange) {
             Transport transport;
-            transport.set_type(::Transport_TransportType_CUE);
+            transport.set_type(::Transport::CUE);
             Transport_Cue *cue = transport.mutable_cue();
             cue->set_value(newFrame);
             push(m_IO, transport);
@@ -522,14 +519,14 @@ ostream& operator<<(ostream& stream, const FilenameExtractor& fe) {
     return stream << fe.id.filename;
 }
 
-string Application::dumpInfo(const Debug_Content& info) const {
+string Application::dumpInfo(const Debug::Content& info) const {
     stringstream ss;
 
     switch (info) {
-        case Debug_Content_FRAME:
+        case Debug::FRAME:
             ss << m_Playback.frame();
             break;
-        case Debug_Content_FILENAMES: {
+        case Debug::FILENAMES: {
             image::WorkUnitIds ids;
             ids.reserve(200);
             m_Cache.dumpKeys(ids);
@@ -537,7 +534,7 @@ string Application::dumpInfo(const Debug_Content& info) const {
 //            ss << "found " << ids.size() << " files in cache";
             break;
         }
-        case Debug_Content_FPS: {
+        case Debug::FPS: {
             ss << m_FrameTimings.frequency();
             break;
         }
