@@ -2,6 +2,7 @@
 #include <dukeengine/CmdLineOptions.h>
 #include <dukeengine/Version.h>
 #include <dukeengine/Application.h>
+#include <dukeengine/EngineState.h>
 #include <dukeengine/host/io/ImageDecoderFactoryImpl.h>
 #include <dukeapi/messageBuilder/QuitBuilder.h>
 #include <dukeapi/io/PlaybackReader.h>
@@ -53,9 +54,14 @@ private:
 const static string HEADER = "[Configuration] ";
 
 Configuration::Configuration(int argc, char** argv) :
-                m_iReturnValue(EXIT_RELAUNCH), m_CmdLineOnly("command line only options"), m_Config("configuration options"), m_Display("display options"), m_Interactive(
-                                "interactive mode options"), m_CmdlineOptionsGroup("Command line options"), m_ConfigFileOptions("Configuration file options"), m_HiddenOptions(
-                                "hidden options") {
+                m_iReturnValue(EXIT_RELAUNCH), //
+                m_CmdLineOnly("command line only options"), //
+                m_Config("configuration options"), //
+                m_Display("display options"), //
+                m_Interactive("interactive mode options"), //
+                m_CmdlineOptionsGroup("Command line options"), //
+                m_ConfigFileOptions("Configuration file options"), //
+                m_HiddenOptions("hidden options") {
 
     using namespace ::duke::protocol;
 
@@ -211,7 +217,7 @@ Configuration::Configuration(int argc, char** argv) :
         queueInserter << stop; // stopping rendering for now
 
         const extension_set validExtensions = extension_set::create(listOfExtensions);
-        duke::playlist::Playlist playlist = browseMode ?  browseViewerComplete(validExtensions, inputs[0]) :  browsePlayer(validExtensions, inputs);
+        duke::playlist::Playlist playlist = browseMode ? browseViewerComplete(validExtensions, inputs[0]) : browsePlayer(validExtensions, inputs);
 
         if (playlist.shot_size() == 0)
             throw runtime_error("No media found, nothing to render. Aborting.");
@@ -227,10 +233,10 @@ Configuration::Configuration(int argc, char** argv) :
         {
             duke::protocol::PlaybackState playback;
             const PlaybackState::PlaybackMode mode = m_Vm.count(NOFRAMERATE) > 0 ? //
-                            PlaybackState::RENDER : //
-                            m_Vm.count(NOSKIP) > 0 ? //
-                                            PlaybackState::NO_SKIP : //
-                                            PlaybackState::DROP_FRAME_TO_KEEP_REALTIME;
+            PlaybackState::RENDER : //
+                                                     m_Vm.count(NOSKIP) > 0 ? //
+                                                     PlaybackState::NO_SKIP : //
+                                                                     PlaybackState::DROP_FRAME_TO_KEEP_REALTIME;
             playback.set_playbackmode(mode);
             playback.set_frameratenumerator(playlist.framerate());
             playback.set_loop(playlist.loop());
@@ -273,6 +279,11 @@ void Configuration::run(IMessageIO& io, ImageDecoderFactoryImpl &imageDecoderFac
     cache.set_size(cacheSize);
     cache.set_threading(threads);
     cache.clear_region();
+
+    EngineState state(imageDecoderFactory, cache);
+    Renderer renderer = waitForRenderer(state, io);
+
+    createWindowAndLoop(renderer, state);
     Application(imageDecoderFactory, io, m_iReturnValue, cache);
 }
 

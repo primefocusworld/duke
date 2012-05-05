@@ -24,9 +24,7 @@ void createWindowAndLoop(duke::protocol::Renderer configuration, IRendererHost& 
         const char * const filename = "duke";
         QApplication qapp(arguments, const_cast<char**>(&filename), true);
 
-        Qt::WindowFlags windowflags = 0; // normal window
-        //Qt::WindowFlags windowflags = Qt::CustomizeWindowHint; // borderless window
-
+        Qt::WindowFlags windowflags = 0;
         RenderingEngine renderer(host, QGLFormat(), 0, 0, windowflags);
 
         if (configuration.fullscreen())
