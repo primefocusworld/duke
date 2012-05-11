@@ -26,10 +26,10 @@ namespace protocol {
 string MediaFrame::filename() const {
     boost::filesystem::path path;
     switch (type) {
-        case duke::protocol::Media_Type_SINGLE_IMAGE:
+        case duke::protocol::Media::SINGLE_IMAGE:
             path = item.path;
             break;
-        case duke::protocol::Media_Type_IMAGE_SEQUENCE:
+        case duke::protocol::Media::IMAGE_SEQUENCE:
             path = item.path / sequence::instanciatePattern(item.sequence.pattern, source);
             break;
         default:
@@ -87,7 +87,7 @@ static inline void assertBefore(const Range &first, const Range &second) {
 static inline void checkMedia(const Media &media) {
     if (media.filename().empty())
         throw PlaylistError(string("Media must have a filename\n") + media.DebugString());
-    if (media.type() == Media_Type_IMAGE_SEQUENCE && media.filename().find('#') == string::npos)
+    if (media.type() == Media::IMAGE_SEQUENCE && media.filename().find('#') == string::npos)
         throw PlaylistError(string("Sequence filename must have a '#' in it : ") + media.filename());
 }
 
@@ -105,10 +105,10 @@ static sequence::BrowseItem prepare(const Clip &clip) {
         return sequence::BrowseItem();
     const Media &media = clip.media();
     switch (media.type()) {
-        case Media_Type_MOVIE_CONTAINER:
-        case Media_Type_SINGLE_IMAGE:
+        case Media::MOVIE_CONTAINER:
+        case Media::SINGLE_IMAGE:
             return sequence::create_file(media.filename());
-        case Media_Type_IMAGE_SEQUENCE: {
+        case Media::IMAGE_SEQUENCE: {
             boost::filesystem::path path(media.filename());
             return sequence::create_sequence(path.parent_path(), sequence::parsePattern(path.filename().string()), make(media.source()));
         }

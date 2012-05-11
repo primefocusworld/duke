@@ -1,3 +1,5 @@
+import path ;
+
 project
 	: requirements
 		<library>/dukexcore//dukexcore/<link>static			# embedded

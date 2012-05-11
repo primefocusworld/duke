@@ -26,8 +26,8 @@ static void buildVertex(Vertex * const pVertex //
 static inline void buildPlaneVertexBuffer(VertexBuffer* const pVertexBuffer //
                 , const float x, const float y //
                 , const float width, const float height) {
-    pVertexBuffer->add_flag(VertexBuffer_VertexType_POS);
-    pVertexBuffer->add_flag(VertexBuffer_VertexType_UV1);
+    pVertexBuffer->add_flag(VertexBuffer::POS);
+    pVertexBuffer->add_flag(VertexBuffer::UV1);
     buildVertex(pVertexBuffer->add_vertex(), x, y, 1, 0, 1); // 0
     buildVertex(pVertexBuffer->add_vertex(), x + width, y, 1, 1, 1); // 1
     buildVertex(pVertexBuffer->add_vertex(), x, y + height, 1, 0, 0); // 2
@@ -44,7 +44,7 @@ static inline void buildPlaneIndexBuffer(IndexBuffer* const pIndexBuffer) {
 Mesh MeshBuilder::buildPlane(const std::string &name) {
     Mesh mesh;
     mesh.set_name(name);
-    mesh.set_type(Mesh_MeshType_TRIANGLELIST);
+    mesh.set_type(Mesh::TRIANGLELIST);
     buildPlaneVertexBuffer(mesh.mutable_vertexbuffer(), -1, -1, 2, 2);
     buildPlaneIndexBuffer(mesh.mutable_indexbuffer());
     return mesh;

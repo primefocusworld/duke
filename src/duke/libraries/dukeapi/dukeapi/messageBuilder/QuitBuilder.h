@@ -8,6 +8,8 @@
 #ifndef QUITBUILDER_H_
 #define QUITBUILDER_H_
 
+#include <protocol.pb.h>
+
 #include <cstdlib> // for EXIT_SUCCESS and EXIT_FAILURE
 #define EXIT_RELAUNCH -1
 
@@ -17,7 +19,7 @@ namespace serialize {
 
 inline MessageHolder close_connection(int32_t exit_code) {
     MessageHolder holder;
-    holder.set_action(MessageHolder_Action_CLOSE_CONNECTION);
+    holder.set_action(MessageHolder::CLOSE_CONNECTION);
     holder.set_return_value(exit_code);
     return holder;
 }

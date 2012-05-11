@@ -13,12 +13,15 @@ using namespace std;
 namespace {
 
 Transport MAKE(const Transport_TransportType type //
-               , const int value = -1 //
-               , const bool cueRelative = false //
-               , const bool cueClip = false) {
+,
+               const int value = -1 //
+               ,
+               const bool cueRelative = false //
+               ,
+               const bool cueClip = false) {
     Transport transport;
     transport.set_type(type);
-    if (type == Transport_TransportType_CUE) {
+    if (type == Transport::CUE) {
         if (!cueRelative && value < 0)
             throw std::runtime_error("can't cue to a negative frame");
         Transport_Cue *cue = transport.mutable_cue();
@@ -35,8 +38,8 @@ Transport MAKE(const Transport_TransportType type //
 
 } // namespace
 
-InteractiveMessageIO::InteractiveMessageIO(MessageQueue& initialMessages) :
-    m_ToApplicationQueue(initialMessages), m_bPlay(false), m_iFitMode(0) {
+InteractiveMessageIO::InteractiveMessageIO() :
+                m_bPlay(false), m_iFitMode(0) {
 }
 
 InteractiveMessageIO::~InteractiveMessageIO() {
@@ -58,53 +61,53 @@ void InteractiveMessageIO::push(const SharedHolder& pHolder) {
     const MessageHolder &holder = *pHolder;
 
     // we are taking into account only Event type messages
-    if (!isType<Event> (holder))
+    if (!isType<Event>(holder))
         return;
 
     Event event;
     unpack(holder, event);
     switch (event.type()) {
-        case Event_Type_KEYPRESSED: {
+        case Event::KEYPRESSED: {
             switch (event.keyevent().code()) {
-                case KeyEvent_KeyCode_Space:
+                case KeyEvent::Space:
                     m_bPlay = !m_bPlay;
                     if (m_bPlay)
-                        PUSH(MAKE(Transport_TransportType_PLAY));
+                        PUSH(MAKE(Transport::PLAY));
                     else
-                        PUSH(MAKE(Transport_TransportType_STOP));
+                        PUSH(MAKE(Transport::STOP));
                     break;
-                case KeyEvent_KeyCode_Left:
+                case KeyEvent::Left:
                     m_bPlay = false;
                     if (event.keyevent().shift())
-                        PUSH(MAKE(Transport_TransportType_CUE, -100, true));
+                        PUSH(MAKE(Transport::CUE, -100, true));
                     else
-                        PUSH(MAKE(Transport_TransportType_CUE, -1, true));
+                        PUSH(MAKE(Transport::CUE, -1, true));
                     break;
-                case KeyEvent_KeyCode_Right:
+                case KeyEvent::Right:
                     m_bPlay = false;
                     if (event.keyevent().shift())
-                        PUSH(MAKE(Transport_TransportType_CUE, 100, true));
+                        PUSH(MAKE(Transport::CUE, 100, true));
                     else
-                        PUSH(MAKE(Transport_TransportType_CUE, 1, true));
+                        PUSH(MAKE(Transport::CUE, 1, true));
                     break;
-                case KeyEvent_KeyCode_Home:
+                case KeyEvent::Home:
                     m_bPlay = false;
-                    PUSH(MAKE(Transport_TransportType_CUE_FIRST));
+                    PUSH(MAKE(Transport::CUE_FIRST));
                     break;
-                case KeyEvent_KeyCode_End:
+                case KeyEvent::End:
                     m_bPlay = false;
-                    PUSH(MAKE(Transport_TransportType_CUE_LAST));
+                    PUSH(MAKE(Transport::CUE_LAST));
                     break;
-                case KeyEvent_KeyCode_Escape:
+                case KeyEvent::Escape:
                     m_ToApplicationQueue.push(make_shared(quitSuccess()));
                     break;
-                case KeyEvent_KeyCode_PageUp:
-                    PUSH(MAKE(Transport_TransportType_CUE, 1, true, true));
+                case KeyEvent::PageUp:
+                    PUSH(MAKE(Transport::CUE, 1, true, true));
                     break;
-                case KeyEvent_KeyCode_PageDown:
-                    PUSH(MAKE(Transport_TransportType_CUE, -1, true, true));
+                case KeyEvent::PageDown:
+                    PUSH(MAKE(Transport::CUE, -1, true, true));
                     break;
-                case KeyEvent_KeyCode_F: {
+                case KeyEvent::F: {
                     m_iFitMode = (m_iFitMode + 1) % 3; // 1:1 / fit display H / fit display W
                     StaticParameter displayMode;
                     displayMode.set_name("displayMode");
@@ -113,13 +116,13 @@ void InteractiveMessageIO::push(const SharedHolder& pHolder) {
                     PUSH(displayMode);
                     break;
                 }
-                case KeyEvent_KeyCode_G: {
-                    PUSH(MAKE(Transport_TransportType_CUE, atoi(m_ssSeek.str().c_str()), false, false));
+                case KeyEvent::G: {
+                    PUSH(MAKE(Transport::CUE, atoi(m_ssSeek.str().c_str()), false, false));
                     m_ssSeek.str("");
                     m_ssSeek.clear();
                     break;
                 }
-                case KeyEvent_KeyCode_H: {
+                case KeyEvent::H: {
                     cout << "SHORTCUTS" << endl;
                     cout << setw(15) << "[H]" << setw(20) << "Display this help" << endl;
                     cout << setw(15) << "[I]" << setw(20) << "Display image info" << endl;
@@ -135,79 +138,79 @@ void InteractiveMessageIO::push(const SharedHolder& pHolder) {
                     cout << setw(15) << "[Esc]" << setw(20) << "Quit" << endl;
                     break;
                 }
-                case KeyEvent_KeyCode_D: {
+                case KeyEvent::D: {
                     {
                         Info info;
-                        info.set_content(Info_Content_PLAYBACKSTATE);
+                        info.set_content(Info::PLAYBACKSTATE);
                         PUSH(info);
                     }
                     {
                         Info info;
-                        info.set_content(Info_Content_CACHESTATE);
+                        info.set_content(Info::CACHESTATE);
                         PUSH(info);
                     }
                     {
                         Info info;
-                        info.set_content(Info_Content_EXTENSIONS);
+                        info.set_content(Info::EXTENSIONS);
                         PUSH(info);
                     }
                     {
                         Info info;
-                        info.set_content(Info_Content_IMAGEINFO);
+                        info.set_content(Info::IMAGEINFO);
                         PUSH(info);
                     }
                     break;
                 }
-                case KeyEvent_KeyCode_I: {
+                case KeyEvent::I: {
                     Debug d;
                     d.add_line("IMAGE INFO");
                     d.add_line("    current frame: %0");
                     d.add_line("    associated file(s): %1");
                     d.add_line("    FPS: %2");
-                    d.add_content(Debug_Content_FRAME);
-                    d.add_content(Debug_Content_FILENAMES);
-                    d.add_content(Debug_Content_FPS);
+                    d.add_content(Debug::FRAME);
+                    d.add_content(Debug::FILENAMES);
+                    d.add_content(Debug::FPS);
                     PUSH(d);
                     break;
                 }
-                case KeyEvent_KeyCode_Num0:
-                case KeyEvent_KeyCode_Numpad0:
+                case KeyEvent::Num0:
+                case KeyEvent::Numpad0:
                     m_ssSeek << 0;
                     break;
-                case KeyEvent_KeyCode_Num1:
-                case KeyEvent_KeyCode_Numpad1:
+                case KeyEvent::Num1:
+                case KeyEvent::Numpad1:
                     m_ssSeek << 1;
                     break;
-                case KeyEvent_KeyCode_Num2:
-                case KeyEvent_KeyCode_Numpad2:
+                case KeyEvent::Num2:
+                case KeyEvent::Numpad2:
                     m_ssSeek << 2;
                     break;
-                case KeyEvent_KeyCode_Num3:
-                case KeyEvent_KeyCode_Numpad3:
+                case KeyEvent::Num3:
+                case KeyEvent::Numpad3:
                     m_ssSeek << 3;
                     break;
-                case KeyEvent_KeyCode_Num4:
-                case KeyEvent_KeyCode_Numpad4:
+                case KeyEvent::Num4:
+                case KeyEvent::Numpad4:
                     m_ssSeek << 4;
                     break;
-                case KeyEvent_KeyCode_Num5:
-                case KeyEvent_KeyCode_Numpad5:
+                case KeyEvent::Num5:
+                case KeyEvent::Numpad5:
                     m_ssSeek << 5;
                     break;
-                case KeyEvent_KeyCode_Num6:
-                case KeyEvent_KeyCode_Numpad6:
+                case KeyEvent::Num6:
+                case KeyEvent::Numpad6:
                     m_ssSeek << 6;
                     break;
-                case KeyEvent_KeyCode_Num7:
-                case KeyEvent_KeyCode_Numpad7:
+                case KeyEvent::Num7:
+                case KeyEvent::Numpad7:
                     m_ssSeek << 7;
                     break;
-                case KeyEvent_KeyCode_Num8:
-                case KeyEvent_KeyCode_Numpad8:
+                case KeyEvent::Num8:
+                case KeyEvent::Numpad8:
                     m_ssSeek << 8;
                     break;
-                case KeyEvent_KeyCode_Num9:
-                case KeyEvent_KeyCode_Numpad9:
+                case KeyEvent::Num9:
+                case KeyEvent::Numpad9:
                     m_ssSeek << 9;
                     break;
                 default:
@@ -215,7 +218,7 @@ void InteractiveMessageIO::push(const SharedHolder& pHolder) {
             }
             break;
         }
-        case Event_Type_CLOSED:
+        case Event::CLOSED:
             m_ToApplicationQueue.push(make_shared(quitSuccess()));
             break;
         default:

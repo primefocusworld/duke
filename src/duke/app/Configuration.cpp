@@ -1,27 +1,25 @@
 #include "Configuration.h"
+
 #include <dukeengine/CmdLineOptions.h>
 #include <dukeengine/Version.h>
-#include <dukeengine/Application.h>
 #include <dukeengine/host/io/ImageDecoderFactoryImpl.h>
-#include <dukeapi/messageBuilder/QuitBuilder.h>
+
 #include <dukeapi/io/PlaybackReader.h>
 #include <dukeapi/io/FileRecorder.h>
 #include <dukeapi/io/InteractiveMessageIO.h>
 #include <dukeapi/protobuf_builder/CmdLineParser.h>
 #include <dukeapi/protobuf_builder/SceneBuilder.h>
-#include <dukeapi/SocketMessageIO.h>
 #include <dukeapi/QueueMessageIO.h>
-#include <dukeapi/ProtobufSocket.h>
+
 #include <player.pb.h>
 #include <protocol.pb.h>
+
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
+
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <memory>
-#include <algorithm>
 
 // namespace
 namespace po = boost::program_options;
@@ -39,23 +37,18 @@ void setDisplayOptions(boost::program_options::options_description& description,
      ;
 }
 
-struct SessionCreator {
-    SessionCreator(QueueMessageIO& _io) :
-                    io(_io) {
-    }
-    google::protobuf::serialize::ISession* create(boost::asio::io_service& service) {
-        return new SocketSession(service, io.inputQueue, io.outputQueue);
-    }
-private:
-    QueueMessageIO& io;
-};
-
 const static string HEADER = "[Configuration] ";
 
 Configuration::Configuration(int argc, char** argv) :
-                m_iReturnValue(EXIT_RELAUNCH), m_CmdLineOnly("command line only options"), m_Config("configuration options"), m_Display("display options"), m_Interactive(
-                                "interactive mode options"), m_CmdlineOptionsGroup("Command line options"), m_ConfigFileOptions("Configuration file options"), m_HiddenOptions(
-                                "hidden options") {
+                m_CmdLineOnly("command line only options"), //
+                m_Config("configuration options"), //
+                m_Display("display options"), //
+                m_Interactive("interactive mode options"), //
+                m_CmdlineOptionsGroup("Command line options"), //
+                m_ConfigFileOptions("Configuration file options"), //
+                m_HiddenOptions("hidden options"), //
+                m_Mode(NO_OP), //
+                m_Port(0) {
 
     using namespace ::duke::protocol;
 
@@ -126,48 +119,43 @@ Configuration::Configuration(int argc, char** argv) :
             return;
         }
 
-        // loading plugins
-        ImageDecoderFactoryImpl imageDecoderFactory;
+        // parse caching options
+        const uint64_t cacheSize = parseCache(m_Vm[CACHESIZE].as<string>());
+        const size_t threads = m_Vm[THREADS].as<size_t>();
+        m_Cache.set_size(cacheSize);
+        m_Cache.set_threading(threads);
+        m_Cache.clear_region();
 
-        const char** listOfExtensions = imageDecoderFactory.getAvailableExtensions();
+        // loading plugins
+        m_pImageFactory.reset(new ImageDecoderFactoryImpl());
+        const char** listOfExtensions = m_pImageFactory->getAvailableExtensions();
 
         /**
          * Server mode
          */
         // if port is specified turning into a server
         if (m_Vm.count(PORT)) {
-            using namespace boost::asio;
-            using namespace boost::asio::ip;
-            using google::protobuf::serialize::duke_server;
-            while (m_iReturnValue == EXIT_RELAUNCH) {
-                QueueMessageIO io;
-                tcp::endpoint endpoint(tcp::v4(), m_Vm[PORT].as<short>());
-                // -> c++0x version, cool but need a gcc version > 4.4
-                //            auto sessionCreator = [&io](io_service &service) {return new SocketSession(service, io.inputQueue, io.outputQueue);};
-                //            duke_server server(endpoint, sessionCreator);
-                SessionCreator creator(io);
-                duke_server server(endpoint, boost::bind(&SessionCreator::create, &creator, _1));
-                boost::thread io_launcher(&duke_server::run, &server);
-                decorateAndRun(io, imageDecoderFactory);
-                io_launcher.join();
-            }
+            m_Port = m_Vm[PORT].as<short>();
+            m_Mode = SERVER;
             return;
         }
 
-        /**
-         * Playback mode
-         */
-        if (m_Vm.count(PLAYBACK)) {
-            const string filename = m_Vm[PLAYBACK].as<string>();
-            cout << HEADER + "Reading protocol buffer script: " << filename << endl;
-            PlaybackReader decoder(filename.c_str());
-            decorateAndRun(decoder, imageDecoderFactory);
-            return;
-        }
+//        /**
+//         * Playback mode
+//         */
+//        if (m_Vm.count(PLAYBACK)) {
+//            m_Mode = PLAYBACK;
+//            const string filename = m_Vm[PLAYBACK].as<string>();
+//            cout << HEADER + "Reading protocol buffer script: " << filename << endl;
+//            m_pIO.reset(new PlaybackReader(filename.c_str()));
+//            return;
+//        }
 
         /**
          * Interactive mode
          */
+        m_Mode = DUKE;
+
         renderer.set_presentinterval(m_Vm[BLANKING].as<unsigned>());
         renderer.set_fullscreen(m_Vm.count(FULLSCREEN) > 0);
         renderer.set_refreshrate(m_Vm[REFRESHRATE].as<unsigned>());
@@ -201,7 +189,8 @@ Configuration::Configuration(int argc, char** argv) :
         } else if (inputs.empty())
             throw cmdline_exception("You should specify at least one input : filename, directory or playlist files.");
 
-        MessageQueue queue;
+        m_pIO.reset(new InteractiveMessageIO());
+        MessageQueue &queue = dynamic_cast<InteractiveMessageIO*>(m_pIO.get())->m_ToApplicationQueue;
         IOQueueInserter queueInserter(queue);
 
         queueInserter << renderer; // setting renderer
@@ -211,7 +200,7 @@ Configuration::Configuration(int argc, char** argv) :
         queueInserter << stop; // stopping rendering for now
 
         const extension_set validExtensions = extension_set::create(listOfExtensions);
-        duke::playlist::Playlist playlist = browseMode ?  browseViewerComplete(validExtensions, inputs[0]) :  browsePlayer(validExtensions, inputs);
+        duke::playlist::Playlist playlist = browseMode ? browseViewerComplete(validExtensions, inputs[0]) : browsePlayer(validExtensions, inputs);
 
         if (playlist.shot_size() == 0)
             throw runtime_error("No media found, nothing to render. Aborting.");
@@ -226,11 +215,8 @@ Configuration::Configuration(int argc, char** argv) :
 
         {
             duke::protocol::PlaybackState playback;
-            const PlaybackState::PlaybackMode mode = m_Vm.count(NOFRAMERATE) > 0 ? //
-                            PlaybackState::RENDER : //
-                            m_Vm.count(NOSKIP) > 0 ? //
-                                            PlaybackState::NO_SKIP : //
-                                            PlaybackState::DROP_FRAME_TO_KEEP_REALTIME;
+            const PlaybackState::PlaybackMode mode = m_Vm.count(NOFRAMERATE) > 0 ? PlaybackState::RENDER : //
+                                                     m_Vm.count(NOSKIP) > 0 ? PlaybackState::NO_SKIP : PlaybackState::DROP_FRAME_TO_KEEP_REALTIME;
             playback.set_playbackmode(mode);
             playback.set_frameratenumerator(playlist.framerate());
             playback.set_loop(playlist.loop());
@@ -247,34 +233,23 @@ Configuration::Configuration(int argc, char** argv) :
         start.set_action(Engine::RENDER_START);
         queueInserter << start;
 
-        InteractiveMessageIO decoder(queue);
-        decorateAndRun(decoder, imageDecoderFactory);
     } catch (cmdline_exception &e) {
         cout << "invalid command line : " << e.what() << endl << endl;
         displayHelp();
+        m_Mode = NO_OP;
     }
 }
-
-void Configuration::decorateAndRun(IMessageIO& io, ImageDecoderFactoryImpl &imageDecoderFactory) {
-    if (m_Vm.count(RECORD) > 0) {
-        const string recordFilename = m_Vm[RECORD].as<string>();
-        FileRecorder recorder(recordFilename.c_str(), io);
-        cout << HEADER + "recording session to " << recordFilename << endl;
-        run(recorder, imageDecoderFactory);
-    } else {
-        run(io, imageDecoderFactory);
-    }
-}
-
-void Configuration::run(IMessageIO& io, ImageDecoderFactoryImpl &imageDecoderFactory) {
-    const uint64_t cacheSize = parseCache(m_Vm[CACHESIZE].as<string>());
-    const size_t threads = m_Vm[THREADS].as<size_t>();
-    duke::protocol::Cache cache;
-    cache.set_size(cacheSize);
-    cache.set_threading(threads);
-    cache.clear_region();
-    Application(imageDecoderFactory, io, m_iReturnValue, cache);
-}
+//
+//void Configuration::decorateAndRun(IMessageIO& io, ImageDecoderFactoryImpl &imageDecoderFactory) {
+//    if (m_Vm.count(RECORD) > 0) {
+//        const string recordFilename = m_Vm[RECORD].as<string>();
+//        FileRecorder recorder(recordFilename.c_str(), io);
+//        cout << HEADER + "recording session to " << recordFilename << endl;
+//        run(recorder, imageDecoderFactory);
+//    } else {
+//        run(io, imageDecoderFactory);
+//    }
+//}
 
 void Configuration::displayVersion() {
     cout << getVersion("Duke") << endl;
@@ -292,3 +267,14 @@ void Configuration::displayHelp() {
     cout << m_CmdlineOptionsGroup << endl;
 }
 
+IMessageIO& Configuration::io() const {
+    if (m_pIO.get() == NULL)
+        throw exception();
+    return *m_pIO;
+}
+
+ImageDecoderFactory& Configuration::imageFactory() const {
+    if (m_pImageFactory.get() == NULL)
+        throw exception();
+    return *m_pImageFactory;
+}

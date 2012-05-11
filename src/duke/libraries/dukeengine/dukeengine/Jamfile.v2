@@ -2,21 +2,25 @@
 # dukeengine
 #
 
+
 project 
 	: requirements 
 		<library>/dukeio//dukeio/<link>static					# header only library
 		<library>/duke/sub/dukeplugins//dukehost/<link>static	# plugin manager embedded
 		<library>/dukeapi//dukeapi/<link>static					# dukeapi is embedded
 		
+		<library>/user-config//GLEW/<link>shared
 		<library>/user-config//cg/<link>shared
 		<library>/user-config//cggl/<link>shared
-		<library>/user-config//sfml/<link>shared
 		<library>/boost//chrono/<link>static
 		<library>/boost//iostreams/<link>shared
+
+        <library>/qt//QtCore/<variant>release/<link>shared
+        <library>/qt//QtOpenGL/<variant>release/<link>shared
+        <library>/qt//QtGui/<variant>release/<link>shared
     : usage-requirements 
 		<library>/boost//iostreams/<link>shared
-		<library>/user-config//sfml/<link>shared
 	;
 
 explicit dukeengine ;
-lib dukeengine	:	[ glob-tree *.cpp ] ;
+lib dukeengine	:	[ glob-tree *.cpp ] renderer/DukeWidget.h ;

@@ -40,8 +40,8 @@ static inline void buildVertex(Vertex * const pVertex //
 }
 
 static inline void buildCubeVertexBuffer(VertexBuffer* const pVertexBuffer) {
-    pVertexBuffer->add_flag(VertexBuffer_VertexType_POS);
-    pVertexBuffer->add_flag(VertexBuffer_VertexType_UV1);
+    pVertexBuffer->add_flag(VertexBuffer::POS);
+    pVertexBuffer->add_flag(VertexBuffer::UV1);
     buildVertex(pVertexBuffer->add_vertex(), -1, 1, -1); // 0
     buildVertex(pVertexBuffer->add_vertex(), 1, 1, -1); // 1
     buildVertex(pVertexBuffer->add_vertex(), -1, -1, -1); // 2
@@ -71,8 +71,8 @@ static inline void buildPlaneVertexBuffer(VertexBuffer* const pVertexBuffer //
                             , const float y0 //
                             , const float xsize //
                             , const float ysize) {
-    pVertexBuffer->add_flag(::duke::protocol::VertexBuffer_VertexType_POS);
-    pVertexBuffer->add_flag(::duke::protocol::VertexBuffer_VertexType_UV1);
+    pVertexBuffer->add_flag(::duke::protocol::VertexBuffer::POS);
+    pVertexBuffer->add_flag(::duke::protocol::VertexBuffer::UV1);
     buildVertex(pVertexBuffer->add_vertex(), x0, y0, 1, 0, 1); // 0
     buildVertex(pVertexBuffer->add_vertex(), x0 + xsize, y0, 1, 1, 1); // 1
     buildVertex(pVertexBuffer->add_vertex(), x0, y0 + ysize, 1, 0, 0); // 2
@@ -97,12 +97,12 @@ static inline void buildMesh(Mesh & _m //
     _m.set_name(_name);
     switch (_shape) {
         case MS_Cube:
-            _m.set_type(Mesh_MeshType_TRIANGLELIST);
+            _m.set_type(Mesh::TRIANGLELIST);
             buildCubeVertexBuffer(_m.mutable_vertexbuffer());
             buildCubeIndexBuffer(_m.mutable_indexbuffer());
             break;
         case MS_Plane:
-            _m.set_type(Mesh_MeshType_TRIANGLELIST);
+            _m.set_type(Mesh::TRIANGLELIST);
             buildPlaneVertexBuffer(_m.mutable_vertexbuffer(), _x0, _y0, _xSize, _ySize);
             buildPlaneIndexBuffer(_m.mutable_indexbuffer());
             break;
