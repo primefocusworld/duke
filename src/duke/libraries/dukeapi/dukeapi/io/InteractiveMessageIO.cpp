@@ -13,9 +13,12 @@ using namespace std;
 namespace {
 
 Transport MAKE(const Transport_TransportType type //
-               , const int value = -1 //
-               , const bool cueRelative = false //
-               , const bool cueClip = false) {
+,
+               const int value = -1 //
+               ,
+               const bool cueRelative = false //
+               ,
+               const bool cueClip = false) {
     Transport transport;
     transport.set_type(type);
     if (type == Transport::CUE) {
@@ -35,8 +38,8 @@ Transport MAKE(const Transport_TransportType type //
 
 } // namespace
 
-InteractiveMessageIO::InteractiveMessageIO(MessageQueue& initialMessages) :
-    m_ToApplicationQueue(initialMessages), m_bPlay(false), m_iFitMode(0) {
+InteractiveMessageIO::InteractiveMessageIO() :
+                m_bPlay(false), m_iFitMode(0) {
 }
 
 InteractiveMessageIO::~InteractiveMessageIO() {
@@ -58,7 +61,7 @@ void InteractiveMessageIO::push(const SharedHolder& pHolder) {
     const MessageHolder &holder = *pHolder;
 
     // we are taking into account only Event type messages
-    if (!isType<Event> (holder))
+    if (!isType<Event>(holder))
         return;
 
     Event event;

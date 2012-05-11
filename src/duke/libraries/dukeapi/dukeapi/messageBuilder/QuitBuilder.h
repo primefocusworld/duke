@@ -8,6 +8,8 @@
 #ifndef QUITBUILDER_H_
 #define QUITBUILDER_H_
 
+#include <protocol.pb.h>
+
 #include <cstdlib> // for EXIT_SUCCESS and EXIT_FAILURE
 #define EXIT_RELAUNCH -1
 

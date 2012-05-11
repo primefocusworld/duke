@@ -23,4 +23,4 @@ project
 	;
 
 explicit dukeengine ;
-lib dukeengine	:	[ glob-tree *.cpp ] renderer/RenderingEngine.h ;
+lib dukeengine	:	[ glob-tree *.cpp ] renderer/DukeWidget.h ;

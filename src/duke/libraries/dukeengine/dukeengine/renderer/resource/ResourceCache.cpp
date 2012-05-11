@@ -28,6 +28,7 @@ void ResourceCache::put(EResourceType type, const std::string & name, const Shar
         map.insert(std::make_pair(name, pResource));
 }
 
+#ifdef DEBUG
 static const char* const toString(EResourceType type) {
     switch (type) {
         case MESH:
@@ -45,6 +46,7 @@ static const char* const toString(EResourceType type) {
             return "UNDEF";
     }
 }
+#endif
 
 ResourceCache::~ResourceCache() {
 #ifdef DEBUG
