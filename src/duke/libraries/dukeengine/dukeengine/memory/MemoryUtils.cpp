@@ -13,6 +13,19 @@ unsigned long long getTotalSystemMemory() {
     GlobalMemoryStatusEx(&status);
     return status.ullTotalPhys;
 }
+#elif defined __APPLE__
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
+unsigned long long getTotalSystemMemory()
+{
+    int mib[2] = { CTL_HW, HW_MEMSIZE };
+    u_int namelen = sizeof(mib) / sizeof(mib[0]);
+    uint64_t size = 0;
+    size_t len = sizeof(size);
+    sysctl(mib, namelen, &size, &len, NULL, 0);
+    return size;
+}
 #else
 #include <unistd.h>
 unsigned long long getTotalSystemMemory()

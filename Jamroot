@@ -20,21 +20,21 @@ local				GIT_COMMIT			= [ modules.peek : GIT_COMMIT ] ;
 local 				GIT_BRANCH			= [ modules.peek : GIT_BRANCH ] ; 
 local 				BUILD_NUMBER		= [ modules.peek : BUILD_NUMBER ] ;
 local 				JAMDATE				= [ modules.peek : JAMDATE ] ;
-
 local 				BOOST_ROOT 			= [ modules.peek : BOOST_ROOT ] ;
+
 use-project /boost 						: $(BOOST_ROOT) ;
 use-project /dukeapi                    : src/duke/libraries/dukeapi/dukeapi ;
 use-project /dukeengine                 : src/duke/libraries/dukeengine/dukeengine ;
 use-project /dukeioplugin               : src/duke/libraries/dukeio/dukeio/plugin ;
+#use-project /dukeui		                : src/duke/libraries/dukeui/dukeui ;
 use-project /duke/sub/dukeplugins		: src/duke/submodules/dukeplugins ;
 use-project /duke/sub/sequence      	: src/duke/submodules/sequenceparser/src/sequence ;
 use-project /duke/sub/sequenceparser	: src/duke/submodules/sequenceparser/src/sequence/parser ;
 use-project /duke/sub/concurrent		: src/duke/submodules/concurrent_utils ;
-use-project /dukexcore                  : src/dukex/libraries/dukexcore ;
-use-project /dukexgui                   : src/dukex/libraries/dukexgui ;
 
 project : requirements
             <threading>multi
+            <include>$(BOOST_ROOT)
             <toolset>gcc:<cxxflags>-isystem$(BOOST_ROOT)		# will prevent warnings within boost
 #            <toolset>gcc:<cxxflags>-fvisibility=hidden			# hidding export by default
 #            <toolset>gcc:<cxxflags>-fvisibility-inlines-hidden	# hidding export by default
@@ -55,30 +55,20 @@ project : requirements
 explicit plugin-jpg
          plugin-dpx
          plugin-oiio
-         plugin-timeline
-         plugin-imageinfo
          dukeplugins
          duketests
          shader_prototypes
          mingw_runtime
-         dukexplugins
-         dukextests
-         distduke
-         distdukex
          dist 
          tests ;
 
 alias plugin-jpg        : src/duke/plugins/io/jpg//jpg ;
 alias plugin-dpx        : src/duke/plugins/io/dpx//dpx ;
 alias plugin-oiio       : src/duke/plugins/io/oiio//oiio ;
-alias plugin-timeline   : src/dukex/plugins/timeline//timeline ;
-alias plugin-imageinfo  : src/dukex/plugins/imageinfo//imageinfo ;
 alias dukeplugins 		: plugin-jpg plugin-dpx plugin-oiio : <os>LINUX ;
 alias dukeplugins 		: plugin-jpg plugin-dpx plugin-oiio : <os>MACOSX ;
 alias dukeplugins 		: plugin-jpg plugin-dpx : <os>NT ;
 alias duketests 	    : src/duke/libraries//tests src/duke/submodules//tests ;
-alias dukexplugins 		: plugin-timeline plugin-imageinfo ;
-alias dukextests 	    : [ glob src/dukex/tests/* ] ;
 alias tests 	        : duketests dukextests ;
 alias mingw_runtime     ;
 alias mingw_runtime     : /user-config//mwingw_runtime : <os>NT <toolset>gcc ;
@@ -86,34 +76,7 @@ alias mingw_runtime     : /user-config//mwingw_runtime : <os>NT <toolset>gcc ;
 install dist :
 	    #src/diskbench
 	    src/duke/app
-	    src/dukex/app
 	    dukeplugins
-	    mingw_runtime
-    :
-	    <install-dependencies>on
-	    <install-type>SHARED_LIB
-	    <install-type>SEARCHED_LIB
-	    <install-type>EXE
-	    <variant>debug:<location>dist/debug
-	    <variant>release:<location>dist/release
-    ;
-    
-install distduke :
-	    #src/diskbench
-	    src/duke/app
-	    dukeplugins
-	    mingw_runtime
-    :
-	    <install-dependencies>on
-	    <install-type>SHARED_LIB
-	    <install-type>SEARCHED_LIB
-	    <install-type>EXE
-	    <variant>debug:<location>dist/debug
-	    <variant>release:<location>dist/release
-    ;
-
-install distdukex :
-	    src/dukex/app
 	    mingw_runtime
     :
 	    <install-dependencies>on
