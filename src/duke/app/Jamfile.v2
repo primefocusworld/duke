@@ -5,4 +5,7 @@ project
     ;
 
 
-exe duke : [ glob *.cpp ] /dukeengine//dukeengine/<link>static ;
+exe duke : 
+	[ glob *.cpp ] 
+	/dukeengine//dukeengine/<link>static 
+	/dukeui//dukeui ;

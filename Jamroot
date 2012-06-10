@@ -26,7 +26,7 @@ use-project /boost 						: $(BOOST_ROOT) ;
 use-project /dukeapi                    : src/duke/libraries/dukeapi/dukeapi ;
 use-project /dukeengine                 : src/duke/libraries/dukeengine/dukeengine ;
 use-project /dukeioplugin               : src/duke/libraries/dukeio/dukeio/plugin ;
-#use-project /dukeui		                : src/duke/libraries/dukeui/dukeui ;
+use-project /dukeui		                : src/duke/libraries/dukeui/dukeui ;
 use-project /duke/sub/dukeplugins		: src/duke/submodules/dukeplugins ;
 use-project /duke/sub/sequence      	: src/duke/submodules/sequenceparser/src/sequence ;
 use-project /duke/sub/sequenceparser	: src/duke/submodules/sequenceparser/src/sequence/parser ;

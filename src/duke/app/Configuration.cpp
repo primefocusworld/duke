@@ -72,7 +72,9 @@ Configuration::Configuration(int argc, char** argv) :
     (RECORD_OPT, po::value<string>(), "Record a session to file") //
     (PORT_OPT, po::value<short>(), "Sets the port number to be used") //
     (CACHESIZE_OPT, po::value<string>()->default_value("50%"), "Cache size for look ahead. Valid units are K,M,G or %") //
-    (THREADS_OPT, po::value<size_t>()->default_value(0), "Number of load/decode threads. Cache size must be >0.");
+    (THREADS_OPT, po::value<size_t>()->default_value(0), "Number of load/decode threads. Cache size must be >0.") //
+    (NOGUI_OPT, "Hide all UI elements.");
+
     // adding display settings
     ::duke::protocol::Renderer renderer;
     setDisplayOptions(m_Display, renderer);
@@ -154,7 +156,7 @@ Configuration::Configuration(int argc, char** argv) :
         /**
          * Interactive mode
          */
-        m_Mode = DUKE;
+        m_Mode = (m_Vm.count(NOGUI) > 0) ? DUKE : DUKEX;
 
         renderer.set_presentinterval(m_Vm[BLANKING].as<unsigned>());
         renderer.set_fullscreen(m_Vm.count(FULLSCREEN) > 0);
