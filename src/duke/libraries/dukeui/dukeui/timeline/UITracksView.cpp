@@ -40,8 +40,8 @@ UITracksView::UITracksView(QGraphicsScene *s, QWidget *p) :
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setStyleSheet("QScrollBar:horizontal {"
                   "border: 0px;"
-                  "background: #333333;"
-                  "height: 2px;"
+                  "background: #666666;"
+                  "height: 1px;"
                   "margin: 0px 0px 0 0px;"
                   "}");
 }

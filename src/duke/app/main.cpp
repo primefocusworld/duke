@@ -75,6 +75,7 @@ int runDukeX(int argc, char** argv, const Configuration& configuration, IMessage
     DukeWidget widget(QGLFormat(), &mw, 0, windowflags);
     mw.setCentralWidget(&widget);
     widget.setFocusPolicy(Qt::StrongFocus);
+    widget.setFocus(Qt::OtherFocusReason);
 
     DukeEngine engine(configuration.imageFactory(), configuration.cache(), io);
     widget.bind(&engine);
