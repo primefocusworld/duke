@@ -1,6 +1,7 @@
 #ifndef SIMPLESHADERS_H_
 #define SIMPLESHADERS_H_
 
+/*
 static const char* const IMAGE_DIM = "imageDim";
 static const char* const DISPLAY_DIM = "displayDim";
 static const char* const DISPLAY_MODE = "displayMode";
@@ -8,6 +9,7 @@ static const char* const IMAGE_RATIO = "imageRatio";
 static const char* const ZOOM = "zoom";
 static const char* const PANX = "panX";
 static const char* const PANY = "panY";
+*/
 
 static const char* const fittableTransformVs = "float displayMode;\n"
     "float3 displayDim;\n"

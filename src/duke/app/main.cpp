@@ -69,16 +69,18 @@ int runDukeX(int argc, char** argv, const Configuration& configuration, IMessage
     }
 
     Qt::WindowFlags windowflags = 0;
-    MainWindow mw;
+    MainWindow mw(NULL);
     mw.setUnifiedTitleAndToolBarOnMac(true);
 
     DukeWidget widget(QGLFormat(), &mw, 0, windowflags);
     mw.setCentralWidget(&widget);
-    widget.setFocusPolicy(Qt::StrongFocus);
+    //widget.setFocusPolicy(Qt::StrongFocus);
     widget.setFocus(Qt::OtherFocusReason);
 
     DukeEngine engine(configuration.imageFactory(), configuration.cache(), io);
     widget.bind(&engine);
+    mw.bind(&engine);
+    //mw.setFocus(Qt::OtherFocusReason);
 
     const duke::protocol::Renderer renderer = waitForRenderer(io);
     if (renderer.fullscreen())

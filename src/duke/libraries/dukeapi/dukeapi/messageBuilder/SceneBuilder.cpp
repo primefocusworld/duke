@@ -6,9 +6,9 @@
  */
 
 #include "SceneBuilder.h"
-#include "details/MeshBuilder.h"
-#include <dukeapi/messageBuilder/ShaderBuilder.h>
-#include <dukeapi/messageBuilder/ParameterBuilder.h>
+#include "MeshBuilder.h"
+#include "ShaderBuilder.h"
+#include "ParameterBuilder.h"
 
 #include <player.pb.h>
 
@@ -26,6 +26,7 @@ using namespace google::protobuf;
 using namespace google::protobuf::serialize;
 using namespace duke::playlist;
 using namespace duke::protocol;
+
 
 static void setRange(FrameRange *pRange, uint32_t first, uint32_t last) {
     pRange->set_first(first);
@@ -189,18 +190,17 @@ private:
         copy(display.shader().begin(), display.shader().end(), back_inserter(effects));
         const string psName = generateShader(effects);
         effect.set_pixelshadername(psName);
-        packAndShare(automaticClipSource(IMAGE_DIM, clip.name()));
+        packAndShare(automaticClipSource(ParameterBuilder::image_dim, clip.name()));
         packAndShare(staticClipSampler("sampler", clip.name()));
     }
 
     string generateShader(const vector<string> &effects) {
         const string name = shaderName(effects);
         if (shaders.find(name) == shaders.end()) {
-            Shader ps;
-            buildPixelShader(ps, name, NULL);
+            Shader ps = ShaderBuilder::pixelShader(name, NULL);
             int i = 1;
             for (vector<string>::const_iterator itr = effects.begin(), end = effects.end(); itr != end; ++itr, ++i)
-                addShadingNode(ps, *itr, i);
+                ShaderBuilder::addShadingNode(ps, *itr, i);
             packAndShare(ps);
             shaders.insert(name);
         }
@@ -213,37 +213,28 @@ private:
     vector<SharedHolder> result;
 };
 
-static StaticParameter staticFloat(const string& name, float value) {
-    StaticParameter param;
-    param.set_name(name);
-    param.set_type(StaticParameter::FLOAT);
-    param.add_floatvalue(value);
-    return param;
-}
-
 vector<google::protobuf::serialize::SharedHolder> getMessages(const Playlist &playlist) {
     const RepeatedPtrField<Shot> &shots = playlist.shot();
     SceneBuilder builder(playlist);
     // mesh
     builder.packAndShare(MeshBuilder::buildPlane(MeshBuilder::plane));
     // appending unbound parameters
-    builder.packAndShare(automaticTexDim(DISPLAY_DIM));
-    builder.packAndShare(staticFloat(DISPLAY_MODE, 2)); // fit to display X
-    builder.packAndShare(staticFloat(IMAGE_RATIO, 0));
-    builder.packAndShare(staticFloat(ZOOM, 1));
-    builder.packAndShare(staticFloat(PANX, 0));
-    builder.packAndShare(staticFloat(PANY, 0));
+    builder.packAndShare(automaticTexDim(ParameterBuilder::display_dim));
+    builder.packAndShare(ParameterBuilder::staticFloat(ParameterBuilder::display_mode, 2)); // fit to display X
+    builder.packAndShare(ParameterBuilder::staticFloat(ParameterBuilder::image_ratio, 0));
+    builder.packAndShare(ParameterBuilder::staticFloat(ParameterBuilder::zoom_ratio, 1));
+    builder.packAndShare(ParameterBuilder::staticFloat(ParameterBuilder::pan_x, 0));
+    builder.packAndShare(ParameterBuilder::staticFloat(ParameterBuilder::pan_y, 0));
 
-    Shader vertexShader;
-    buildVertexShader(vertexShader, "vs", fittableTransformVs);
-    vertexShader.add_parametername(DISPLAY_DIM);
-    vertexShader.add_parametername(IMAGE_DIM);
-    vertexShader.add_parametername(DISPLAY_MODE);
-    vertexShader.add_parametername(IMAGE_RATIO);
-    vertexShader.add_parametername(ZOOM);
-    vertexShader.add_parametername(PANX);
-    vertexShader.add_parametername(PANY);
-    builder.packAndShare(vertexShader);
+    Shader vs  = ShaderBuilder::vertexShader(ShaderBuilder::default_vertex_shader, fittableTransformVs);
+    vs.add_parametername(ParameterBuilder::display_dim);
+    vs.add_parametername(ParameterBuilder::image_dim);
+    vs.add_parametername(ParameterBuilder::display_mode);
+    vs.add_parametername(ParameterBuilder::image_ratio);
+    vs.add_parametername(ParameterBuilder::zoom_ratio);
+    vs.add_parametername(ParameterBuilder::pan_x);
+    vs.add_parametername(ParameterBuilder::pan_y);
+    builder.packAndShare(vs);
 
     for_each(shots.begin(), shots.end(), boost::bind(&SceneBuilder::handleShot, boost::ref(builder), _1));
 

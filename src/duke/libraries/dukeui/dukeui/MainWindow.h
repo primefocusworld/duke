@@ -6,6 +6,8 @@
 #include "timeline/UITimeline.h"
 #include "utils/UIFileDialog.h"
 
+class IDukeEngine;
+
 class MainWindow : public QMainWindow {
 
 Q_OBJECT
@@ -15,14 +17,13 @@ public:
     ~MainWindow() {
     }
 
+    void bind(IDukeEngine *pEngine) {
+        m_pEngine = pEngine;
+    }
+
 private:
-    void showEvent(QShowEvent* event);
+    bool event(QEvent * pEvent);
     void closeEvent(QCloseEvent *event);
-    void timerEvent(QTimerEvent *event);
-    void keyPressEvent(QKeyEvent * event);
-    void dragEnterEvent(QDragEnterEvent *event);
-    void dragMoveEvent(QDragMoveEvent *event);
-    void dropEvent(QDropEvent *event);
     void resizeCentralWidget(const QSize& resolution);
     void updateRecentFilesMenu();
 
@@ -53,14 +54,11 @@ private slots:
     void fitToNormalSize();
     void fitImageToWindowWidth();
     void fitImageToWindowHeight();
-    void zoom(double);
-    void pan(double, double);
     // ?
     void about();
 
-    void topLevelChanged(bool); // TEST
-
 private:
+    IDukeEngine *m_pEngine;
     Ui::mainWindow ui;
     UserPreferences mPreferences;
     UITimeline mTimeline;

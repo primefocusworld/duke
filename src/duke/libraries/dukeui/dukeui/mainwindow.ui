@@ -173,7 +173,7 @@
     <string>Ctrl+F</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionPlay">
@@ -206,7 +206,7 @@
     <string>Right</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WindowShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="previousFrameAction">
@@ -221,7 +221,7 @@
     <string>Left</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionLast">
@@ -392,7 +392,7 @@
     <string>PgUp</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="nextShotAction">
@@ -403,7 +403,7 @@
     <string>PgDown</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="firstFrameAction">
@@ -414,7 +414,7 @@
     <string>Home</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="lastFrameAction">
@@ -425,7 +425,7 @@
     <string>End</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="playStopAction">
@@ -436,7 +436,7 @@
     <string>Space</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="stopAction">
@@ -454,7 +454,7 @@
     <string>Fit Image to Window &amp;Height</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="fitImageToWindowWidthAction">
@@ -462,7 +462,7 @@
     <string>Fit Image to Window &amp;Width</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="stretchImageToWindowAction">
@@ -478,7 +478,7 @@
     <string>&amp;Normal Size (1:1)</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="fitWindowToImageAction">
@@ -494,7 +494,7 @@
     <string>F</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionTest">
@@ -565,7 +565,7 @@
     <string>LOG</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionLin_to_Cineon">
@@ -581,7 +581,7 @@
     <string>LIN</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="actionSRGB_to_Lin">
@@ -600,7 +600,7 @@
     <string>SRGB</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="zoom12Action">
@@ -673,7 +673,7 @@
     <string>T</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
   <action name="imageInfoAction">
@@ -690,7 +690,7 @@
     <string>I</string>
    </property>
    <property name="shortcutContext">
-    <enum>Qt::WidgetWithChildrenShortcut</enum>
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
  </widget>

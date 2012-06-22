@@ -5,6 +5,8 @@ project
 		<include>timeline
 		<include>utils
 		
+		<library>/dukeengine//dukeengine/<link>static 
+		
 		<library>/boost//system
 		<library>/boost//filesystem
 		

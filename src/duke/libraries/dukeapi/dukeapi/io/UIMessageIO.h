@@ -1,13 +1,13 @@
-#ifndef INTERACTIVEMESSAGEIO_H_
-#define INTERACTIVEMESSAGEIO_H_
+#ifndef UIMESSAGEIO_H_
+#define UIMESSAGEIO_H_
 
 #include <dukeapi/IMessageIO.h>
 #include <dukeapi/MessageQueue.h>
 
-class InteractiveMessageIO : public IMessageIO {
+class UIMessageIO : public IMessageIO {
 public:
-    InteractiveMessageIO();
-    virtual ~InteractiveMessageIO();
+    UIMessageIO();
+    virtual ~UIMessageIO();
 
     virtual void push(const ::google::protobuf::serialize::SharedHolder& holder);
     virtual void waitPop(::google::protobuf::serialize::SharedHolder& holder);
@@ -20,4 +20,4 @@ private:
     std::stringstream m_ssSeek;
 };
 
-#endif // INTERACTIVEMESSAGEIO_H_
+#endif // UIMESSAGEIO_H_
