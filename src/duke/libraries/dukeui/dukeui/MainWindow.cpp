@@ -98,8 +98,6 @@ bool MainWindow::event(QEvent * pEvent) {
 
 // private
 void MainWindow::closeEvent(QCloseEvent *event) {
-    qDebug() << "+++closeEvent";
-
     if (isFullScreen()) {
         showNormal();
         event->ignore();
@@ -179,43 +177,36 @@ void MainWindow::openPreferences() {
 
 // private slot
 void MainWindow::playStop() {
-    QMessageBox::about(this, tr("playStop"), tr("Not yet implemented"));
     PUSH(m_pEngine, TransportBuilder::play());
 }
 
 // private slot
 void MainWindow::previousFrame() {
-    QMessageBox::about(this, tr("previousFrame"), tr("Not yet implemented"));
     PUSH(m_pEngine, TransportBuilder::previousFrame());
 }
 
 // private slot
 void MainWindow::nextFrame() {
-    QMessageBox::about(this, tr("nextFrame"), tr("Not yet implemented"));
     PUSH(m_pEngine, TransportBuilder::nextFrame());
 }
 
 // private slot
 void MainWindow::firstFrame() {
-    QMessageBox::about(this, tr("previousShot"), tr("Not yet implemented"));
     PUSH(m_pEngine, TransportBuilder::firstFrame());
 }
 
 // private slot
 void MainWindow::lastFrame() {
-    QMessageBox::about(this, tr("previousShot"), tr("Not yet implemented"));
     PUSH(m_pEngine, TransportBuilder::lastFrame());
 }
 
 // private slot
 void MainWindow::previousShot() {
-    QMessageBox::about(this, tr("previousShot"), tr("Not yet implemented"));
     PUSH(m_pEngine, TransportBuilder::previousShot());
 }
 
 // private slot
 void MainWindow::nextShot() {
-    QMessageBox::about(this, tr("nextShot"), tr("Not yet implemented"));
     PUSH(m_pEngine, TransportBuilder::nextShot());
 }
 

@@ -69,7 +69,6 @@ void UIGraphicsCursorItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
 
 void UIGraphicsCursorItem::frameChanged(qint64 newFrame) {
     setPos(newFrame, pos().y());
-    qDebug() << "UIGraphicsCursorItem::frameChanged";
 }
 
 void UIGraphicsCursorItem::setHeight(int height) {

@@ -1,8 +1,0 @@
-project
-	: requirements
-		<library>/dukeengine//dukeengine/<link>static		# embedded
-	: usage-requirements
-	;
-
-explicit dukexcore ;
-lib dukexcore :  [ glob *.cpp ] ;
