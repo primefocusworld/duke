@@ -15,26 +15,14 @@ project user-config ;
 # website  : http://code.google.com/p/protobuf/
 # download : http://code.google.com/p/protobuf/downloads/list
 #-----------------------------------------------------------------------------
-lib protobuf : : <file>/PATH/TO/PROTOBUF-SO/libprotobuf.7.dylib
-	   		 : : <include>/PATH/TO/PROTOBUF/include ;
+# if protobuf is installed on your system use the following line
+lib protobuf ;
+# if you installed it from source uncomment and configure
+#lib protobuf : : <file>/PATH/TO/PROTOBUF-SO/libprotobuf.7.dylib
+#             : : <include>/PATH/TO/PROTOBUF/include ;
 
-# expected by duke build system
-constant PROTOC : /PATH/TO/PROTOC-BINARY/protoc ; 
-
-
-#-----------------------------------------------------------------------------
-# name     : SFML2
-# purpose  : Window creation and sound management
-# website  : http://www.sfml-dev.org/
-# download : http://www.sfml-dev.org/download.php
-#-----------------------------------------------------------------------------
-lib sfml-graphics  : : <file>/PATH/TO/SFML-GRAPHICS-SO/libsfml-graphics.2.dylib ;
-lib sfml-system    : : <file>/PATH/TO/SFML-SYSTEM-SO/libsfml-system.2.dylib ;
-lib sfml-window    : : <file>/PATH/TO/SFML-WINDOW-SO/libsfml-window.2.dylib ;
-lib sfml-audio     : : <file>/PATH/TO/SFML-AUDIO-SO/libsfml-audio.2.dylib ;
-
-alias sfml : sfml-graphics sfml-system sfml-window sfml-audio 
-		   : : : <include>/PATH/TO/SFML/include ;
+# also define PROTOC the protocol buffer compiler
+constant PROTOC : /usr/bin/protoc ; 
 
 
 #-----------------------------------------------------------------------------
@@ -46,6 +34,7 @@ alias sfml : sfml-graphics sfml-system sfml-window sfml-audio
 lib cg : : <framework>Cg ;
 
 
+
 #-----------------------------------------------------------------------------
 # name     : CgGL
 # purpose  : Graphical toolkit - OpenGL backend
@@ -55,11 +44,30 @@ lib cg : : <framework>Cg ;
 lib cggl : : <framework>Cg ;
 
 
+#-----------------------------------------------------------------------------
+# name     : Qt
+# purpose  : GUI framework used by DukeX
+# website  : http://qt.nokia.com
+# download : http://qt.nokia.com/downloads
+#-----------------------------------------------------------------------------
+constant QTDIR : PATH/TO/QtSDK/Desktop/Qt/473/gcc ;
+using qt4 : $(QTDIR) ; 
+alias Qt : : : : 
+	<toolset>darwin:<use>/qt//QtCore/<variant>release
+	<toolset>darwin:<use>/qt//QtGui/<variant>release
+	<toolset>darwin:<use>/qt//QtOpenGL/<variant>release
+	<toolset>darwin:<include>$(QTDIR)/include
+	<toolset>darwin:<framework>$(QTDIR)/lib/QtGui.framework
+	<toolset>darwin:<framework>$(QTDIR)/lib/QtCore.framework
+	<toolset>darwin:<framework>$(QTDIR)/lib/QtOpenGL.framework ;
 
 
 #----------------------------------------#
 #   Optional  libraries                  #
 #----------------------------------------#
+
+# The optionnal libraries can be excluded from the build by using
+# the --no-plugin-* flag. 
 
 #-----------------------------------------------------------------------------
 # name     : TurboJpeg
@@ -67,8 +75,8 @@ lib cggl : : <framework>Cg ;
 # website  : http://sourceforge.net/projects/libjpeg-turbo/
 # download : http://sourceforge.net/projects/libjpeg-turbo/files/1.1.1/
 #-----------------------------------------------------------------------------
-lib turbojpeg : : <file>/PATH/TO/TURBOJPEG-SO/libturbojpeg.dylib
- 	      	  : : <include>/PATH/TO/TURBOJPEG/include ;
+#lib turbojpeg : : <file>/PATH/TO/TURBOJPEG-SO/libturbojpeg.dylib
+#              : : <include>/PATH/TO/TURBOJPEG/include ;
 
 
 #-----------------------------------------------------------------------------
@@ -77,23 +85,15 @@ lib turbojpeg : : <file>/PATH/TO/TURBOJPEG-SO/libturbojpeg.dylib
 # website  : https://sites.google.com/site/openimageio/home
 # download : https://github.com/OpenImageIO/oiio
 #-----------------------------------------------------------------------------
-lib oiio : : <file>/PATH/TO/OPENIMAGEIO-SO/libOpenImageIO.dylib
- 	     : : <include>/PATH/TO/OPENIMAGEIO/include ;
+#lib oiio : : <file>/PATH/TO/OPENIMAGEIO-SO/libOpenImageIO.dylib
+#         : : <include>/PATH/TO/OPENIMAGEIO/include ;
 
-
-#-----------------------------------------------------------------------------
-# name     : Qt
-# purpose  : GUI framework used by DukeX
-# website  : http://qt.nokia.com
-# download : http://qt.nokia.com/downloads
-#-----------------------------------------------------------------------------
-using qt4 : PATH/TO/QtSDK/Desktop/Qt/473/gcc ;
 
 
 #-----------------------------------------------------------------------------
 ## prevent building targets by default
 ## more info here http://www.boost.org/boost-build2/doc/html/bbv2/reference/rules.html
-explicit protobuf sfml sfml-graphics sfml-system sfml-window sfml-audio cg cggl turbojpeg oiio ;
+explicit protobuf cg cggl turbojpeg oiio ;
 #-----------------------------------------------------------------------------
 
 

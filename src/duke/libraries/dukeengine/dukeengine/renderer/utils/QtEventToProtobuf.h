@@ -239,7 +239,7 @@ inline ::duke::protocol::MouseEvent_Button Get(const Qt::MouseButton& mouseButto
     }
 }
 
-inline bool Update(::duke::protocol::Event& toUpdate, const QEvent &withEvent) {
+inline bool Update(::duke::protocol::Event& toUpdate, QEvent &withEvent) {
     using namespace ::duke::protocol;
     // setting event type
     toUpdate.set_type(Get(withEvent.type()));

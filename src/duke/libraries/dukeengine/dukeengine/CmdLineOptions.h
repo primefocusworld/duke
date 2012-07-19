@@ -39,6 +39,8 @@ static const char* const HELP = "help";
 static const char* const HELP_OPT = "help,h";
 static const char* const PORT = "port";
 static const char* const PORT_OPT = PORT;
+static const char* const NOGUI = "no-gui";
+static const char* const NOGUI_OPT = NOGUI;
 
 #include <string>
 

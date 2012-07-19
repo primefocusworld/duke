@@ -53,7 +53,7 @@ bool DukeWidget::event(QEvent * pEvent) {
         }
     }
 
-    return QWidget::event(pEvent);
+    return QGLWidget::event(pEvent);
 }
 
 void DukeWidget::bind(IDukeEngine *pEngine) {

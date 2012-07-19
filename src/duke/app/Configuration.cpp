@@ -7,8 +7,9 @@
 #include <dukeapi/io/PlaybackReader.h>
 #include <dukeapi/io/FileRecorder.h>
 #include <dukeapi/io/InteractiveMessageIO.h>
+#include <dukeapi/io/UIMessageIO.h>
 #include <dukeapi/protobuf_builder/CmdLineParser.h>
-#include <dukeapi/protobuf_builder/SceneBuilder.h>
+#include <dukeapi/messageBuilder/SceneBuilder.h>
 #include <dukeapi/QueueMessageIO.h>
 
 #include <player.pb.h>
@@ -72,7 +73,9 @@ Configuration::Configuration(int argc, char** argv) :
     (RECORD_OPT, po::value<string>(), "Record a session to file") //
     (PORT_OPT, po::value<short>(), "Sets the port number to be used") //
     (CACHESIZE_OPT, po::value<string>()->default_value("50%"), "Cache size for look ahead. Valid units are K,M,G or %") //
-    (THREADS_OPT, po::value<size_t>()->default_value(0), "Number of load/decode threads. Cache size must be >0.");
+    (THREADS_OPT, po::value<size_t>()->default_value(0), "Number of load/decode threads. Cache size must be >0.") //
+    (NOGUI_OPT, "Hide all UI elements.");
+
     // adding display settings
     ::duke::protocol::Renderer renderer;
     setDisplayOptions(m_Display, renderer);
@@ -154,8 +157,6 @@ Configuration::Configuration(int argc, char** argv) :
         /**
          * Interactive mode
          */
-        m_Mode = DUKE;
-
         renderer.set_presentinterval(m_Vm[BLANKING].as<unsigned>());
         renderer.set_fullscreen(m_Vm.count(FULLSCREEN) > 0);
         renderer.set_refreshrate(m_Vm[REFRESHRATE].as<unsigned>());
@@ -189,10 +190,19 @@ Configuration::Configuration(int argc, char** argv) :
         } else if (inputs.empty())
             throw cmdline_exception("You should specify at least one input : filename, directory or playlist files.");
 
-        m_pIO.reset(new InteractiveMessageIO());
-        MessageQueue &queue = dynamic_cast<InteractiveMessageIO*>(m_pIO.get())->m_ToApplicationQueue;
-        IOQueueInserter queueInserter(queue);
 
+        MessageQueue *queue;
+        if(m_Vm.count(NOGUI) > 0){
+            m_Mode = DUKE;
+            m_pIO.reset(new InteractiveMessageIO());
+            queue = &dynamic_cast<InteractiveMessageIO*>(m_pIO.get())->m_ToApplicationQueue; // ugly!
+        } else {
+            m_Mode = DUKEX;
+            m_pIO.reset(new UIMessageIO());
+            queue = &dynamic_cast<UIMessageIO*>(m_pIO.get())->m_ToApplicationQueue; // ugly!
+        }
+
+        IOQueueInserter queueInserter(*queue);
         queueInserter << renderer; // setting renderer
 
         Engine stop;
@@ -211,7 +221,7 @@ Configuration::Configuration(int argc, char** argv) :
         normalize(playlist);
 
         vector<google::protobuf::serialize::SharedHolder> messages = getMessages(playlist);
-        queue.drainFrom(messages);
+        queue->drainFrom(messages);
 
         {
             duke::protocol::PlaybackState playback;

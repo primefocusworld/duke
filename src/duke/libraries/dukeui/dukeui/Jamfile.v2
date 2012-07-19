@@ -1,0 +1,26 @@
+project
+    : requirements
+     	<include>.
+		<include>settings
+		<include>timeline
+		<include>utils
+		
+		<library>/dukeengine//dukeengine/<link>static 
+		
+		<library>/boost//system
+		<library>/boost//filesystem
+		
+		<library>/user-config//Qt/<link>shared
+		
+    : usage-requirements 
+    	<include>.
+		<include>settings     	
+     	<source>mainwindow.ui
+		
+		<include>timeline
+     	<source>timeline/Timeline.ui
+    ;
+
+explicit dukeui ;
+lib dukeui	: 
+	[ glob-tree *.ui *.cpp *.qrc *.h ] ;

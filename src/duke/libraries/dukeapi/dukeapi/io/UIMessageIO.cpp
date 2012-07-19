@@ -1,4 +1,4 @@
-#include "InteractiveMessageIO.h"
+#include "UIMessageIO.h"
 #include <dukeapi/messageBuilder/QuitBuilder.h>
 #include <protocol.pb.h>
 #include <player.pb.h>
@@ -38,22 +38,22 @@ Transport MAKE(const Transport_TransportType type //
 
 } // namespace
 
-InteractiveMessageIO::InteractiveMessageIO() :
+UIMessageIO::UIMessageIO() :
                 m_bPlay(false), m_iFitMode(0) {
 }
 
-InteractiveMessageIO::~InteractiveMessageIO() {
+UIMessageIO::~UIMessageIO() {
 }
 
-bool InteractiveMessageIO::tryPop(SharedHolder& holder) {
+bool UIMessageIO::tryPop(SharedHolder& holder) {
     return m_ToApplicationQueue.tryPop(holder);
 }
 
-void InteractiveMessageIO::waitPop(SharedHolder& holder) {
+void UIMessageIO::waitPop(SharedHolder& holder) {
     m_ToApplicationQueue.waitPop(holder);
 }
 
-void InteractiveMessageIO::push(const SharedHolder& pHolder) {
+void UIMessageIO::push(const SharedHolder& pHolder) {
     using namespace ::duke::protocol;
 
     if (!pHolder)
@@ -61,8 +61,10 @@ void InteractiveMessageIO::push(const SharedHolder& pHolder) {
     const MessageHolder &holder = *pHolder;
 
     // we are taking into account only Event type messages
-    if (!isType<Event>(holder))
+    if (!isType<Event>(holder)){
+        PUSH(*unpack(holder));
         return;
+    }
 
     Event event;
     unpack(holder, event);

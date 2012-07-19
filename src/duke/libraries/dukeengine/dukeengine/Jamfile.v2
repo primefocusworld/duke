@@ -15,9 +15,8 @@ project
 		<library>/boost//chrono/<link>static
 		<library>/boost//iostreams/<link>shared
 
-        <library>/qt//QtCore/<variant>release/<link>shared
-        <library>/qt//QtOpenGL/<variant>release/<link>shared
-        <library>/qt//QtGui/<variant>release/<link>shared
+        <library>/user-config//Qt/<link>shared
+        
     : usage-requirements 
 		<library>/boost//iostreams/<link>shared
 	;

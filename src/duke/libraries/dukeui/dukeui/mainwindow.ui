@@ -1,0 +1,701 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>mainWindow</class>
+ <widget class="QMainWindow" name="mainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>691</width>
+    <height>466</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>11</pointsize>
+   </font>
+  </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
+  <property name="windowTitle">
+   <string>Duke</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>:/IMG/img/duke.png</normaloff>:/IMG/img/duke.png</iconset>
+  </property>
+  <property name="animated">
+   <bool>false</bool>
+  </property>
+  <property name="documentMode">
+   <bool>false</bool>
+  </property>
+  <property name="dockNestingEnabled">
+   <bool>true</bool>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::VerticalTabs</set>
+  </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>true</bool>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="acceptDrops">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>691</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <property name="separatorsCollapsible">
+     <bool>false</bool>
+    </property>
+    <widget class="QMenu" name="openRecentMenu">
+     <property name="title">
+      <string>Open &amp;Recent...</string>
+     </property>
+    </widget>
+    <addaction name="openFileAction"/>
+    <addaction name="openRecentMenu"/>
+    <addaction name="separator"/>
+    <addaction name="savePlaylistAction"/>
+    <addaction name="separator"/>
+    <addaction name="preferencesAction"/>
+    <addaction name="quitAction"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>?</string>
+    </property>
+    <addaction name="aboutAction"/>
+   </widget>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>&amp;Window</string>
+    </property>
+    <widget class="QMenu" name="fitModeMenu">
+     <property name="title">
+      <string>&amp;Fit mode</string>
+     </property>
+     <addaction name="toggleFitModeAction"/>
+     <addaction name="separator"/>
+     <addaction name="fitImageTo11Action"/>
+     <addaction name="fitImageToWindowWidthAction"/>
+     <addaction name="fitImageToWindowHeightAction"/>
+    </widget>
+    <addaction name="fullscreenAction"/>
+    <addaction name="separator"/>
+    <addaction name="fitModeMenu"/>
+   </widget>
+   <widget class="QMenu" name="menuControl">
+    <property name="title">
+     <string>&amp;Control</string>
+    </property>
+    <addaction name="playStopAction"/>
+    <addaction name="separator"/>
+    <addaction name="previousFrameAction"/>
+    <addaction name="nextFrameAction"/>
+    <addaction name="firstFrameAction"/>
+    <addaction name="lastFrameAction"/>
+    <addaction name="separator"/>
+    <addaction name="previousShotAction"/>
+    <addaction name="nextShotAction"/>
+   </widget>
+   <widget class="QMenu" name="menuDisplay">
+    <property name="title">
+     <string>&amp;Display</string>
+    </property>
+    <widget class="QMenu" name="menuColorspace">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="title">
+      <string>&amp;Colorspace</string>
+     </property>
+     <addaction name="LINAction"/>
+     <addaction name="LOGAction"/>
+     <addaction name="SRGBAction"/>
+    </widget>
+    <addaction name="menuColorspace"/>
+    <addaction name="separator"/>
+    <addaction name="timelineAction"/>
+    <addaction name="imageInfoAction"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuControl"/>
+   <addaction name="menuDisplay"/>
+   <addaction name="menuWindow"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <action name="actionPower">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/powerOff32.png</normaloff>
+     <normalon>:/resources/icons/icons/powerOn32.png</normalon>:/resources/icons/icons/powerOff32.png</iconset>
+   </property>
+   <property name="text">
+    <string>power</string>
+   </property>
+  </action>
+  <action name="fullscreenAction">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/fullscreen32.png</normaloff>
+     <normalon>:/resources/icons/icons/restore32.png</normalon>:/resources/icons/icons/fullscreen32.png</iconset>
+   </property>
+   <property name="text">
+    <string>Full&amp;screen</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionPlay">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/play32.png</normaloff>:/resources/icons/icons/play32.png</iconset>
+   </property>
+   <property name="text">
+    <string>play</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/stop32.png</normaloff>:/resources/icons/icons/stop32.png</iconset>
+   </property>
+   <property name="text">
+    <string>stop</string>
+   </property>
+  </action>
+  <action name="nextFrameAction">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/forward32.png</normaloff>:/resources/icons/icons/forward32.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Next frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Right</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="previousFrameAction">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/rewind32.png</normaloff>:/resources/icons/icons/rewind32.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Previous frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Left</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionLast">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/forwardStop32.png</normaloff>:/resources/icons/icons/forwardStop32.png</iconset>
+   </property>
+   <property name="text">
+    <string>last</string>
+   </property>
+  </action>
+  <action name="actionFirst">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/rewindStop32.png</normaloff>:/resources/icons/icons/rewindStop32.png</iconset>
+   </property>
+   <property name="text">
+    <string>first</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/new32.png</normaloff>:/resources/icons/icons/new32.png</iconset>
+   </property>
+   <property name="text">
+    <string>open</string>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/bin32.png</normaloff>:/resources/icons/icons/bin32.png</iconset>
+   </property>
+   <property name="text">
+    <string>close</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/resources/icons/icons/save32.png</normaloff>:/resources/icons/icons/save32.png</iconset>
+   </property>
+   <property name="text">
+    <string>save</string>
+   </property>
+  </action>
+  <action name="actionClose_2">
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </action>
+  <action name="quitAction">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionFirst_Frame">
+   <property name="text">
+    <string>First Frame</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+  </action>
+  <action name="actionPrevious_Frame">
+   <property name="text">
+    <string>Previous Frame</string>
+   </property>
+  </action>
+  <action name="actionStop_2">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="actionPlay_2">
+   <property name="text">
+    <string>Play</string>
+   </property>
+  </action>
+  <action name="actionNext_Frame">
+   <property name="text">
+    <string>Next Frame</string>
+   </property>
+  </action>
+  <action name="actionLast_Frame">
+   <property name="text">
+    <string>Last Frame</string>
+   </property>
+  </action>
+  <action name="actionSession">
+   <property name="text">
+    <string>Session</string>
+   </property>
+  </action>
+  <action name="actionPlaylist">
+   <property name="text">
+    <string>Playlist</string>
+   </property>
+  </action>
+  <action name="actionFit">
+   <property name="text">
+    <string>Fit</string>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+  </action>
+  <action name="actionFullscreen_2">
+   <property name="text">
+    <string>Fullscreen</string>
+   </property>
+  </action>
+  <action name="aboutAction">
+   <property name="text">
+    <string>&amp;About</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="aboutPluginsAction">
+   <property name="text">
+    <string>About &amp;Plugins</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionKate">
+   <property name="text">
+    <string>Open recent...</string>
+   </property>
+  </action>
+  <action name="actionPrevious_2">
+   <property name="text">
+    <string>Previous image</string>
+   </property>
+  </action>
+  <action name="actionNext_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Next image</string>
+   </property>
+  </action>
+  <action name="actionFullscreen_3">
+   <property name="text">
+    <string>Fullscreen mode</string>
+   </property>
+  </action>
+  <action name="previousShotAction">
+   <property name="text">
+    <string>Previous shot</string>
+   </property>
+   <property name="shortcut">
+    <string>PgUp</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="nextShotAction">
+   <property name="text">
+    <string>Next shot</string>
+   </property>
+   <property name="shortcut">
+    <string>PgDown</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="firstFrameAction">
+   <property name="text">
+    <string>&amp;First frame</string>
+   </property>
+   <property name="shortcut">
+    <string>Home</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="lastFrameAction">
+   <property name="text">
+    <string>&amp;Last frame</string>
+   </property>
+   <property name="shortcut">
+    <string>End</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="playStopAction">
+   <property name="text">
+    <string>Play / &amp;Stop</string>
+   </property>
+   <property name="shortcut">
+    <string>Space</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="stopAction">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="actionFit_to_img_height">
+   <property name="text">
+    <string>Fit to width</string>
+   </property>
+  </action>
+  <action name="fitImageToWindowHeightAction">
+   <property name="text">
+    <string>Fit Image to Window &amp;Height</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="fitImageToWindowWidthAction">
+   <property name="text">
+    <string>Fit Image to Window &amp;Width</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="stretchImageToWindowAction">
+   <property name="text">
+    <string>&amp;Stretch Image to Window</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="fitImageTo11Action">
+   <property name="text">
+    <string>&amp;Normal Size (1:1)</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="fitWindowToImageAction">
+   <property name="text">
+    <string>Fit Window to Image</string>
+   </property>
+  </action>
+  <action name="toggleFitModeAction">
+   <property name="text">
+    <string>Toggle Fit Mode</string>
+   </property>
+   <property name="shortcut">
+    <string>F</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionTest">
+   <property name="text">
+    <string>test</string>
+   </property>
+  </action>
+  <action name="openPlaylistAction">
+   <property name="text">
+    <string>Open &amp;Playlist...</string>
+   </property>
+  </action>
+  <action name="openFileAction">
+   <property name="text">
+    <string>&amp;Open...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="openDirectoryAction">
+   <property name="text">
+    <string>Open Directory...</string>
+   </property>
+  </action>
+  <action name="openSequenceFromFileAction">
+   <property name="text">
+    <string>From File...</string>
+   </property>
+  </action>
+  <action name="openSequenceInDirectoryAction">
+   <property name="text">
+    <string>In Directory...</string>
+   </property>
+  </action>
+  <action name="openPlaylistAction_2">
+   <property name="text">
+    <string>Open &amp;Playlist...</string>
+   </property>
+  </action>
+  <action name="browseDirectoryAction">
+   <property name="text">
+    <string>&amp;Browse...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+B</string>
+   </property>
+  </action>
+  <action name="infoAction">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Image &amp;Infos</string>
+   </property>
+   <property name="shortcut">
+    <string>I</string>
+   </property>
+  </action>
+  <action name="LOGAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>LOG</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionLin_to_Cineon">
+   <property name="text">
+    <string>Lin to Cineon</string>
+   </property>
+  </action>
+  <action name="LINAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>LIN</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="actionSRGB_to_Lin">
+   <property name="text">
+    <string>SRGB to Lin</string>
+   </property>
+  </action>
+  <action name="SRGBAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>SRGB</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="zoom12Action">
+   <property name="text">
+    <string>12%</string>
+   </property>
+  </action>
+  <action name="zoom25Action">
+   <property name="text">
+    <string>25%</string>
+   </property>
+  </action>
+  <action name="zoom50Action">
+   <property name="text">
+    <string>50%</string>
+   </property>
+  </action>
+  <action name="zoom75Action">
+   <property name="text">
+    <string>75%</string>
+   </property>
+  </action>
+  <action name="zoom100Action">
+   <property name="text">
+    <string>100%</string>
+   </property>
+  </action>
+  <action name="zoom150Action">
+   <property name="text">
+    <string>150%</string>
+   </property>
+  </action>
+  <action name="zoom200Action">
+   <property name="text">
+    <string>200%</string>
+   </property>
+  </action>
+  <action name="undefinedAction">
+   <property name="text">
+    <string>dock1</string>
+   </property>
+  </action>
+  <action name="savePlaylistAction">
+   <property name="text">
+    <string>&amp;Save Playlist As...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="preferencesAction">
+   <property name="text">
+    <string>&amp;Preferences...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+,</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="timelineAction">
+   <property name="text">
+    <string>&amp;Timeline</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="imageInfoAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Image &amp;Info</string>
+   </property>
+   <property name="shortcut">
+    <string>I</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="resources/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

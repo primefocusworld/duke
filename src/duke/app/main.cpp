@@ -1,15 +1,12 @@
 #include "Configuration.h"
-
 #include <player.pb.h>
-
 #include <dukeapi/messageBuilder/QuitBuilder.h>
 #include <dukeapi/QueueMessageIO.h>
 #include <dukeapi/SocketMessageIO.h>
-
 #include <dukeengine/renderer/DukeEngine.h>
 #include <dukeengine/renderer/DukeWidget.h>
+#include <dukeui/MainWindow.h>
 #include <QApplication>
-
 #include <iostream>
 #include <cstdlib>
 
@@ -58,6 +55,44 @@ int runDuke(int argc, char** argv, const Configuration& configuration, IMessageI
     return qapp.exec();
 }
 
+
+int runDukeX(int argc, char** argv, const Configuration& configuration, IMessageIO &io) {
+    // Qt resources & CSS
+    Q_INIT_RESOURCE(resources);
+
+    DukeApplication qapp(argc, argv, true);
+
+    QFile file(":/CSS/dark.qss");
+    if (file.open(QIODevice::ReadOnly)) {
+        QString styleSheet = QLatin1String(file.readAll());
+        qapp.setStyleSheet(styleSheet);
+    }
+
+    Qt::WindowFlags windowflags = 0;
+    MainWindow mw(NULL);
+    mw.setUnifiedTitleAndToolBarOnMac(true);
+
+    DukeWidget widget(QGLFormat(), &mw, 0, windowflags);
+    mw.setCentralWidget(&widget);
+    //widget.setFocusPolicy(Qt::StrongFocus);
+    widget.setFocus(Qt::OtherFocusReason);
+
+    DukeEngine engine(configuration.imageFactory(), configuration.cache(), io);
+    widget.bind(&engine);
+    mw.bind(&engine);
+    //mw.setFocus(Qt::OtherFocusReason);
+
+    const duke::protocol::Renderer renderer = waitForRenderer(io);
+    if (renderer.fullscreen())
+        mw.showFullScreen();
+    else
+        mw.showNormal();
+
+    mw.raise();
+
+    return qapp.exec();
+}
+
 /////////////////
 // Server mode //
 /////////////////
@@ -102,6 +137,8 @@ int main(int argc, char** argv) {
         switch (configuration.mode()) {
             case Configuration::DUKE:
                 return runDuke(argc, argv, configuration, configuration.io());
+            case Configuration::DUKEX:
+                return runDukeX(argc, argv, configuration, configuration.io());
             case Configuration::SERVER:
                 return runServer(argc, argv, configuration);
             default:
