@@ -31,7 +31,7 @@ constant PROTOC : /usr/bin/protoc ;
 # website  : http://developer.nvidia.com/cg-toolkit
 # download : http://developer.nvidia.com/cg-toolkit-download
 #-----------------------------------------------------------------------------
-lib cg : : <framework>Cg ;
+alias cg : : : : <linkflags>"-framework Cg -framework OpenGL" ;
 
 
 
@@ -41,9 +41,16 @@ lib cg : : <framework>Cg ;
 # website  : http://developer.nvidia.com/cg-toolkit
 # download : http://developer.nvidia.com/cg-toolkit-download
 #-----------------------------------------------------------------------------
-lib cggl : : <framework>Cg ;
+alias cggl : : : : <linkflags>"-framework Cg -framework OpenGL" ;
 
-
+#-----------------------------------------------------------------------------
+# name     : GLEW
+# purpose  : Graphical toolkit - OpenGL backend
+# website  : http://glew.sourceforge.net/
+#-----------------------------------------------------------------------------
+lib GLEW : : <file>/PATH/TO/GLEW/lib/libGLEW.1.7.0.dylib
+         : : <include>/PATH/TO/GLEW/include ;
+ 	     
 #-----------------------------------------------------------------------------
 # name     : Qt
 # purpose  : GUI framework used by DukeX

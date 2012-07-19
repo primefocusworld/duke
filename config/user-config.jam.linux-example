@@ -44,6 +44,12 @@ lib cg : : 	<file>/PATH/TO/CG-SO/libCg.so
 lib cggl : : <file>/PATH/TO/CGGL-SO/libCgGL.so
 	     : : <include>/PATH/TO/CGGL/include ;
 
+#-----------------------------------------------------------------------------
+# name     : GLEW
+# purpose  : Graphical toolkit - OpenGL backend
+# website  : http://glew.sourceforge.net/
+#-----------------------------------------------------------------------------
+lib GLEW : : <file>/usr/lib64/libGLEW.so ;
 
 #-----------------------------------------------------------------------------
 # name     : Qt

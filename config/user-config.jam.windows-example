@@ -54,7 +54,15 @@ lib cg : : 	<file>C:/PATH/TO/CG-LIB/cg.lib
 lib cggl : : <name>CgGL <search>$(CG_ROOT)
 	     : : <include>$(CG_ROOT)/include ;
 
-
+#-----------------------------------------------------------------------------
+# name     : GLEW
+# purpose  : Graphical toolkit - OpenGL backend
+# website  : http://glew.sourceforge.net/
+#-----------------------------------------------------------------------------
+lib GLEW : : <file>C:/PATH/TO/GLEW-LIB/glew32.lib
+             <file>C:/PATH/TO/GLEW-DLL/glew32.dll
+         : : <include>C:/PATH/TO/GLEW/include ;
+         
 #-----------------------------------------------------------------------------
 # name     : Qt
 # purpose  : GUI framework used by DukeX
