@@ -69,12 +69,12 @@ lib GLEW : : <file>C:/PATH/TO/GLEW-LIB/glew32.lib
 # website  : http://qt.nokia.com
 # download : http://qt.nokia.com/downloads
 #-----------------------------------------------------------------------------
-using qt4 : PATH/TO/QtSDK/Desktop/Qt/473/gcc ;
-
-
-
-
-
+constant QTDIR : PATH/TO/QtSDK/Desktop/Qt/473/gcc ;
+using qt4 : $(QTDIR) ; 
+alias Qt : : : : 
+	<toolset>gcc:<library>/qt//QtCore/<variant>release/<link>shared
+	<toolset>gcc:<library>/qt//QtOpenGL/<variant>release/<link>shared
+	<toolset>gcc:<library>/qt//QtGui/<variant>release/<link>shared ;
 
 
 #----------------------------------------#
