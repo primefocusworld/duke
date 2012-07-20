@@ -21,6 +21,15 @@ project user-config ;
 #----------------------------------------#
 
 #-----------------------------------------------------------------------------
+# name     : MinGW runtime
+# purpose  : provides automatic reditribution of MinGW's runtime   
+#-----------------------------------------------------------------------------
+local MINGW_ROOT = C:/MinGW32 ;
+lib mwingw_runtime : :  <file>$(MINGW_ROOT)/bin/libgcc_s_sjlj-1.dll
+                        <file>$(MINGW_ROOT)/bin/libstdc++-6.dll
+                        ;
+
+#-----------------------------------------------------------------------------
 # name     : Google Protocolbuffer
 # purpose  : Defines duke's protocol to communicate internally and with other
 #            applications  
