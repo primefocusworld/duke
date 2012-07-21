@@ -30,10 +30,14 @@ Setting up the build process
     
             ./bootstrap.sh
     
-    - Windows
+    - Windows with MinGW ( recommended )
+    
+            bootstrap.bat gcc
+
+    - Windows with Visual ( not tested )
     
             bootstrap.bat
-
+            
     This will generate a 'b2' executable.
 
 
