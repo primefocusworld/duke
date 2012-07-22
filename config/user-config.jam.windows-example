@@ -24,7 +24,7 @@ project user-config ;
 # name     : MinGW runtime
 # purpose  : provides automatic reditribution of MinGW's runtime   
 #-----------------------------------------------------------------------------
-constant MINGW_ROOT = C:/MinGW/bin ;
+constant MINGW_ROOT : C:/MinGW/bin ;
 
 lib mwingw_runtime : :  <file>$(MINGW_ROOT)/libgcc_s_dw2-1.dll
                         <file>$(MINGW_ROOT)/libstdc++-6.dll
@@ -116,11 +116,11 @@ alias Qt : : : :
 # website  : http://sourceforge.net/projects/libjpeg-turbo/
 # download : http://sourceforge.net/projects/libjpeg-turbo/files/1.1.1/
 #-----------------------------------------------------------------------------
-#constant TJPEG_ROOT : C:/lib/libjpeg-turbo ;
-#
-#lib turbojpeg : : <file>$(TJPEG_ROOT)/lib/libturbojpeg.dll.a
-#                  <file>$(TJPEG_ROOT)/bin/libturbojpeg.dll
-#              : : <include>$(TJPEG_ROOT)/include ;
+constant TJPEG_ROOT : C:/lib/libjpeg-turbo ;
+
+lib turbojpeg : : <file>$(TJPEG_ROOT)/lib/libturbojpeg.dll.a
+                  <file>$(TJPEG_ROOT)/bin/libturbojpeg.dll
+              : : <include>$(TJPEG_ROOT)/include ;
 
 
 #-----------------------------------------------------------------------------
