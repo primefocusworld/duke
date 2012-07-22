@@ -5,7 +5,9 @@ message MessageHolder {
         CREATE = 0;
         RETRIEVE = 1;
         UPDATE = 2;
-        DELETE = 3;
+// This command is removed for the moment because
+// because it breaks MinGW/Windows build
+//        DELETE = 3;
         CLOSE_CONNECTION = 4;
     }
     
