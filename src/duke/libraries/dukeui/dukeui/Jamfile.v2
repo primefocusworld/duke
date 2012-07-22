@@ -5,11 +5,13 @@ lib dukeui : # sources
              /boost//system/<link>shared
              /boost//filesystem/<link>shared
              /user-config//Qt/<link>shared
-           : # usage requirements
+           : # requirements
              <include>.
              <include>settings
              <include>timeline
              <include>utils
+           : # default-build
+           : # usage-requirements 
              <source>mainwindow.ui
              <source>timeline/Timeline.ui
            ;
