@@ -24,9 +24,10 @@ project user-config ;
 # name     : MinGW runtime
 # purpose  : provides automatic reditribution of MinGW's runtime   
 #-----------------------------------------------------------------------------
-local MINGW_ROOT = C:/MinGW32 ;
-lib mwingw_runtime : :  <file>$(MINGW_ROOT)/bin/libgcc_s_sjlj-1.dll
-                        <file>$(MINGW_ROOT)/bin/libstdc++-6.dll
+constant MINGW_ROOT = C:/MinGW/bin ;
+
+lib mwingw_runtime : :  <file>$(MINGW_ROOT)/libgcc_s_dw2-1.dll
+                        <file>$(MINGW_ROOT)/libstdc++-6.dll
                         ;
 
 #-----------------------------------------------------------------------------
@@ -36,12 +37,13 @@ lib mwingw_runtime : :  <file>$(MINGW_ROOT)/bin/libgcc_s_sjlj-1.dll
 # website  : http://code.google.com/p/protobuf/
 # download : http://code.google.com/p/protobuf/downloads/list
 #-----------------------------------------------------------------------------
-lib protobuf : : <file>C:/PATH/TO/PROTOBUF/LIB/libprotobuf.a
-                 <file>C:/PATH/TO/PROTOBUF/BIN/libprotobuf-7.dll
-             : : <include>C:/PATH/TO/PROTOBUF/include ;
+constant PB_ROOT : C:/lib/protobuf ;
+
+lib protobuf : : <file>$(PB_ROOT)/lib/libprotobuf.a
+             : : <include>$(PB_ROOT)/include ;
 
 # also define PROTOC the protocol buffer compiler
-constant PROTOC : C:/PATH/TO/PROTOC-BINARY/protoc.exe ; 
+constant PROTOC : $(PB_ROOT)/bin/protoc.exe ; 
 
 
 #-----------------------------------------------------------------------------
@@ -50,9 +52,11 @@ constant PROTOC : C:/PATH/TO/PROTOC-BINARY/protoc.exe ;
 # website  : http://developer.nvidia.com/cg-toolkit
 # download : http://developer.nvidia.com/cg-toolkit-download
 #-----------------------------------------------------------------------------
-lib cg : : 	<file>C:/PATH/TO/CG-LIB/cg.lib
-			<file>C:/PATH/TO/CG-DLL/cg.dll
-	   : : 	<include>C:/PATH/TO/CG/include ;
+constant CG_ROOT : "C:/Program Files (x86)/NVIDIA Corporation/Cg" ;
+
+lib cg : : 	<file>$(CG_ROOT)/lib/cg.lib
+		<file>$(CG_ROOT)/bin/cg.dll
+	   : : 	<include>$(CG_ROOT)/include ;
 
 #-----------------------------------------------------------------------------
 # name     : CgGL
@@ -60,17 +64,25 @@ lib cg : : 	<file>C:/PATH/TO/CG-LIB/cg.lib
 # website  : http://developer.nvidia.com/cg-toolkit
 # download : http://developer.nvidia.com/cg-toolkit-download
 #-----------------------------------------------------------------------------
-lib cggl : : <name>CgGL <search>$(CG_ROOT)
-	     : : <include>$(CG_ROOT)/include ;
+lib opengl32 ;
+lib gdi32 ;
+lib cggl : gdi32 opengl32 :
+             <file>$(CG_ROOT)/lib/cgGL.lib
+             <file>$(CG_ROOT)/lib/glut32.lib
+	     <file>$(CG_ROOT)/bin/cgGL.dll
+	 : : <include>$(CG_ROOT)/include ;
 
 #-----------------------------------------------------------------------------
 # name     : GLEW
 # purpose  : Graphical toolkit - OpenGL backend
 # website  : http://glew.sourceforge.net/
+# download : http://sourceforge.net/projects/glew/files/glew/1.6.0
 #-----------------------------------------------------------------------------
-lib GLEW : : <file>C:/PATH/TO/GLEW-LIB/glew32.lib
-             <file>C:/PATH/TO/GLEW-DLL/glew32.dll
-         : : <include>C:/PATH/TO/GLEW/include ;
+constant GLEW_ROOT : C:/lib/glew-1.8.0 ;
+
+lib GLEW : : <file>$(GLEW_ROOT)/lib/libglew32.dll.a
+             <file>$(GLEW_ROOT)/lib/glew32.dll
+         : : <include>$(GLEW_ROOT)/include ;
          
 #-----------------------------------------------------------------------------
 # name     : Qt
@@ -78,12 +90,17 @@ lib GLEW : : <file>C:/PATH/TO/GLEW-LIB/glew32.lib
 # website  : http://qt.nokia.com
 # download : http://qt.nokia.com/downloads
 #-----------------------------------------------------------------------------
-constant QTDIR : PATH/TO/QtSDK/Desktop/Qt/473/gcc ;
-using qt4 : $(QTDIR) ; 
+constant QT_ROOT : C:/lib/qt-everywhere-opensource-src-4.8.2 ;
+
+using qt4 : $(QT_ROOT) ; 
 alias Qt : : : : 
 	<toolset>gcc:<library>/qt//QtCore/<variant>release/<link>shared
 	<toolset>gcc:<library>/qt//QtOpenGL/<variant>release/<link>shared
-	<toolset>gcc:<library>/qt//QtGui/<variant>release/<link>shared ;
+	<toolset>gcc:<library>/qt//QtGui/<variant>release/<link>shared
+	<toolset>gcc:<file>$(QT_ROOT)/bin/QtCore4.dll
+	<toolset>gcc:<file>$(QT_ROOT)/bin/QtOpenGL4.dll
+	<toolset>gcc:<file>$(QT_ROOT)/bin/QtGui4.dll
+	;
 
 
 #----------------------------------------#
@@ -99,8 +116,11 @@ alias Qt : : : :
 # website  : http://sourceforge.net/projects/libjpeg-turbo/
 # download : http://sourceforge.net/projects/libjpeg-turbo/files/1.1.1/
 #-----------------------------------------------------------------------------
-#lib turbojpeg : : <file>C:/PATH/TO/TURBOJPEG-LIB/libturbojpeg.a
-#              : : <include>C:/PATH/TO/TURBOJPEG/include ;
+#constant TJPEG_ROOT : C:/lib/libjpeg-turbo ;
+#
+#lib turbojpeg : : <file>$(TJPEG_ROOT)/lib/libturbojpeg.dll.a
+#                  <file>$(TJPEG_ROOT)/bin/libturbojpeg.dll
+#              : : <include>$(TJPEG_ROOT)/include ;
 
 
 #-----------------------------------------------------------------------------
