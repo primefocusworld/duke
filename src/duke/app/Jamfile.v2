@@ -7,5 +7,4 @@ project
 
 exe duke : 
 	[ glob *.cpp ] 
-	/dukeengine//dukeengine/<link>static 
-	/dukeui//dukeui ;
+	/dukeui//dukeui/<link>static  ;
