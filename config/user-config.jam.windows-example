@@ -4,6 +4,11 @@ project user-config ;
 # See README for more details.
 
 ############ warning for windows users ############
+# -> MinGW
+#
+# if you haven't already done so please read  
+# INSTALL-MINGW.md file in the root folder.
+#
 # -> Paths
 #
 # if your path is C:\PATH\TO\FILE
