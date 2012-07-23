@@ -54,7 +54,7 @@ Now you need to compile [Google's protocol buffer](http://code.google.com/p/prot
 * unzip in ```C:\lib\protobuf-2.4.1\```
 * launch MinGW Shell from Start menu
 * ```cd /C/lib/protobuf-2.4.1/```
- * please note that in MinGW shell path are Unix style.
+ * please note that in MinGW Shell path are Unix style.
 * ```./configure --prefix /C/lib/protobuf```
  * we want the distribution folder to be C:\lib\protobuf
 * ```make```
