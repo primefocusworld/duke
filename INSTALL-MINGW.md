@@ -23,7 +23,7 @@ Go for the [recent one](http://www.mingw.org/wiki/Getting_Started) and as recomm
  * MSYS Basic System
  * MinGW Developer Toolkit
 
-Once installed you'll have an ```MinGW Shell``` available in your Start Menu.
+Once installed you'll have an MinGW Shell available in your Start Menu.
 
 Qt - from Sources
 -----------------
@@ -34,7 +34,7 @@ Qt binaries for Windows are only available for an old version of MinGW so we'll 
  * the link is not easy to find : search for ```source``` in the page and download the [zip file](http://releases.qt-project.org/qt4/source/qt-everywhere-opensource-src-4.8.2.zip)
 * unzip in ```C:\lib\qt-everywhere-opensource-src-4.8.2\```
 * open a shell ( cmd.exe ) in ```C:\lib\qt-everywhere-opensource-src-4.8.2\```
- * warning : do not use ```MinGW Shell``` here, Qt's configure script does not work within this shell, use cmd.exe
+ * warning : do not use MinGW Shell here, Qt's configure script does not work within this shell, use cmd.exe
 * ```set PATH=c:\MinGW\bin;%PATH%;c:\MinGW\msys\1.0\bin```
  * Qt's configure script needs access to MinGW's bin folder and to a perl interpreter ( hopefully there's one shipped with MSYS ) so let's configure the PATH
 * ```configure -release -opensource -developer-build -platform win32-g++-4.6 -no-openssl -no-s60 -nomake demos -nomake examples -arch windows```
@@ -52,9 +52,9 @@ Now you need to compile [Google's protocol buffer](http://code.google.com/p/prot
 
 * Download the [sources](http://code.google.com/p/protobuf/downloads/list)
 * unzip in ```C:\lib\protobuf-2.4.1\```
-* launch ```MinGW Shell``` from Start menu
+* launch MinGW Shell from Start menu
 * ```cd /C/lib/protobuf-2.4.1/```
- * please note that in MinGW shell path are Unix style.
+ * please note that in MinGW Shell path are Unix style.
 * ```./configure --prefix /C/lib/protobuf```
  * we want the distribution folder to be C:\lib\protobuf
 * ```make```
