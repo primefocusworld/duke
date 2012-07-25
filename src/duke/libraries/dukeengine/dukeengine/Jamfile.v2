@@ -19,5 +19,8 @@ lib dukeengine
 	: # requirements
 	: # default build
 	: # usage requirements
-		<find-shared-library>GL
+		<os>LINUX:<find-shared-library>GL
+		<os>MACOSX:<find-shared-library>GL
+		<os>NT:<find-shared-library>opengl32
+		<os>NT:<find-shared-library>gdi32
 	;
