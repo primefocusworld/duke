@@ -1,14 +1,10 @@
-project 
-	: requirements 
-		<include>.
-    	<library>/dukeioplugin//dukeioplugin 
-    	<library>/user-config//oiio
-    ;
-
 explicit oiio ;
 ioplugin oiio 
-    :   
+    : # sources
         [ glob *.cpp ] 
-    : 
+    	/dukeioplugin//dukeioplugin 
+    	/user-config//oiio
+    : # requirements
+    	<include>.
         <build>$(build-oiio) 
     ; 

@@ -1,12 +1,15 @@
 explicit dukeapi ;
-lib dukeapi	: # sources
-                  [ glob-tree *.cpp ]
-                  /duke/sub/concurrent//concurrent/<link>static            # header only library
-                  /duke/sub/sequenceparser//sequence_parser/<link>static   # embedded
-                  /pb/serialize//serialize
-                  /pb/player//player
-                  /pb/playlist//playlist
-                : # usage requirements
-                  #<os>NT:<find-shared-library>Ws2_32/<link>shared
-                  #<os>NT:<find-shared-library>Mswsock/<link>shared
-                ;
+lib dukeapi
+	: # sources
+		[ glob-tree *.cpp ]
+		/duke/sub/concurrent//concurrent/<link>static            # header only library
+		/duke/sub/sequenceparser//sequence_parser/<link>static   # embedded
+		/pb/serialize//serialize
+		/pb/player//player
+		/pb/playlist//playlist
+	: # requirements
+	: # default build
+	: # usage requirements
+		<os>NT:<find-shared-library>Ws2_32
+		<os>NT:<find-shared-library>Mswsock
+	;

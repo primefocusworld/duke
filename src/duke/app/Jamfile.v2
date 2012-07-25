@@ -1,9 +1,8 @@
-exe duke : # sources
-           [ glob *.cpp ]
-           /dukeui//dukeui/<link>static
-           /boost//program_options
-         : # usage requirements
-           <include>.
-           <os>NT:<find-shared-library>Ws2_32
-           <os>NT:<find-shared-library>Mswsock
-         ;
+exe duke
+	: # sources
+	   [ glob *.cpp ]
+	   /dukeui//dukeui/<link>static
+	   /boost//program_options
+	 : # requirements
+	   <include>.
+	 ;

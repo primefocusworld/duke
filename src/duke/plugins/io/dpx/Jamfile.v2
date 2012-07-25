@@ -1,14 +1,9 @@
-project 
-	: requirements 
-		<include>.
-    	<library>/dukeioplugin//dukeioplugin 
-    	<threading>single
-    ;
-
 explicit dpx ;
 ioplugin dpx 
-    :   
+    : # sources
         [ glob *.cpp ] 
-    : 
-        <build>$(build-dpx) 
+    	/dukeioplugin//dukeioplugin 
+    : # requirements
+		<include>.
+        <build>$(build-dpx)
     ; 

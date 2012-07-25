@@ -73,7 +73,8 @@ alias tests 	        : duketests dukextests ;
 alias mingw_runtime     ;
 alias mingw_runtime     : /user-config//mwingw_runtime : <os>NT <toolset>gcc ;
 
-install dist :
+install dist
+	:
 	    #src/diskbench
 	    src/duke/app
 	    dukeplugins

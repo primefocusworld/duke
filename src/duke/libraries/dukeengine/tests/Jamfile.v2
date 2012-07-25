@@ -2,19 +2,19 @@ import testing ;
 
 explicit dukeengine_test_subset ;
 lib dukeengine_test_subset
-			:
-				[ glob ../dukeengine/utils/*.cpp ]
-				[ glob ../dukeengine/memory/pool/*.cpp ]
-				[ glob ../dukeengine/memory/alloc/*.cpp ]
-				[ glob ../dukeengine/file/*.cpp ]
-				../dukeengine/CmdLineOptions.cpp
-				../dukeengine/memory/MemoryUtils.cpp
-				../dukeengine/renderer/TexturePool.cpp
-				../dukeengine/renderer/IResource.cpp
-			:
-				<library>/dukeapi//dukeapi/<link>static
-				<include>../../dukeio
-			;
+	:
+		[ glob ../dukeengine/utils/*.cpp ]
+		[ glob ../dukeengine/memory/pool/*.cpp ]
+		[ glob ../dukeengine/memory/alloc/*.cpp ]
+		[ glob ../dukeengine/file/*.cpp ]
+		../dukeengine/CmdLineOptions.cpp
+		../dukeengine/memory/MemoryUtils.cpp
+		../dukeengine/renderer/TexturePool.cpp
+		../dukeengine/renderer/IResource.cpp
+		/dukeapi//dukeapi/<link>static
+	:
+		<include>../../dukeio
+	;
 
 for local l in [ glob *.cpp ] {
 	unit-test $(l)_tests

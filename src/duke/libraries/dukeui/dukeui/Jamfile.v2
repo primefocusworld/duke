@@ -1,17 +1,18 @@
 explicit dukeui ;
-lib dukeui : # sources
-             [ glob-tree *.ui *.cpp *.qrc *.h ]
-             /dukeengine//dukeengine/<link>static
-             /boost//system/<link>shared
-             /boost//filesystem/<link>shared
-             /user-config//Qt/<link>shared
-           : # requirements
-             <include>.
-             <include>settings
-             <include>timeline
-             <include>utils
-           : # default-build
-           : # usage-requirements 
-             <source>mainwindow.ui
-             <source>timeline/Timeline.ui
-           ;
+lib dukeui
+	: # sources
+		[ glob-tree *.ui *.cpp *.qrc *.h ]
+		/dukeengine//dukeengine/<link>static
+		/boost//system/<link>shared
+		/boost//filesystem/<link>shared
+		/user-config//Qt/<link>shared
+	: # requirements
+		<include>.
+		<include>settings
+		<include>timeline
+		<include>utils
+	: # default-build
+	: # usage-requirements 
+		<source>mainwindow.ui
+		<source>timeline/Timeline.ui
+	;
