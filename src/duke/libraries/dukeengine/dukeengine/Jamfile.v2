@@ -6,13 +6,17 @@ explicit dukeengine ;
 lib dukeengine	: # sources
                   renderer/DukeWidget.h                         # Qt preprocessing
                   [ glob-tree *.cpp ]
-                  /dukeio//dukeio/<link>static			# header only library
-		  /duke/sub/dukeplugins//dukehost/<link>static	# plugin manager embedded
-		  /dukeapi//dukeapi/<link>static		# dukeapi is embedded
+                  /dukeio//dukeio/<link>static					# header only library
+				  /duke/sub/dukeplugins//dukehost/<link>static	# plugin manager embedded
+				  /dukeapi//dukeapi/<link>static				# dukeapi is embedded
                   /user-config//GLEW/<link>shared
                   /user-config//cg/<link>shared
                   /user-config//cggl/<link>shared
                   /user-config//Qt/<link>shared
                   /boost//chrono/<link>shared
                   /boost//iostreams/<link>shared
+                : # requirements
+                : # default build
+                : # usage requirements
+                  <find-shared-library>GL
                 ;
