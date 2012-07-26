@@ -69,7 +69,7 @@ alias dukeplugins 		: plugin-jpg plugin-dpx plugin-oiio : <os>LINUX ;
 alias dukeplugins 		: plugin-jpg plugin-dpx plugin-oiio : <os>MACOSX ;
 alias dukeplugins 		: plugin-jpg plugin-dpx : <os>NT ;
 alias duketests 	    : src/duke/libraries//tests src/duke/submodules//tests ;
-alias tests 	        : duketests dukextests ;
+alias tests 	        : duketests ;
 alias mingw_runtime     ;
 alias mingw_runtime     : /user-config//mwingw_runtime : <os>NT <toolset>gcc ;
 

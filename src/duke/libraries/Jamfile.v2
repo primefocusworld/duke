@@ -4,5 +4,5 @@ use-project /pb/playlist   : protobuf/playlist ;
 use-project /pb/serialize  : protobuf/serialize ;
 use-project /dukeio        : dukeio ;
 
-alias tests : dukeapi/tests dukeengine/tests ;
+alias tests : dukeengine/tests ;
 explicit tests ;

@@ -1,4 +1,3 @@
-#include <dukeapi/protobuf_builder/PlaylistBuilder.h>
 #include <dukeengine/utils/CacheIterator.h>
 #include <dukeengine/utils/RangeIterator.h>
 #include <dukeengine/utils/TimeUtils.h>
@@ -9,20 +8,6 @@
 using namespace duke::protocol;
 using namespace sequence;
 using namespace std;
-
-static inline void check(const PlaylistIndex &a, const PlaylistIndex &b) {
-    BOOST_CHECK_EQUAL(a.frame, b.frame);
-    BOOST_CHECK_EQUAL(a.track, b.track);
-}
-
-static inline void check(CacheIterator &itr, unsigned int frame) {
-    BOOST_CHECK( !itr.empty());
-    const MediaFrame mf = itr.front();
-    check(mf.index, PlaylistIndex(frame,0));
-    BOOST_CHECK_EQUAL(mf.source, frame);
-    BOOST_CHECK_EQUAL(mf.item.type, SEQUENCE);
-    itr.popFront();
-}
 
 static inline void checkAndPop(RangeIterator& itr, unsigned int value) {
     BOOST_CHECK( !itr.empty());
@@ -91,47 +76,6 @@ BOOST_AUTO_TEST_CASE( emptyPlaylist ) {
         CacheIterator itr(helper, FORWARD, helper.range.first, helper.range);
         BOOST_CHECK(itr.empty());
     }
-    {
-        PlaylistBuilder builder;
-        builder.addTrack("default");
-        PlaylistHelper helper(builder);
-        CacheIterator itr(helper, FORWARD, helper.range.first, helper.range);
-        BOOST_CHECK(itr.empty());
-    }
-    {
-        PlaylistBuilder builder;
-        TrackBuilder track = builder.addTrack("default");
-        track.addSequence("file-####.jpg", sequence::Range(0,0), sequence::Range(0,0));
-        PlaylistHelper helper(builder);
-        CacheIterator itr(helper, FORWARD, helper.range.first, helper.range);
-        BOOST_CHECK(!itr.empty());
-    }
-}
-
-static inline PlaylistHelper build() {
-    PlaylistBuilder builder;
-    TrackBuilder track = builder.addTrack("default");
-    track.addSequence("file-####.jpg", sequence::Range(0,10), sequence::Range(0,10));
-    return PlaylistHelper(builder);
-}
-
-BOOST_AUTO_TEST_CASE( __first ) {
-    PlaylistHelper helper(build());
-    CacheIterator itr(helper, FORWARD, 5, helper.range);
-
-    BOOST_CHECK(!itr.empty());
-    check(itr, 5);
-    check(itr, 6);
-    check(itr, 7);
-    check(itr, 8);
-    check(itr, 9);
-    check(itr, 10);
-    check(itr, 0);
-    check(itr, 1);
-    check(itr, 2);
-    check(itr, 3);
-    check(itr, 4);
-    BOOST_CHECK(itr.empty());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -29,7 +29,7 @@ constant PROTOC : /usr/bin/protoc ;
 # name     : Cg
 # purpose  : Graphical toolkit
 # website  : http://developer.nvidia.com/cg-toolkit
-# download : http://developer.nvidia.com/cg-toolkit-download
+# download : http://http.developer.nvidia.com/Cg/index_releases.html
 #-----------------------------------------------------------------------------
 alias cg : : : : <linkflags>"-framework Cg -framework OpenGL" ;
 

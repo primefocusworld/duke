@@ -15,25 +15,26 @@ project user-config ;
 # website  : http://code.google.com/p/protobuf/
 # download : http://code.google.com/p/protobuf/downloads/list
 #-----------------------------------------------------------------------------
-# if protobuf is installed on your system use the following line
-lib protobuf ;
-# if you installed it from source uncomment and configure
-#lib protobuf : : <file>/PATH/TO/PROTOBUF-SO/libprotobuf.so.7
-#             : : <include>/PATH/TO/PROTOBUF/include ;
+constant PB_ROOT : /home/gch/lib/protobuf ;
+
+lib protobuf : : <file>$(PB_ROOT)/lib64/libprotobuf.so.7
+             : : <include>$(PB_ROOT)/include ;
 
 # also define PROTOC the protocol buffer compiler
-constant PROTOC : /usr/bin/protoc ; 
+constant PROTOC : $(PB_ROOT)/bin/protoc ; 
 
 
 #-----------------------------------------------------------------------------
 # name     : Cg
 # purpose  : Graphical toolkit
 # website  : http://developer.nvidia.com/cg-toolkit
-# download : http://developer.nvidia.com/cg-toolkit-download
+# download : http://http.developer.nvidia.com/Cg/index_releases.html
 #-----------------------------------------------------------------------------
-lib cg : : 	<file>/PATH/TO/CG-SO/libCg.so
-	   : : 	<include>/PATH/TO/CG/include ;
+constant CG_ROOT : /home/gch/lib/Cg-3.1_April2012_x86_64 ;
 
+lib cg : : 	<file>$(CG_ROOT)/lib64/libCg.so
+	   : : 	<include>$(CG_ROOT)/include ;
+	   
 
 #-----------------------------------------------------------------------------
 # name     : CgGL
@@ -41,8 +42,9 @@ lib cg : : 	<file>/PATH/TO/CG-SO/libCg.so
 # website  : http://developer.nvidia.com/cg-toolkit
 # download : http://developer.nvidia.com/cg-toolkit-download
 #-----------------------------------------------------------------------------
-lib cggl : : <file>/PATH/TO/CGGL-SO/libCgGL.so
-	     : : <include>/PATH/TO/CGGL/include ;
+lib cggl : :
+             <file>$(CG_ROOT)/lib64/libCgGL.so
+		 : : <include>$(CG_ROOT)/include ;
 
 #-----------------------------------------------------------------------------
 # name     : GLEW
@@ -57,7 +59,7 @@ lib GLEW : : <file>/usr/lib64/libGLEW.so ;
 # website  : http://qt.nokia.com
 # download : http://qt.nokia.com/downloads
 #-----------------------------------------------------------------------------
-constant QTDIR : PATH/TO/QtSDK/Desktop/Qt/473/gcc ;
+constant QTDIR : /usr ;
 using qt4 : $(QTDIR) ; 
 alias Qt : : : : 
 	<toolset>gcc:<library>/qt//QtCore/<variant>release/<link>shared
@@ -78,8 +80,10 @@ alias Qt : : : :
 # website  : http://sourceforge.net/projects/libjpeg-turbo/
 # download : http://sourceforge.net/projects/libjpeg-turbo/files/1.1.1/
 #-----------------------------------------------------------------------------
-#lib turbojpeg : : <file>/PATH/TO/TURBOJPEG-SO/libturbojpeg.so
-#              : : <include>/PATH/TO/TURBOJPEG/include ;
+constant TJPEG_ROOT : /home/gch/lib/libjpeg-turbo ;
+
+lib turbojpeg : : <file>$(TJPEG_ROOT)/lib64/libturbojpeg.so
+              : : <include>$(TJPEG_ROOT)/include ;
 
 
 #-----------------------------------------------------------------------------
@@ -103,4 +107,4 @@ explicit protobuf cg cggl turbojpeg oiio ;
 #    Congratulations ! You're done :)   #
 #    Uncomment the following line.      #
 #---------------------------------------#
-#constant duke_user_configuration : true ;
+constant duke_user_configuration : true ;

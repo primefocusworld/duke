@@ -55,7 +55,7 @@ constant PROTOC : $(PB_ROOT)/bin/protoc.exe ;
 # name     : Cg
 # purpose  : Graphical toolkit
 # website  : http://developer.nvidia.com/cg-toolkit
-# download : http://developer.nvidia.com/cg-toolkit-download
+# download : http://http.developer.nvidia.com/Cg/index_releases.html
 #-----------------------------------------------------------------------------
 constant CG_ROOT : "C:/Program Files (x86)/NVIDIA Corporation/Cg" ;
 

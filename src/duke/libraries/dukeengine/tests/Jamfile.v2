@@ -10,8 +10,9 @@ lib dukeengine_test_subset
 		../dukeengine/CmdLineOptions.cpp
 		../dukeengine/memory/MemoryUtils.cpp
 		../dukeengine/renderer/TexturePool.cpp
-		../dukeengine/renderer/IResource.cpp
 		/dukeapi//dukeapi/<link>static
+		/user-config//cg/<link>shared
+        /boost//chrono/<link>shared
 	:
 		<include>../../dukeio
 	;
