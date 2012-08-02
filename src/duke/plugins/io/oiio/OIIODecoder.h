@@ -4,35 +4,38 @@
 #include <dukeio/ImageDescription.h>
 #include <dukeplugin/IBoostPlugin.h>
 #include <dukeplugin/suite/property/PropertySuiteImpl.h>
-
 #include <boost/thread/tss.hpp>
 
+#include <OpenImageIO/imageio.h>
 
-namespace OpenImageIO{
-namespace v1_0{
-	class ImageInput;
-} // namespace v1_0
-} // namespace OpenImageIO
+OIIO_PLUGIN_NAMESPACE_BEGIN //
+class ImageInput;
+OIIO_PLUGIN_NAMESPACE_END //
 
-class OIIODecoder : public IBoostPlugin
-{
+class OIIODecoder : public IBoostPlugin {
 public:
-    typedef OpenImageIO::v1_0::ImageInput ImageInput;
+    typedef OIIO_NAMESPACE::OIIO_VERSION_NS::ImageInput ImageInput;
     typedef boost::thread_specific_ptr<ImageInput> ImageInputPtr;
+
+    OIIODecoder();
+    virtual ~OIIODecoder();
+
+public:
+    OfxStatus noOp();
+    OfxStatus describe(const void* handle, OfxPropertySetHandle in, OfxPropertySetHandle out);
+    OfxStatus readHeader(const void* handle, OfxPropertySetHandle in, OfxPropertySetHandle out);
+    OfxStatus decodeImage(const void* handle, OfxPropertySetHandle in, OfxPropertySetHandle out);
+
+private:
+    OfxStatus safeClose();
+    void safeSet(ImageInput *pImage);
+    int getImageFormat(const OIIO_NAMESPACE::OIIO_VERSION_NS::ImageSpec& imagespec) const;
+    void printDebug(const OIIO_NAMESPACE::OIIO_VERSION_NS::ImageSpec& imagespec);
+
 private:
     ImageInputPtr m_pImageInput;
     openfx::plugin::PropertySuiteImpl m_PropertySuite;
 
-    OfxStatus safeClose();
-    void safeSet(ImageInput *pImage);
-public:
-    OIIODecoder();
-	virtual ~OIIODecoder();
-
-	OfxStatus noOp();
-    OfxStatus describe(const void* handle, OfxPropertySetHandle in, OfxPropertySetHandle out);
-    OfxStatus readHeader(const void* handle, OfxPropertySetHandle in, OfxPropertySetHandle out);
-    OfxStatus decodeImage(const void* handle, OfxPropertySetHandle in, OfxPropertySetHandle out);
 };
 
 #endif /* OIIODECODER_H_ */

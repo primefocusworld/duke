@@ -2,11 +2,38 @@
 #include <dukeio/ofxDukeIo.h>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
-#include <imageio.h>
 #include <iostream>
 
 using namespace std;
-using namespace OpenImageIO::v1_0;
+OIIO_NAMESPACE_USING
+
+
+static const char* OIIO_FILE_EXTENSIONS = ""
+                "bmp,cin,dds,f3d,fits,hdr,ico,iff,jp2,j2k,exr,png,"
+                "pbm,pgm,ppm,ptex,rla,sgi,rgb,rgba,bw,int,inta,pic,tga,tpic,"
+                "tif,tiff,tx,env,sm,vsm,zfile";
+
+// [x] BMP (*.bmp)
+// [x] Cineon (*.cin)
+// [x] Direct Draw Surface (*.dds)
+// [ ] DPX (*.dpx)
+// [x] Field3D (*.f3d)
+// [x] FITS (*.fits)
+// [x] HDR/RGBE (*.hdr)
+// [x] Icon (*.ico)
+// [x] IFF (*.iff)
+// [ ] JPEG (*.jpg *.jpe *.jpeg *.jif *.jfif *.jfi)
+// [x] JPEG-2000 (*.jp2 *.j2k)
+// [x] OpenEXR (*.exr)
+// [x] Portable Network Graphics (*.png)
+// [x] PNM / Netpbm (*.pbm *.pgm *.ppm)
+// [x] Ptex (*.ptex)
+// [x] RLA (*.rla)
+// [x] SGI (*.sgi *.rgb *.rgba *.bw *.int *.inta)
+// [x] Softimage PIC (*.pic)
+// [x] Targa (*.tga *.tpic)
+// [x] TIFF (*.tif *.tiff *.tx *.env *.sm *.vsm)
+// [x] Zfile (*.zfile)
 
 OIIODecoder::OIIODecoder() :
     m_pImageInput(NULL), m_PropertySuite(*this) {
@@ -22,25 +49,13 @@ OIIODecoder::OIIODecoder() :
 OIIODecoder::~OIIODecoder() {
 }
 
-OfxStatus OIIODecoder::safeClose() {
-    if (m_pImageInput.get()) {
-        m_pImageInput->close();
-        m_pImageInput.release();
-    }
-    return kOfxStatFailed;
-}
-
-void OIIODecoder::safeSet(ImageInput *pImage) {
-    safeClose();
-    m_pImageInput.reset(pImage);
-}
 OfxStatus OIIODecoder::noOp() {
     return kOfxStatOK;
 }
 
 OfxStatus OIIODecoder::describe(const void* handle, OfxPropertySetHandle in, OfxPropertySetHandle out) {
     openfx::plugin::PropertyHelper helper = m_PropertySuite.getHelper(OfxPropertySetHandle(handle));
-    helper.setString(kOfxDukeIoSupportedExtensions, "bmp,dds,hdr,ico,jp2,j2k,exr,png,pbm,pgm,ppm,pnm,sgi,rgb,pic,tga,tpic,tif,tiff");
+    helper.setString(kOfxDukeIoSupportedExtensions, OIIO_FILE_EXTENSIONS);
     helper.setInt(kOfxDukeIoUncompressedFormat, 0);
     helper.setInt(kOfxDukeIoDelegateRead, 0);
     return kOfxStatOK;
@@ -48,62 +63,38 @@ OfxStatus OIIODecoder::describe(const void* handle, OfxPropertySetHandle in, Ofx
 
 OfxStatus OIIODecoder::readHeader(const void* handle, OfxPropertySetHandle in, OfxPropertySetHandle out) {
     try {
-        int width = 0, height = 0, depth = 0, format = 0;
         openfx::plugin::PropertyHelper inArgHelper = m_PropertySuite.getHelper(in);
         string filename = inArgHelper.getString(kOfxDukeIoImageFilename);
 
-        safeSet(ImageInput::create(filename));
-
+        // clean reset
+        safeClose();
+        m_pImageInput.reset(ImageInput::create(filename));
         if (m_pImageInput.get() == NULL)
             return kOfxStatFailed;
 
+        // open image
         ImageSpec spec;
         if (!m_pImageInput->open(filename, spec))
             return safeClose();
 
-        width = spec.width;
-        height = spec.height;
-        //TODO depth
+#ifdef DEBUG
+        // print debug infos
+        printDebug(spec);
+#endif
 
-        if (spec.nchannels == 3)
-            format = kOfxDukeIoImageFormatR16G16B16F;
-        else if (spec.nchannels == 4)
-            format = kOfxDukeIoImageFormatR16G16B16A16F;
-        else {
-            cerr << "OIIO plugin: image format not handled yet (nchannels must be 3 or 4) \n";
+        // warn on error
+        int format = getImageFormat(spec);
+        if (format == kOfxDukeIoImageFormatUndefined) {
+            cerr << "OIIO plugin: image format not handled yet.\n";
             return safeClose();
         }
 
-        /*
-        // ------- DUMP
-        cerr << "width: " << spec.width << endl;
-        cerr << "full_width: " << spec.full_width << endl;
-        cerr << "height: " << spec.height << endl;
-        cerr << "full_height: " << spec.full_height << endl;
-        cerr << "x: " << spec.x << endl;
-        cerr << "y: " << spec.y << endl;
-        cerr << "z: " << spec.z << endl;
-        cerr << "full_x: " << spec.full_x << endl;
-        cerr << "full_y: " << spec.full_y << endl;
-        cerr << "full_z: " << spec.full_z << endl;
-        cerr << "tile_width: " << spec.tile_width << endl;
-        cerr << "tile_height: " << spec.tile_height << endl;
-        cerr << "tile_depth: " << spec.tile_depth << endl;
-        cerr << "nchannels: " << spec.nchannels << endl;
-        cerr << "alpha_channel: " << spec.alpha_channel << endl;
-        cerr << "z_channel: " << spec.z_channel << endl;
-        cerr << "channelnames: " ;
-        BOOST_FOREACH(string s, spec.channelnames){cerr << s << ", ";}
-        cerr << endl ;
-        */
-
-        int dataSize = height * width * spec.nchannels * sizeof(float) / 2;
         openfx::plugin::PropertyHelper outArgHelper = m_PropertySuite.getHelper(out);
         outArgHelper.setInt(kOfxDukeIoImageFormat, format);
-        outArgHelper.setInt(kOfxDukeIoImageWidth, width);
-        outArgHelper.setInt(kOfxDukeIoImageHeight, height);
-        outArgHelper.setInt(kOfxDukeIoImageDepth, depth);
-        outArgHelper.setInt(kOfxDukeIoBufferSize, dataSize);
+        outArgHelper.setInt(kOfxDukeIoImageWidth, spec.width);
+        outArgHelper.setInt(kOfxDukeIoImageHeight, spec.height);
+        outArgHelper.setInt(kOfxDukeIoImageDepth, 0);
+        outArgHelper.setInt(kOfxDukeIoBufferSize, spec.image_bytes());
         return kOfxStatOK;
 
     } catch (exception& e) {
@@ -117,14 +108,83 @@ OfxStatus OIIODecoder::decodeImage(const void* handle, OfxPropertySetHandle in, 
         if (m_pImageInput.get() == NULL)
             return kOfxStatFailed;
         openfx::plugin::PropertyHelper inArgHelper = m_PropertySuite.getHelper(in);
-        void * pData = inArgHelper.getPointer(kOfxDukeIoBufferPtr);
-        m_pImageInput->read_image(TypeDesc::HALF, pData);
+
+        const ImageSpec& spec = m_pImageInput->spec();
+        if (spec.nchannels > 4) {
+            // read only the 4 first chans
+            m_pImageInput->read_scanlines(0, m_pImageInput->spec().height,0,0,4, TypeDesc::UNKNOWN, inArgHelper.getPointer(kOfxDukeIoBufferPtr));
+        } else {
+            // read the whole image
+            m_pImageInput->read_image(TypeDesc::UNKNOWN, inArgHelper.getPointer(kOfxDukeIoBufferPtr));
+        }
+
         safeClose();
         return kOfxStatOK;
     } catch (exception& e) {
-        cerr << "unhandled exception in OIIO plugin: " << e.what() << endl;
+        cerr << "Unhandled exception in OIIO plugin: " << e.what() << endl;
     }
     return safeClose();
+}
+
+// private
+OfxStatus OIIODecoder::safeClose() {
+    if (m_pImageInput.get()) {
+        m_pImageInput->close();
+        m_pImageInput.release();
+    }
+    return kOfxStatFailed;
+}
+
+// private
+int OIIODecoder::getImageFormat(const ImageSpec& imagespec) const {
+
+    //TODO oiio image formats
+    //  UNKNOWN, NONE, UCHAR, UINT8, INT8, USHORT, SHORT, UINT, INT,
+    //  ULONGLONG, LONGLONG, DOUBLE, STRING, PTR, LASTBASE
+
+    int nchannels = imagespec.nchannels;
+    if(nchannels > 4) nchannels = 4;
+
+    switch (imagespec.nchannels) {
+        case 3: {
+            switch (imagespec.format.basetype) {
+                case TypeDesc::HALF:
+                    return kOfxDukeIoImageFormatB16G16R16F;
+                case TypeDesc::FLOAT:
+                    return kOfxDukeIoImageFormatB32G32R32F;
+                default:
+                    return kOfxDukeIoImageFormatB8G8R8;
+            }
+            break;
+        }
+        case 4: {
+            switch (imagespec.format.basetype) {
+                case TypeDesc::HALF:
+                    return kOfxDukeIoImageFormatB16G16R16A16F;
+                case TypeDesc::FLOAT:
+                    return kOfxDukeIoImageFormatB32G32R32A32F;
+                default:
+                    return kOfxDukeIoImageFormatB8G8R8A8;
+            }
+            break;
+        }
+    }
+    return kOfxDukeIoImageFormatUndefined;
+}
+
+void OIIODecoder::printDebug(const ImageSpec& imagespec) {
+    cerr << "-- OIIO Image Spec " << endl;
+    cerr << "  * format: " << imagespec.format.c_str() << endl;
+    cerr << "  * width: " << imagespec.width << endl;
+    cerr << "  * height: " << imagespec.height << endl;
+    cerr << "  * alpha_channel index: " << imagespec.alpha_channel << endl;
+    cerr << "  * z_channel index: " << imagespec.z_channel << endl;
+    cerr << "  * nchannels: " << imagespec.nchannels << endl;
+    cerr << "  * channelnames: ";
+    {
+        BOOST_FOREACH(string s, imagespec.channelnames) {cerr << s << ", ";}
+        cerr << endl;
+    }
 }
 
 //
