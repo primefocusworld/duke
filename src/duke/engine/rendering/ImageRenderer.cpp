@@ -34,6 +34,8 @@ static ColorSpace resolveFromExtension(const char* pFileExtension) {
 			return ColorSpace::KodakLog;
 		if (streq(pFileExtension, "png"))
 			return ColorSpace::sRGB;
+		if (streq(pFileExtension, "exr"))
+			return ColorSpace::Linear;
 	}
 	printf("Unable to find default ColorSpace for extension '%s' assuming sRGB\n", pFileExtension);
 	return ColorSpace::sRGB;

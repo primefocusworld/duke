@@ -65,3 +65,13 @@ else(OPENIMAGEIO_FOUND)
   # enabling dumb TGA reader just to have a basic reader
   add_definitions(-DDUKE_TGA)
 endif(OPENIMAGEIO_FOUND)
+
+#
+# OpenEXR
+#
+find_package(OpenEXR)
+if(OPENEXR_FOUND)
+  add_definitions(-DDUKE_OPEN_EXR)
+  include_directories(${OPENEXR_INCLUDE_PATH})
+  target_link_libraries(duke ${OPENEXR_LIBRARIES})
+endif(OPENEXR_FOUND)
