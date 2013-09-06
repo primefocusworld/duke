@@ -86,6 +86,7 @@ public:
 			m_pReader(nullptr), 
 			m_DataWindow() {
 
+		// Note cyril : we shouldn't const cast here
 		m_pStream = new Imf::MMappedExrStream(const_cast<void*>(pData), dataSize);
 		m_pReader = new Imf::RgbaInputFile(*m_pStream);
 		m_DataWindow = m_pReader->dataWindow();

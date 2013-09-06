@@ -189,21 +189,24 @@ class OpenImageIODescriptor: public IIODescriptor {
 public:
 	OpenImageIODescriptor() {
 		string extensions;
-		getattribute("extension_list", extensions);
-		bool append = false;
-		string current;
-		for (const char c : extensions) {
-			if (c == ';')
-				append = false;
-			if (c == ',' || c == ';') {
-				m_Extensions.push_back(current);
-				current.clear();
-			} else if (append)
-				current.push_back(c);
-			if (c == ':')
-				append = true;
-		}
-		m_Extensions.push_back(current);
+		//getattribute("extension_list", extensions);
+		//bool append = false;
+		//string current;
+		//for (const char c : extensions) {
+		//	if (c == ';')
+		//		append = false;
+		//	if (c == ',' || c == ';') {
+		//		m_Extensions.push_back(current);
+		//		current.clear();
+		//	} else if (append)
+		//		current.push_back(c);
+		//	if (c == ':')
+		//		append = true;
+		//}
+		//m_Extensions.push_back(current);
+		m_Extensions.emplace_back("jpg");
+		//m_Extensions.emplace_back("exr");
+		m_Extensions.emplace_back("tif");
 	}
 	virtual bool supports(Capability capability) const {
 		return capability == Capability::READER_GENERAL_PURPOSE;
