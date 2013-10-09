@@ -6,6 +6,7 @@
 #include <duke/engine/ConsoleIO.hpp>
 #include <duke/engine/rendering/ImageRenderer.hpp>
 #include <duke/engine/commands/Commands.hpp>
+#include <duke/engine/LookupTables.cpp>
 #include <duke/time/Clock.hpp>
 #include <duke/gl/GL.hpp>
 
@@ -207,6 +208,9 @@ void DukeMainWindow::run() {
 		doSetupZoom = false;
 	};
 
+	// Testing : load 3d lut texture
+	LookupTransform *lookup = defaultsRGB(); // defaut for testing purposes
+
 	while (running) {
 		// fetching user inputs
 		::glfwPollEvents();
@@ -254,12 +258,17 @@ void DukeMainWindow::run() {
 					}
 				}
 				if (pLoadedTexture) {
+					glActiveTexture(GL_TEXTURE1);
+					auto bound3dTexture = lookup->lookup3d.scope_bind_texture();
+					glActiveTexture(GL_TEXTURE0);
 					m_Context.pCurrentImage = pLoadedTexture;
 					setupZoom();
 					auto &texture = *pLoadedTexture->pTexture;
 					auto boundTexture = texture.scope_bind_texture();
 					glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 					glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+
 					renderWithBoundTexture(m_GlyphRenderer.getGeometryRenderer().shaderPool, pSquare.get(), m_Context);
 				} else {
 					drawText(m_GlyphRenderer, m_Context.viewport, "caching", 100, 100, 1, 3);

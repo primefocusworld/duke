@@ -104,6 +104,10 @@ void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, con
 	pProgram->glUniform4i(shader::gShowChannel, context.channels.x, context.channels.y, context.channels.z, context.channels.w);
 
 	pProgram->glUniform1f(shader::gZoom, context.zoom);
+
+	// 3d lut
+	pProgram->glUniform1i("lookup3d", 1); // Texture unit 1
+
 	pMesh->draw();
 	glCheckError();
 }

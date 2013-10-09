@@ -11,6 +11,7 @@ namespace duke {
 // From ColorSpace.cpp, all the conversion functions
 // in a char *
 extern const char *pColorSpaceConversions;
+extern const char *pLookupTransformFunc; 
 
 namespace  {
 
@@ -228,7 +229,7 @@ void appendSampler(ostream&stream, const ShaderDescription &description) {
 	const string filter(filtering ? "bilinear" : "nearest");
 	stream << (description.tenBitUnpack ? pSampleTenbitsUnpack : pSampleRegular);
 	stream << "vec4 sample(vec2 offset) {"
-	"  return " << filter << "(gTextureSampler, vVaryingTexCoord+offset); }\n";
+	"  return " << "apply3dTransform(" << filter << "(gTextureSampler, vVaryingTexCoord+offset)); }\n";
 }
 
 void appendSwizzle(ostream&stream, const ShaderDescription &description) {
@@ -247,6 +248,7 @@ std::string buildFragmentShaderSource(const ShaderDescription &description) {
 	ostringstream oss;
 	oss << "#version 330" << endl;
 	if (description.sampleTexture) {
+		oss << pLookupTransformFunc << endl; 
 		oss << pColorSpaceConversions << endl;
 		appendToLinearFunction(oss, description.fileColorspace);
 		appendToScreenFunction(oss, description.screenColorspace);
