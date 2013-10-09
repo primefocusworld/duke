@@ -59,6 +59,10 @@ GlTexture2D::GlTexture2D() :
 		GlTextureObject(GL_TEXTURE_2D) {
 }
 
+GlTexture3D::GlTexture3D() :
+		GlTextureObject(GL_TEXTURE_3D) {
+}
+
 GlTextureRectangle::GlTextureRectangle() :
 		GlTextureObject(GL_TEXTURE_RECTANGLE) {
 }

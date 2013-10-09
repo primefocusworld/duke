@@ -53,6 +53,10 @@ struct GlTexture2D: public GlTextureObject {
 	GlTexture2D();
 };
 
+struct GlTexture3D: public GlTextureObject {
+	GlTexture3D();
+};
+
 struct GlTextureRectangle: public GlTextureObject {
 	GlTextureRectangle();
 };
