@@ -77,7 +77,7 @@ bool isGreyscale(size_t glPackFormat) {
 
 }  // namespace
 
-void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, const Context &context) {
+void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, int lutSize, const Context &context) {
 	const auto &description = context.pCurrentImage->description;
 	bool redBlueSwapped = description.swapRedAndBlue;
 	if (isInternalOptimizedFormatRedBlueSwapped(description.glPackFormat))
@@ -107,6 +107,7 @@ void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, con
 
 	// 3d lut
 	pProgram->glUniform1i("lookup3d", 1); // Texture unit 1
+    pProgram->glUniform1f("lutSize", lutSize ); // Texture unit 1
 
 	pMesh->draw();
 	glCheckError();

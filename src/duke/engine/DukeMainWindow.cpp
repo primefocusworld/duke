@@ -1,3 +1,4 @@
+
 #include "DukeMainWindow.hpp"
 
 #include <duke/engine/overlay/StatisticsOverlay.hpp>
@@ -209,8 +210,13 @@ void DukeMainWindow::run() {
 	};
 
 	// Testing : load 3d lut texture
-	LookupTransform *lookup = defaultsRGB(); // defaut for testing purposes
-
+	LookupTransform *lookup = nullptr;
+	if ( m_CmdLine.lutFilePath != "") {
+        lookup = createFromFile(m_CmdLine.lutFilePath); // defaut for testing purposes
+	}
+	if (!lookup) {
+		lookup = createIDLut();
+	}
 	while (running) {
 		// fetching user inputs
 		::glfwPollEvents();
@@ -259,7 +265,7 @@ void DukeMainWindow::run() {
 				}
 				if (pLoadedTexture) {
 					glActiveTexture(GL_TEXTURE1);
-					auto bound3dTexture = lookup->lookup3d.scope_bind_texture();
+					auto bound3dTexture = lookup ? lookup->lookup3d.scope_bind_texture() : nullptr;
 					glActiveTexture(GL_TEXTURE0);
 					m_Context.pCurrentImage = pLoadedTexture;
 					setupZoom();
@@ -269,7 +275,7 @@ void DukeMainWindow::run() {
 					glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 
-					renderWithBoundTexture(m_GlyphRenderer.getGeometryRenderer().shaderPool, pSquare.get(), m_Context);
+                    renderWithBoundTexture(m_GlyphRenderer.getGeometryRenderer().shaderPool, pSquare.get(), lookup->lutSize, m_Context);
 				} else {
 					drawText(m_GlyphRenderer, m_Context.viewport, "caching", 100, 100, 1, 3);
 				}

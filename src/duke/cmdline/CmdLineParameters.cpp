@@ -91,6 +91,9 @@ CmdLineParameters::CmdLineParameters(int argc, const char* const * argv) {
 			getArgs(argc, argv, ++i, colorSpaceString);
 			outputColorSpace = resolveFromName(colorSpaceString.c_str());
 		}
+		else if (matches(pOption, "--viewinglut")) {
+			getArgs(argc, argv, ++i, lutFilePath);
+		}
         else if (*pOption != '-')
             additionnalOptions.push_back(pOption);
         else

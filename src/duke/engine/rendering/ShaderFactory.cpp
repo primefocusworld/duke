@@ -235,7 +235,7 @@ void appendSampler(ostream&stream, const ShaderDescription &description) {
 void appendSwizzle(ostream&stream, const ShaderDescription &description) {
 	const char* type = description.tenBitUnpack ? "uvec4" : "vec4";
 	string swizzling = description.grayscale ? "rrra" : "rgba";
-	if (description.swapRedAndBlue)
+    if (description.swapRedAndBlue)
 		std::swap(swizzling[0], swizzling[2]);
 	if (description.swapEndianness)
 		std::reverse(swizzling.begin(), swizzling.end());

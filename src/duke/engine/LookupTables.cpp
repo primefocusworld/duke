@@ -2,6 +2,8 @@
 #include <sstream>
 #include <vector>
 #include <cstdio> // sscanf
+#include <cmath>
+
 #include "duke/engine/LookupTables.hpp"
 
 namespace duke {
@@ -39,9 +41,9 @@ struct Buffer3D {
 	
 	}
 
-
 	void uploadTo(gl::GlTexture3D &tex) {
 		// Using texture unit 1 ?? check if the fonts are not using this one
+		// NOTE that this might go in scope_bind_texture ...
 		glActiveTexture(GL_TEXTURE1);
 		//glEnable(GL_TEXTURE_3D);
 		auto textureBound = tex.scope_bind_texture();
@@ -58,7 +60,7 @@ struct Buffer3D {
 };
 
 /// Decode cube file 
-Buffer3D *decodeCube(const char *filename) {
+Buffer3D *decodeCube(const char *filename, int &lutSize) {
 	
     std::ifstream infile(filename);
 	if (!infile.is_open())
@@ -103,8 +105,81 @@ Buffer3D *decodeCube(const char *filename) {
 		}
 	}
 
+    lutSize = nbSteps;
 	return buffer;
 }
+
+/// Decode cube file 
+Buffer3D *decode3dl(const char *filename, int &lutSize) {
+
+    std::ifstream infile(filename);
+	if (!infile.is_open())
+		return nullptr;
+
+    std::string line;
+    std::vector<int>::iterator tableIt;
+
+	enum class FileParts : char {Header, LutData, Footer};
+	//readHeader, readContent
+    Buffer3D *buffer = nullptr;
+    Buffer3D::ComponentType *bufIt = nullptr;
+	Buffer3D::ComponentType r, g, b;
+	FileParts part = FileParts::Header;
+    int nbSteps = 0, colorMax = 0;
+	float invColorMax = 0;
+	int cpt =0; // A compteur to know when you quit the LutData Part.
+
+    while(std::getline(infile, line)) {
+	    // Pass comments and new lines
+		if (line[0] == '\n')
+			continue;
+		if (line[0] == '#') // Assuming that is a comment
+			continue;
+
+		if (part == FileParts::Header) 
+		{
+			if (sscanf(line.c_str(), "Mesh %d %d", &nbSteps, &colorMax) == 2) 
+			{
+					nbSteps = ( 1 << nbSteps ) + 1;
+					colorMax = 1 << colorMax ;
+                    invColorMax = float( 1. / colorMax );
+					buffer = new Buffer3D(nbSteps);
+					// HACK : Bypass next line (it is a scale of values)
+					std::getline(infile, line);
+					if (buffer) {
+						bufIt = buffer->rawBuffer;
+						// Jump to new part of the file
+						part = FileParts::LutData;
+						continue;
+					}// else throw ?	
+            }
+		} else if (part == FileParts::LutData) {
+			std::stringstream sline(line);
+			sline >> r >> g >> b;
+
+            // Compute the index
+            int x = cpt % nbSteps,
+                y = (cpt / nbSteps) % nbSteps,
+                z = (( cpt / nbSteps) / nbSteps) % nbSteps;
+
+            int idx =  z  + y * nbSteps + x * nbSteps *nbSteps;
+
+            buffer->rawBuffer[3*idx]   = r * invColorMax;
+            buffer->rawBuffer[3*idx+1] = g * invColorMax;
+            buffer->rawBuffer[3*idx+2] = b * invColorMax;
+
+            if(++cpt >= nbSteps*nbSteps*nbSteps)
+				part = FileParts::Footer;
+			
+		} else if (part == FileParts::Footer)
+			break ; // TODO	
+	}
+
+    lutSize = nbSteps;
+
+    return buffer;
+}
+
 
 
 };// anonymous namespace
@@ -115,19 +190,86 @@ LookupTransform::LookupTransform() :
 }
 
 
+// Load an identity Lut
+
+LookupTransform* createIDLut(uint size) {
+	// Create the buffer
+	Buffer3D *buffer = new Buffer3D(size);
+	Buffer3D::ComponentType *bufIt = buffer->rawBuffer;
+
+	// Precompute the inverse of the size
+	float invSizef = float(1. / ( size - 1. ));
+	
+	// Pull the colors on the LUT - RGB
+        for(uint i = 0; i < size * size * size; i++)
+        {
+            *bufIt++ = (float)(i%size) * invSizef;
+            *bufIt++ = (float)((i/size)%size) * invSizef;
+            *bufIt++ = (float)((i/size/size)%size) * invSizef;
+        }	
+
+	auto transform = new LookupTransform();
+    transform->lutSize = size;
+    buffer->uploadTo(transform->lookup3d);
+	delete buffer;
+
+
+	return transform;
+}
+//
+
+
 // Readers for different formats
 
 // OpenGL code
 
-LookupTransform* createFromFile(const char *) {
+LookupTransform* createFromFile(const std::string &lutFilePath) {
 	// TODO : read lookup code
 	//
 	//
 	// Look for extension, 3dl, cub, etc...
 
 	// 3 parts in the file 
+	//
 
+    Buffer3D *buffer;
 
+    int size = lutFilePath.length();
+    int marker = -1;
+    for(int idx = size - 1; idx > 0; idx--)
+    {
+        if(lutFilePath.c_str()[idx] == '.')
+        {
+            marker = idx+1;
+            break;
+        }
+
+    }
+
+    int lutSize = -1;
+
+    std::string  ext = lutFilePath.substr(marker, size-1);
+
+    if(ext.compare("cube") == 0)
+    {
+        buffer = decodeCube(lutFilePath.c_str(), lutSize);
+    }
+    else if(ext.compare("3dl") == 0)
+    {
+        buffer = decode3dl(lutFilePath.c_str(), lutSize);
+    }
+    else
+    {
+        printf("Duke does know the file format of your LUT, please use 3dl or cube");
+    }
+
+    if (buffer) {
+		auto transform = new LookupTransform();
+        transform->lutSize = lutSize;
+		buffer->uploadTo(transform->lookup3d);
+		delete buffer;
+		return transform;
+	}
 	return nullptr;
 }
 //
@@ -148,8 +290,9 @@ LookupTransform * defaultsRGB() {
 //				*bufIt++ = static_cast<float>(j)/static_cast<float>(s-1);
 //				*bufIt++ = static_cast<float>(i)/static_cast<float>(s-1);
 //			}
+    int lutSize;
 
-	Buffer3D *buffer = decodeCube("/tmp/mytestlut.cube");
+    Buffer3D *buffer = decodeCube("/tmp/mytestlut.cube", lutSize);
 
 	auto transform = new LookupTransform();
 	buffer->uploadTo(transform->lookup3d);
@@ -162,12 +305,15 @@ LookupTransform * defaultsRGB() {
 const char *pLookupTransformFunc =
 		R"(
 uniform sampler3D lookup3d;
-//uniform sampler1D lookup1d;
+uniform float lutSize;
+// uniform sampler1D lookup1d;
 	
 vec4 apply3dTransform(vec4 pix) {
 	// TODO add 3x1d lookup
 	// FIXME : depends on size of the texture !!!
-	return texture(lookup3d, clamp(pix.rgb, 0, 1)*(15.0/16.0)+1.0/32.0);
+	float scale = ( lutSize - 1. )/ lutSize;
+	float offset = 1 / (2. * lutSize);
+	return texture(lookup3d, clamp(pix.rgb, 0, 1) * scale + offset );
 } 
 
 )";

@@ -32,7 +32,7 @@ struct CmdLineParameters {
 	std::vector<std::string> additionnalOptions;
 	ColorSpace inputColorSpace = ColorSpace::Auto;
 	ColorSpace outputColorSpace = ColorSpace::Auto;
-
+	std::string	lutFilePath;
 	static unsigned getDefaultConcurrency();
 	static size_t getDefaultCacheSize();
 };
