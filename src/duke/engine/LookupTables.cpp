@@ -60,7 +60,7 @@ struct Buffer3D {
 };
 
 /// Decode cube file 
-Buffer3D *decodeCube(const char *filename, int &lutSize) {
+Buffer3D *decodeCube(const char *filename) {
 	
     std::ifstream infile(filename);
 	if (!infile.is_open())
@@ -104,13 +104,11 @@ Buffer3D *decodeCube(const char *filename, int &lutSize) {
 			*bufIt++ = b;
 		}
 	}
-
-    lutSize = nbSteps;
 	return buffer;
 }
 
-/// Decode cube file 
-Buffer3D *decode3dl(const char *filename, int &lutSize) {
+/// Decode 3dl file
+Buffer3D *decode3dl(const char *filename) {
 
     std::ifstream infile(filename);
 	if (!infile.is_open())
@@ -122,7 +120,6 @@ Buffer3D *decode3dl(const char *filename, int &lutSize) {
 	enum class FileParts : char {Header, LutData, Footer};
 	//readHeader, readContent
     Buffer3D *buffer = nullptr;
-    Buffer3D::ComponentType *bufIt = nullptr;
 	Buffer3D::ComponentType r, g, b;
 	FileParts part = FileParts::Header;
     int nbSteps = 0, colorMax = 0;
@@ -147,7 +144,6 @@ Buffer3D *decode3dl(const char *filename, int &lutSize) {
 					// HACK : Bypass next line (it is a scale of values)
 					std::getline(infile, line);
 					if (buffer) {
-						bufIt = buffer->rawBuffer;
 						// Jump to new part of the file
 						part = FileParts::LutData;
 						continue;
@@ -174,10 +170,85 @@ Buffer3D *decode3dl(const char *filename, int &lutSize) {
 		} else if (part == FileParts::Footer)
 			break ; // TODO	
 	}
-
-    lutSize = nbSteps;
-
     return buffer;
+}
+
+Buffer3D *decodeCsp(const char *filename) {
+    std::ifstream infile(filename);
+    if (!infile.is_open())
+        return nullptr;
+
+    std::string line;
+    std::vector<int>::iterator tableIt;
+
+    enum class FileParts : char {Header, Lut1DData, Lut3DData};
+    //readHeader, readContent
+    Buffer3D *buffer = nullptr;
+    Buffer3D::ComponentType r, g, b;
+    FileParts part = FileParts::Header;
+    int nbSteps = 0;
+    int lut1DSize = -1, cpt = 0, cptLut =0;
+    // Skip the 1D Luts
+
+
+    while(std::getline(infile, line)) {
+        // Pass comments and new lines
+        if (line[0] == '\n')
+            continue;
+        if (line[0] == '#')
+            continue;
+        if ( line.compare("CSPLUTV100") == 0 || line.compare("3D") == 0 )
+            continue;
+        // Read the size
+        if (part == FileParts::Header) {
+            if (sscanf(line.c_str(), "%d", &lut1DSize) == 1)
+            {
+                printf("LUT 1D : Not implemmented yet \n");
+                // Skip 2 lines
+                std::getline(infile, line);
+                std::getline(infile, line);
+                cptLut++;
+                printf("cpt %d + lutSize %d \n", cptLut, lut1DSize);
+            }
+            if(cptLut > 2)
+            {
+                    part = FileParts::Lut3DData;
+                    continue;
+            }
+        }
+        else if (part == FileParts::Lut3DData)
+        {
+            int tmp1, tmp2, tmp3;
+            if (sscanf(line.c_str(), "%d %d %d", &tmp1, &tmp2, &tmp3) == 3)
+            {
+                nbSteps = tmp1;
+                printf("Init %d \n", nbSteps);
+                // Initialization of the buffer
+                buffer = new Buffer3D(nbSteps);
+                printf("Init %d \n", nbSteps);
+            }
+            else if ( sscanf(line.c_str(), "%f %f %f", &r, &g, &b) == 3)
+            {
+                printf("cpt %d %d \n", cpt, nbSteps);
+                // Compute the index
+                int x = cpt % nbSteps,
+                    y = (cpt / nbSteps) % nbSteps,
+                    z = (( cpt / nbSteps) / nbSteps) % nbSteps;
+
+                int idx =  z* nbSteps *nbSteps  + y * nbSteps + x ;
+                printf("idx %d \n", idx);
+                buffer->rawBuffer[3*idx]   = r ;
+                buffer->rawBuffer[3*idx+1] = g ;
+                buffer->rawBuffer[3*idx+2] = b ;
+
+                cpt++;
+
+            }
+        }
+    }
+    return buffer;
+
+
 }
 
 
@@ -186,7 +257,13 @@ Buffer3D *decode3dl(const char *filename, int &lutSize) {
 
 
 LookupTransform::LookupTransform() :
-	lookup3d() {
+    lookup3d(),
+    red(),
+    green(),
+    blue(),
+    lut1DSize(0),
+    lut3DSize(0)
+{
 }
 
 
@@ -209,7 +286,7 @@ LookupTransform* createIDLut(uint size) {
         }	
 
 	auto transform = new LookupTransform();
-    transform->lutSize = size;
+    transform->lut3DSize = size;
     buffer->uploadTo(transform->lookup3d);
 	delete buffer;
 
@@ -232,10 +309,9 @@ LookupTransform* createFromFile(const std::string &lutFilePath) {
 	// 3 parts in the file 
 	//
 
-    Buffer3D *buffer;
-
     int size = lutFilePath.length();
     int marker = -1;
+
     for(int idx = size - 1; idx > 0; idx--)
     {
         if(lutFilePath.c_str()[idx] == '.')
@@ -243,36 +319,29 @@ LookupTransform* createFromFile(const std::string &lutFilePath) {
             marker = idx+1;
             break;
         }
-
     }
-
-    int lutSize = -1;
 
     std::string  ext = lutFilePath.substr(marker, size-1);
 
     if(ext.compare("cube") == 0)
     {
-        buffer = decodeCube(lutFilePath.c_str(), lutSize);
+        transform = decodeCube(lutFilePath.c_str());
     }
     else if(ext.compare("3dl") == 0)
     {
-        buffer = decode3dl(lutFilePath.c_str(), lutSize);
+        transform = decode3dl(lutFilePath.c_str());
+    }
+    else if(ext.compare("csp") == 0)
+    {
+        transform = decodeCsp(lutFilePath.c_str());
     }
     else
     {
         printf("Duke does know the file format of your LUT, please use 3dl or cube");
+        return nullptr;
     }
-
-    if (buffer) {
-		auto transform = new LookupTransform();
-        transform->lutSize = lutSize;
-		buffer->uploadTo(transform->lookup3d);
-		delete buffer;
-		return transform;
-	}
-	return nullptr;
 }
-//
+
 
 LookupTransform * defaultsRGB() {
 
@@ -290,11 +359,11 @@ LookupTransform * defaultsRGB() {
 //				*bufIt++ = static_cast<float>(j)/static_cast<float>(s-1);
 //				*bufIt++ = static_cast<float>(i)/static_cast<float>(s-1);
 //			}
-    int lutSize;
 
-    Buffer3D *buffer = decodeCube("/tmp/mytestlut.cube", lutSize);
+    Buffer3D *buffer = decodeCube("/tmp/mytestlut.cube");
 
 	auto transform = new LookupTransform();
+    transform->lut3DSize = buffer->nbSamplePerChannel;
 	buffer->uploadTo(transform->lookup3d);
 	delete buffer;
 

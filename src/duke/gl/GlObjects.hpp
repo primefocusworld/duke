@@ -49,6 +49,10 @@ public:
 	const GLenum target;
 };
 
+struct GlTexture1D: public GlTextureObject {
+    GlTexture1D();
+};
+
 struct GlTexture2D: public GlTextureObject {
 	GlTexture2D();
 };
