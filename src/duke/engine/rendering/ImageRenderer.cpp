@@ -39,13 +39,13 @@ float getZoomValue(const Context &context) {
 		break;
 	}
 	if (!context.pCurrentImage)
-		return 1;
+        return 1;
 	const auto viewportDim = glm::vec2(context.viewport.dimension);
 	const auto viewportAspect = getAspectRatio(viewportDim);
 	const auto &imageDescription = context.pCurrentImage->description;
 	const auto imageDim = glm::vec2(imageDescription.width, imageDescription.height);
-	const auto imageAspect = getAspectRatio(imageDim);
-	switch (context.fitMode) {
+    const auto imageAspect = getAspectRatio(imageDim);
+    switch (context.fitMode) {
 	case FitMode::INNER:
 		if (viewportAspect > imageAspect)
 			return viewportDim.y / imageDim.y;
@@ -77,7 +77,7 @@ bool isGreyscale(size_t glPackFormat) {
 
 }  // namespace
 
-void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, int lutSize, const Context &context) {
+void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, float lutmin, float lutmax, int lut1dSize, int lutSize,  const Context &context) {
 	const auto &description = context.pCurrentImage->description;
 	bool redBlueSwapped = description.swapRedAndBlue;
 	if (isInternalOptimizedFormatRedBlueSwapped(description.glPackFormat))
@@ -102,12 +102,17 @@ void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, int
 	pProgram->glUniform1f(shader::gExposure, context.exposure);
 	pProgram->glUniform1f(shader::gGamma, context.gamma);
 	pProgram->glUniform4i(shader::gShowChannel, context.channels.x, context.channels.y, context.channels.z, context.channels.w);
-
 	pProgram->glUniform1f(shader::gZoom, context.zoom);
 
 	// 3d lut
 	pProgram->glUniform1i("lookup3d", 1); // Texture unit 1
     pProgram->glUniform1f("lutSize", lutSize ); // Texture unit 1
+
+    pProgram->glUniform1i("lookup1d", 2); // Texture unit 2
+
+    pProgram->glUniform1f("lookup1d_size", lut1dSize ); // Texture unit
+    pProgram->glUniform1f("lookup1d_min", lutmin ); // Texture unit
+    pProgram->glUniform1f("lookup1d_max", lutmax ); // Texture unit
 
 	pMesh->draw();
 	glCheckError();

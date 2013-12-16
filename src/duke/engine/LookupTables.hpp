@@ -13,9 +13,10 @@ struct Context;
 struct LookupTransform {
 	//
 	LookupTransform();
-	//gl::GlTexture1D lookup1d; // pre-lut
-	gl::GlTexture3D	lookup3d; // 3d lut
-    int lutSize;
+    gl::GlTexture1D lookup1d; // pre-lut
+    gl::GlTexture3D	lookup3d; // 3d lut
+    float lookup1d_min, lookup1d_max;
+    int lut1DSize, lut3DSize;
 
 };
 

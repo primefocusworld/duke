@@ -59,7 +59,6 @@ GlTexture1D::GlTexture1D() :
         GlTextureObject(GL_TEXTURE_1D) {
 }
 
-
 GlTexture2D::GlTexture2D() :
 		GlTextureObject(GL_TEXTURE_2D) {
 }

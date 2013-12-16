@@ -9,7 +9,7 @@ template<class GLOBJECT>
 struct _Unbinder {
 	void operator()(GLOBJECT *ptr) const {
 		ptr->bind_count--;
-		if(ptr->bind_count==0)
+        if(ptr->bind_count==0)
 			ptr->unbind();
 	}
 };

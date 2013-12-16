@@ -84,7 +84,7 @@ CmdLineParameters::CmdLineParameters(int argc, const char* const * argv) {
         else if (matches(pOption, "--inputspace")) {
 			std::string colorSpaceString;
 			getArgs(argc, argv, ++i, colorSpaceString);
-			inputColorSpace = resolveFromName(colorSpaceString.c_str());
+            inputColorSpace = resolveFromName(colorSpaceString.c_str());
 		}
         else if (matches(pOption, "--outputspace")) {
 			std::string colorSpaceString;

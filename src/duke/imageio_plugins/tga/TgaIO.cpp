@@ -15,7 +15,7 @@ typedef struct {
 	GLbyte imageType;              // 0 = none, 1 = indexed, 2 = rgb, 3 = grey, +8=rle
 	unsigned short colorMapStart;  // First colour map entry
 	unsigned short colorMapLength; // Number of colors
-	unsigned char colorMapBits;    // bits per palette entry
+    unsigned char  colorMapBits;    // bits per palette entry
 	unsigned short xstart;         // image x origin
 	unsigned short ystart;         // image y origin
 	unsigned short width;          // width in pixels

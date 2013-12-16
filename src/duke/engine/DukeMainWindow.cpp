@@ -266,6 +266,8 @@ void DukeMainWindow::run() {
 				if (pLoadedTexture) {
 					glActiveTexture(GL_TEXTURE1);
 					auto bound3dTexture = lookup ? lookup->lookup3d.scope_bind_texture() : nullptr;
+                    glActiveTexture(GL_TEXTURE2);
+                    auto bound1dTexture = lookup ? lookup->lookup1d.scope_bind_texture() : nullptr;
 					glActiveTexture(GL_TEXTURE0);
 					m_Context.pCurrentImage = pLoadedTexture;
 					setupZoom();
@@ -275,7 +277,7 @@ void DukeMainWindow::run() {
 					glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 
-                    renderWithBoundTexture(m_GlyphRenderer.getGeometryRenderer().shaderPool, pSquare.get(), lookup->lutSize, m_Context);
+                    renderWithBoundTexture(m_GlyphRenderer.getGeometryRenderer().shaderPool, pSquare.get(), lookup->lookup1d_min, lookup->lookup1d_max, lookup->lut1DSize, lookup->lut3DSize, m_Context);
 				} else {
 					drawText(m_GlyphRenderer, m_Context.viewport, "caching", 100, 100, 1, 3);
 				}

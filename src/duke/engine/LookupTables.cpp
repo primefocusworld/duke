@@ -19,7 +19,7 @@ struct Buffer3D {
 	typedef float ComponentType;// GL_UNSIGNED_BYTE or GL_FLOAT ?
 
 	ComponentType *rawBuffer; 
-	static const unsigned int nbChannel=3; // GL_RGB
+    static const unsigned int nbChannel=3; // GL_RGB
 	unsigned int nbSamplePerChannel; // Resolved at creation, generally 16 or 32
 
 	Buffer3D(unsigned int size) :
@@ -59,8 +59,58 @@ struct Buffer3D {
 
 };
 
+//
+// Should micmic the OpenGL 1D buffer packing
+//
+struct Buffer1D {
+
+    typedef float ComponentType;// GL_UNSIGNED_BYTE or GL_FLOAT ?
+
+    ComponentType *rawBuffer;
+    unsigned int nbSamplePerChannel; // Resolved at creation, generally 16 or 32
+
+    Buffer1D(unsigned int size) :
+           rawBuffer(new ComponentType[size]), nbSamplePerChannel(size)
+    {
+        applyIdentity();// Not really needed, but cleaner
+    }
+
+    ~Buffer1D() {
+        if (rawBuffer)
+            delete [] rawBuffer;
+    }
+
+    // Sets the identity
+    void applyIdentity() {
+    }
+
+    // apply a function to all elements
+    void applyMap() {
+
+    }
+
+    void uploadTo(gl::GlTexture1D &tex) {
+        // Using texture unit 1 ?? check if the fonts are not using this one
+        // NOTE that this might go in scope_bind_texture ...
+        glActiveTexture(GL_TEXTURE2);
+        //glEnable(GL_TEXTURE_3D);
+        auto textureBound = tex.scope_bind_texture();
+        // Interpolation ?
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        // Initialize the bounds of the 3d texture
+        glTexImage1D(GL_TEXTURE_1D, 0, GL_RED,
+                     nbSamplePerChannel,
+                     0, GL_RED, GL_FLOAT, rawBuffer);
+    }
+
+};
+
+
+
 /// Decode cube file 
-Buffer3D *decodeCube(const char *filename) {
+LookupTransform* decodeCube(const char *filename) {
 	
     std::ifstream infile(filename);
 	if (!infile.is_open())
@@ -104,18 +154,23 @@ Buffer3D *decodeCube(const char *filename) {
 			*bufIt++ = b;
 		}
 	}
-	return buffer;
+
+    auto transform = new LookupTransform();
+    transform->lut3DSize = nbSteps;
+    buffer->uploadTo(transform->lookup3d);
+    delete buffer;
+
+    return transform;
 }
 
 /// Decode 3dl file
-Buffer3D *decode3dl(const char *filename) {
+LookupTransform* decode3dl(const char *filename) {
 
     std::ifstream infile(filename);
 	if (!infile.is_open())
 		return nullptr;
 
     std::string line;
-    std::vector<int>::iterator tableIt;
 
 	enum class FileParts : char {Header, LutData, Footer};
 	//readHeader, readContent
@@ -170,26 +225,35 @@ Buffer3D *decode3dl(const char *filename) {
 		} else if (part == FileParts::Footer)
 			break ; // TODO	
 	}
-    return buffer;
+
+    auto transform = new LookupTransform();
+    transform->lut3DSize = nbSteps;
+    buffer->uploadTo(transform->lookup3d);
+    delete buffer;
+
+    return transform;
 }
 
-Buffer3D *decodeCsp(const char *filename) {
+LookupTransform* decodeCsp(const char *filename)
+{
     std::ifstream infile(filename);
     if (!infile.is_open())
         return nullptr;
 
     std::string line;
-    std::vector<int>::iterator tableIt;
 
     enum class FileParts : char {Header, Lut1DData, Lut3DData};
     //readHeader, readContent
     Buffer3D *buffer = nullptr;
     Buffer3D::ComponentType r, g, b;
+    //LUT
+    Buffer1D *lut = nullptr;
+    Buffer1D::ComponentType tmp, bmin, bmax;
+
     FileParts part = FileParts::Header;
     int nbSteps = 0;
     int lut1DSize = -1, cpt = 0, cptLut =0;
     // Skip the 1D Luts
-
 
     while(std::getline(infile, line)) {
         // Pass comments and new lines
@@ -201,14 +265,39 @@ Buffer3D *decodeCsp(const char *filename) {
             continue;
         // Read the size
         if (part == FileParts::Header) {
+
             if (sscanf(line.c_str(), "%d", &lut1DSize) == 1)
             {
-                printf("LUT 1D : Not implemmented yet \n");
-                // Skip 2 lines
+                if(!lut)
+                {
+                    lut = new Buffer1D(lut1DSize);
+                }
+
+                // Jump the first line which is the indexes
                 std::getline(infile, line);
+                std::stringstream sline(line);
+                sline >> bmin;
+
+                for(int i=1; i<lut1DSize-1; i++)
+                {
+                    sline >> tmp;
+                }
+                sline >> bmax;
+
                 std::getline(infile, line);
+
+                sline.str("");
+                sline.clear();
+
+                sline << line;
+
+
+                for(int i=0; i<lut1DSize; i++)
+                {
+                    sline >> tmp;
+                    lut->rawBuffer[i] =  tmp;
+                }
                 cptLut++;
-                printf("cpt %d + lutSize %d \n", cptLut, lut1DSize);
             }
             if(cptLut > 2)
             {
@@ -222,21 +311,20 @@ Buffer3D *decodeCsp(const char *filename) {
             if (sscanf(line.c_str(), "%d %d %d", &tmp1, &tmp2, &tmp3) == 3)
             {
                 nbSteps = tmp1;
-                printf("Init %d \n", nbSteps);
-                // Initialization of the buffer
+               // Initialization of the buffer
                 buffer = new Buffer3D(nbSteps);
-                printf("Init %d \n", nbSteps);
             }
             else if ( sscanf(line.c_str(), "%f %f %f", &r, &g, &b) == 3)
             {
-                printf("cpt %d %d \n", cpt, nbSteps);
+                assert(nbSteps);
+
                 // Compute the index
                 int x = cpt % nbSteps,
                     y = (cpt / nbSteps) % nbSteps,
                     z = (( cpt / nbSteps) / nbSteps) % nbSteps;
 
                 int idx =  z* nbSteps *nbSteps  + y * nbSteps + x ;
-                printf("idx %d \n", idx);
+
                 buffer->rawBuffer[3*idx]   = r ;
                 buffer->rawBuffer[3*idx+1] = g ;
                 buffer->rawBuffer[3*idx+2] = b ;
@@ -246,7 +334,22 @@ Buffer3D *decodeCsp(const char *filename) {
             }
         }
     }
-    return buffer;
+
+    auto transform = new LookupTransform();
+    transform->lut3DSize = nbSteps;
+    buffer->uploadTo(transform->lookup3d);
+
+    transform->lut1DSize = lut1DSize ;
+    transform->lookup1d_max = bmax ;
+    transform->lookup1d_min = bmin ;
+    lut->uploadTo(transform->lookup1d);
+
+
+
+    delete lut;
+    delete buffer;
+
+    return transform;
 
 
 }
@@ -257,10 +360,8 @@ Buffer3D *decodeCsp(const char *filename) {
 
 
 LookupTransform::LookupTransform() :
+    lookup1d(),
     lookup3d(),
-    red(),
-    green(),
-    blue(),
     lut1DSize(0),
     lut3DSize(0)
 {
@@ -311,7 +412,6 @@ LookupTransform* createFromFile(const std::string &lutFilePath) {
 
     int size = lutFilePath.length();
     int marker = -1;
-
     for(int idx = size - 1; idx > 0; idx--)
     {
         if(lutFilePath.c_str()[idx] == '.')
@@ -319,29 +419,31 @@ LookupTransform* createFromFile(const std::string &lutFilePath) {
             marker = idx+1;
             break;
         }
+
     }
 
     std::string  ext = lutFilePath.substr(marker, size-1);
 
     if(ext.compare("cube") == 0)
     {
-        transform = decodeCube(lutFilePath.c_str());
+        return decodeCube(lutFilePath.c_str());
     }
     else if(ext.compare("3dl") == 0)
     {
-        transform = decode3dl(lutFilePath.c_str());
+        return decode3dl(lutFilePath.c_str());
     }
     else if(ext.compare("csp") == 0)
     {
-        transform = decodeCsp(lutFilePath.c_str());
+        return decodeCsp(lutFilePath.c_str());
     }
     else
     {
         printf("Duke does know the file format of your LUT, please use 3dl or cube");
-        return nullptr;
     }
-}
 
+    return nullptr;
+}
+//
 
 LookupTransform * defaultsRGB() {
 
@@ -360,14 +462,14 @@ LookupTransform * defaultsRGB() {
 //				*bufIt++ = static_cast<float>(i)/static_cast<float>(s-1);
 //			}
 
-    Buffer3D *buffer = decodeCube("/tmp/mytestlut.cube");
+    return decodeCube("/tmp/mytestlut.cube");
 
-	auto transform = new LookupTransform();
-    transform->lut3DSize = buffer->nbSamplePerChannel;
-	buffer->uploadTo(transform->lookup3d);
-	delete buffer;
+//	auto transform = new LookupTransform();
+//    transform->lut3DSize = buffer->nbSamplePerChannel;
+//	buffer->uploadTo(transform->lookup3d);
+//	delete buffer;
 
-	return transform;
+//	return transform;
 }
 
 // glsl code 
@@ -375,14 +477,27 @@ const char *pLookupTransformFunc =
 		R"(
 uniform sampler3D lookup3d;
 uniform float lutSize;
-// uniform sampler1D lookup1d;
-	
+
+uniform sampler1D lookup1d;
+uniform float lookup1d_min, lookup1d_max, lookup1d_size ;
+
+
 vec4 apply3dTransform(vec4 pix) {
 	// TODO add 3x1d lookup
 	// FIXME : depends on size of the texture !!!
-	float scale = ( lutSize - 1. )/ lutSize;
-	float offset = 1 / (2. * lutSize);
-	return texture(lookup3d, clamp(pix.rgb, 0, 1) * scale + offset );
+    float scale_1d =  ( lookup1d_size - 1. )/ lookup1d_size;
+    float offset_1d = 1. / (2. * lookup1d_size);
+
+    pix = (pix - lookup1d_min) / (lookup1d_max - lookup1d_min  ) ;
+
+    pix.r = texture(lookup1d,clamp(pix.r,0.,1.) * scale_1d + offset_1d);
+    pix.g = texture(lookup1d,clamp(pix.g,0.,1.) * scale_1d + offset_1d);
+    pix.b = texture(lookup1d,clamp(pix.b,0.,1.) * scale_1d + offset_1d);
+
+    float scale =  ( lutSize - 1. )/ lutSize;
+    float offset = 1. / (2. * lutSize);
+
+    return texture(lookup3d, clamp(pix.rgb,0.,1.) * scale + offset );
 } 
 
 )";

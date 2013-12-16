@@ -100,7 +100,7 @@ SuggestParam::SuggestParam(const Parameters &params) :
 }
 
 std::string SuggestParam::execute() {
-	ostringstream oss;
+    ostringstream oss;
 	for (const auto &suggestion : params.suggest(value)) {
 		if (oss.tellp() != 0)
 			oss << '\t';
