@@ -16,6 +16,7 @@ void render(const SharedProgram& pProgram, const SharedMesh &pMesh, const glm::i
 
 	pProgram->glUniform2i(shader::gPan, pan.x, pan.y);
 	pProgram->glUniform1f(shader::gZoom, 1);
+    pProgram->glUniform1f("pixelRatio", 1.);
 
 	pMesh->draw();
 

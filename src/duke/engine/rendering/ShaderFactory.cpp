@@ -276,6 +276,7 @@ std::string buildVertexShaderSource(const ShaderDescription &description) {
 	uniform ivec2 gImage;
 	uniform ivec2 gPan;
     uniform float gZoom;
+    uniform float pixelRatio;
 
 	out vec2 vVaryingTexCoord; 
 
@@ -319,7 +320,7 @@ std::string buildVertexShaderSource(const ShaderDescription &description) {
 		world = scale(world, vec3(scaling, 1));
         mat4 proj = ortho(0, gViewport.x, 0, gViewport.y);
 		mat4 worldViewProj = proj * world;
-        gl_Position = worldViewProj * vec4(Position, 1.0);
+        gl_Position = worldViewProj * vec4(Position * vec3(1., 1./pixelRatio, 1.), 1.0);
         vVaryingTexCoord = UV * abs(gImage);
 	})";
 }
