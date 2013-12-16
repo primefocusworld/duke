@@ -276,6 +276,7 @@ std::string buildVertexShaderSource(const ShaderDescription &description) {
 	uniform ivec2 gImage;
 	uniform ivec2 gPan;
     uniform float gZoom;
+    uniform float pixelRatio;
 
 	out vec2 vVaryingTexCoord; 
 
@@ -310,17 +311,17 @@ std::string buildVertexShaderSource(const ShaderDescription &description) {
 		translating += gViewport; // moving to center
 		translating /= 2; // moving to center
 		translating += gPan; // moving to center
-		vec2 scaling = vec2(1);
-		scaling /= 2; // bringing square from [-1,1] to [-.5,.5]
-		scaling *= gImage; // to pixel dimension
+        vec2 scaling = vec2(1.);
+        scaling /= 2; // bringing square from [-1,1] to [-.5,.5]
+        scaling *= gImage; // to pixel dimension
         scaling *= gZoom; // zoom
         mat4 world = mat4(1);
 		world = translate(world, vec3(translating, 0)); // move to center
 		world = scale(world, vec3(scaling, 1));
-		mat4 proj = ortho(0, gViewport.x, 0, gViewport.y);
+        mat4 proj = ortho(0, gViewport.x, 0, gViewport.y );
 		mat4 worldViewProj = proj * world;
-        gl_Position = worldViewProj * vec4(Position, 1.0);
-        vVaryingTexCoord = UV * abs(gImage);
+        gl_Position = worldViewProj * vec4(Position * vec3( 1., 1./pixelRatio, 1.), 1.0);
+        vVaryingTexCoord = UV * abs(gImage) * vec2( 1. );
 	})";
 }
 

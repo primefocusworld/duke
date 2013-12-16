@@ -29,6 +29,17 @@ inline float getAspectRatio(glm::vec2 dim) {
 
 }  // namespace
 
+float getPixelRatio(const Context &context)
+{
+    float ratio = 1.;
+    for(const auto attr : context.pCurrentImage->attributes)
+    {
+        if(attr.name().compare("PixelAspectRatio")==0)
+            ratio = *reinterpret_cast<const float*>(attr.data());
+    }
+    return ratio;
+}
+
 float getZoomValue(const Context &context) {
 	switch (context.fitMode) {
 	case FitMode::ACTUAL:
@@ -40,15 +51,19 @@ float getZoomValue(const Context &context) {
 	}
 	if (!context.pCurrentImage)
         return 1;
-	const auto viewportDim = glm::vec2(context.viewport.dimension);
-	const auto viewportAspect = getAspectRatio(viewportDim);
+
+
+    float pixelRatio = getPixelRatio(context);
+
+    const auto viewportDim = glm::vec2(context.viewport.dimension);
+    const auto viewportAspect = getAspectRatio(viewportDim);
 	const auto &imageDescription = context.pCurrentImage->description;
-	const auto imageDim = glm::vec2(imageDescription.width, imageDescription.height);
+    const auto imageDim = glm::vec2(imageDescription.width, imageDescription.height / pixelRatio);
     const auto imageAspect = getAspectRatio(imageDim);
     switch (context.fitMode) {
 	case FitMode::INNER:
 		if (viewportAspect > imageAspect)
-			return viewportDim.y / imageDim.y;
+            return viewportDim.y / imageDim.y;
 		return viewportDim.x / imageDim.x;
 	case FitMode::OUTER:
 		if (viewportAspect > imageAspect)
@@ -102,7 +117,9 @@ void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, flo
 	pProgram->glUniform1f(shader::gExposure, context.exposure);
 	pProgram->glUniform1f(shader::gGamma, context.gamma);
 	pProgram->glUniform4i(shader::gShowChannel, context.channels.x, context.channels.y, context.channels.z, context.channels.w);
-	pProgram->glUniform1f(shader::gZoom, context.zoom);
+    pProgram->glUniform1f(shader::gZoom, context.zoom);
+
+    pProgram->glUniform1f("pixelRatio", getPixelRatio(context) ); // Texture unit 1
 
 	// 3d lut
 	pProgram->glUniform1i("lookup3d", 1); // Texture unit 1

@@ -277,10 +277,13 @@ LookupTransform* decodeCsp(const char *filename)
                 std::getline(infile, line);
                 std::stringstream sline(line);
                 sline >> bmin;
+                float mark = bmin;
 
                 for(int i=1; i<lut1DSize-1; i++)
                 {
                     sline >> tmp;
+                    if( fabs(mark-bmin) > 1./float(lut1DSize) * .1 )
+                         throw std::runtime_error("Not Regular LUT 1D - Not yet implemented");
                 }
                 sline >> bmax;
 
@@ -295,6 +298,9 @@ LookupTransform* decodeCsp(const char *filename)
                 for(int i=0; i<lut1DSize; i++)
                 {
                     sline >> tmp;
+                    if(cptLut > 0 )
+                        if(tmp != lut->rawBuffer[i])
+                               throw std::runtime_error("LUT different for R G and B - Not yet implemented");
                     lut->rawBuffer[i] =  tmp;
                 }
                 cptLut++;
