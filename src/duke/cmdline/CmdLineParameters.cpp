@@ -121,6 +121,9 @@ void CmdLineParameters::printHelpMessage() const {
       --outputspace          force the display colorspace
                              [Linear, sRGB, Rec709]
 
+      --viewinglut           allow to apply a 3D lookup table on your file
+                             file supported : 3dl, cube, csp.
+
   -f, --fullscreen           switch to fullscreen mode.
   -l, --list-formats         output supported formats and exit
   -s, --cache-size SIZE      size of the in-memory cache system in MiB,

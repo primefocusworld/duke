@@ -369,7 +369,9 @@ LookupTransform::LookupTransform() :
     lookup1d(),
     lookup3d(),
     lut1DSize(0),
-    lut3DSize(0)
+    lut3DSize(0),
+    lookup1d_max(0.),
+    lookup1d_min(0.)
 {
 }
 
@@ -491,14 +493,18 @@ uniform float lookup1d_min, lookup1d_max, lookup1d_size ;
 vec4 apply3dTransform(vec4 pix) {
 	// TODO add 3x1d lookup
 	// FIXME : depends on size of the texture !!!
-    float scale_1d =  ( lookup1d_size - 1. )/ lookup1d_size;
-    float offset_1d = 1. / (2. * lookup1d_size);
 
-    pix = (pix - lookup1d_min) / (lookup1d_max - lookup1d_min  ) ;
+    if( lookup1d_min != lookup1d_max )
+    {
+        float scale_1d =  ( lookup1d_size - 1. )/ lookup1d_size;
+        float offset_1d = 1. / (2. * lookup1d_size);
 
-    pix.r = texture(lookup1d,clamp(pix.r,0.,1.) * scale_1d + offset_1d);
-    pix.g = texture(lookup1d,clamp(pix.g,0.,1.) * scale_1d + offset_1d);
-    pix.b = texture(lookup1d,clamp(pix.b,0.,1.) * scale_1d + offset_1d);
+        pix = (pix - lookup1d_min) / (lookup1d_max - lookup1d_min  ) ;
+
+        pix.r = texture(lookup1d,clamp(pix.r,0.,1.) * scale_1d + offset_1d);
+        pix.g = texture(lookup1d,clamp(pix.g,0.,1.) * scale_1d + offset_1d);
+        pix.b = texture(lookup1d,clamp(pix.b,0.,1.) * scale_1d + offset_1d);
+    }
 
     float scale =  ( lutSize - 1. )/ lutSize;
     float offset = 1. / (2. * lutSize);
