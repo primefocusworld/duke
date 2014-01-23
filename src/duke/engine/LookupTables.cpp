@@ -45,7 +45,7 @@ struct Buffer3D {
 		// Using texture unit 1 ?? check if the fonts are not using this one
 		// NOTE that this might go in scope_bind_texture ...
         GLint memID;
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &memID);
+        glGetIntegerv(GL_ACTIVE_TEXTURE, &memID);
 		glActiveTexture(GL_TEXTURE1);
 		//glEnable(GL_TEXTURE_3D);
 		auto textureBound = tex.scope_bind_texture();
@@ -96,7 +96,7 @@ struct Buffer1D {
         // Using texture unit 1 ?? check if the fonts are not using this one
         // NOTE that this might go in scope_bind_texture ...
         GLint memID;
-        glGetIntegerv(GL_TEXTURE_BINDING_2D, &memID);
+        glGetIntegerv(GL_ACTIVE_TEXTURE, &memID);
         glActiveTexture(GL_TEXTURE2);
         //glEnable(GL_TEXTURE_3D);
         auto textureBound = tex.scope_bind_texture();
