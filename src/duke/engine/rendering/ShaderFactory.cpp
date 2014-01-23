@@ -228,8 +228,8 @@ void appendSampler(ostream&stream, const ShaderDescription &description) {
 	const bool filtering = false; // Testing
 	const string filter(filtering ? "bilinear" : "nearest");
 	stream << (description.tenBitUnpack ? pSampleTenbitsUnpack : pSampleRegular);
-	stream << "vec4 sample(vec2 offset) {"
-	"  return " << "apply3dTransform(" << filter << "(gTextureSampler, vVaryingTexCoord+offset)); }\n";
+    stream << "vec4 sample(vec2 offset) {"
+    "  return " << "apply3dTransform(" << filter << "(gTextureSampler, vVaryingTexCoord+offset)); }\n";
 }
 
 void appendSwizzle(ostream&stream, const ShaderDescription &description) {
@@ -248,7 +248,7 @@ std::string buildFragmentShaderSource(const ShaderDescription &description) {
 	ostringstream oss;
 	oss << "#version 330" << endl;
 	if (description.sampleTexture) {
-		oss << pLookupTransformFunc << endl; 
+        oss << pLookupTransformFunc << endl;
 		oss << pColorSpaceConversions << endl;
 		appendToLinearFunction(oss, description.fileColorspace);
 		appendToScreenFunction(oss, description.screenColorspace);

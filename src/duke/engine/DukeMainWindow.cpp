@@ -249,6 +249,11 @@ void DukeMainWindow::run() {
 			const MediaFrameReference mfr = track.getMediaFrameReferenceAt(frame);
 			const auto pMediaStream = mfr.first;
 
+            glActiveTexture(GL_TEXTURE1);
+            auto bound3dTexture = lookup ? lookup->lookup3d.scope_bind_texture() : nullptr;
+            glActiveTexture(GL_TEXTURE2);
+            auto bound1dTexture = lookup ? lookup->lookup1d.scope_bind_texture() : nullptr;
+            glActiveTexture(GL_TEXTURE0);
 
 			if (pMediaStream) {
 				auto pLoadedTexture = textureCache.getLoadedTexture(mfr);
@@ -264,11 +269,6 @@ void DukeMainWindow::run() {
 					}
 				}
 				if (pLoadedTexture) {
-					glActiveTexture(GL_TEXTURE1);
-					auto bound3dTexture = lookup ? lookup->lookup3d.scope_bind_texture() : nullptr;
-                    glActiveTexture(GL_TEXTURE2);
-                    auto bound1dTexture = lookup ? lookup->lookup1d.scope_bind_texture() : nullptr;
-					glActiveTexture(GL_TEXTURE0);
 					m_Context.pCurrentImage = pLoadedTexture;
 					setupZoom();
 					auto &texture = *pLoadedTexture->pTexture;

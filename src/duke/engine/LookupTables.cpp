@@ -44,6 +44,8 @@ struct Buffer3D {
 	void uploadTo(gl::GlTexture3D &tex) {
 		// Using texture unit 1 ?? check if the fonts are not using this one
 		// NOTE that this might go in scope_bind_texture ...
+        GLint memID;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &memID);
 		glActiveTexture(GL_TEXTURE1);
 		//glEnable(GL_TEXTURE_3D);
 		auto textureBound = tex.scope_bind_texture();
@@ -55,6 +57,7 @@ struct Buffer3D {
 		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, 
 					 nbSamplePerChannel, nbSamplePerChannel, nbSamplePerChannel, 
 					 0, GL_RGB, GL_FLOAT, rawBuffer);
+        glActiveTexture(memID);
 	}
 
 };
@@ -92,6 +95,8 @@ struct Buffer1D {
     void uploadTo(gl::GlTexture1D &tex) {
         // Using texture unit 1 ?? check if the fonts are not using this one
         // NOTE that this might go in scope_bind_texture ...
+        GLint memID;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &memID);
         glActiveTexture(GL_TEXTURE2);
         //glEnable(GL_TEXTURE_3D);
         auto textureBound = tex.scope_bind_texture();
@@ -103,6 +108,7 @@ struct Buffer1D {
         glTexImage1D(GL_TEXTURE_1D, 0, GL_RED,
                      nbSamplePerChannel,
                      0, GL_RED, GL_FLOAT, rawBuffer);
+       glActiveTexture(memID);
     }
 
 };
