@@ -374,10 +374,10 @@ LookupTransform* decodeCsp(const char *filename)
 LookupTransform::LookupTransform() :
     lookup1d(),
     lookup3d(),
-    lut1DSize(0),
-    lut3DSize(0),
+    lookup1d_min(0.),
     lookup1d_max(0.),
-    lookup1d_min(0.)
+    lut1DSize(0),
+    lut3DSize(0)
 {
 }
 
