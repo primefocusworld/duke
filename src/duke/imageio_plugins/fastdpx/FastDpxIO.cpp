@@ -1,8 +1,9 @@
 #ifdef DUKE_FAST_DPX
 
 #include <duke/gl/GL.hpp>
-#include <duke/ByteSwap.hpp>              // for bswap_32
+#include <duke/base/ByteSwap.hpp>         // for bswap_32
 #include <duke/imageio/DukeIO.hpp>        // for IIODescriptor::Capability, etc
+#include <duke/attributes/AttributeKeys.hpp> // for DpxImageOrientation
 #include <duke/attributes/Attributes.hpp> // for Attributes
 #include <duke/imageio/PackedFrameDescription.hpp>
 #include <stddef.h>                       // for size_t
@@ -77,39 +78,51 @@ namespace duke {
 
 class FastDpxImageReader: public IImageReader {
 	const void *m_pData;
+    const FileInformation* pInformation;
+    const char* pArithmeticPointer;
+    const Image_Information* pImageInformation;
+    const unsigned int magic;
+    const bool bigEndian;
+
+    template<typename T>
+    inline T swap(T value) const {return ::swap<T>(value, bigEndian); }
 public:
-	FastDpxImageReader(const IIODescriptor *pDesc, const void *pData, const size_t dataSize) :
-			IImageReader(pDesc), m_pData(nullptr) {
-		const FileInformation* pInformation = reinterpret_cast<const FileInformation*>(pData);
-		const char* pArithmeticPointer = reinterpret_cast<const char*>(pData);
-		const Image_Information* pImageInformation = reinterpret_cast<const Image_Information*>(pArithmeticPointer + sizeof(FileInformation));
+    FastDpxImageReader(const IIODescriptor *pDesc, const void *pData, const size_t dataSize) :
+                    IImageReader(pDesc),
+                    m_pData(nullptr),
+                    pInformation(reinterpret_cast<const FileInformation*>(pData)),
+                    pArithmeticPointer(reinterpret_cast<const char*>(pData)),
+                    pImageInformation(reinterpret_cast<const Image_Information*>(pArithmeticPointer + sizeof(FileInformation))),
+                    magic(pInformation->magic_num),
+                    bigEndian(magic == DPX_MAGIC_SWAP){
+        if (magic != DPX_MAGIC_SWAP && magic != DPX_MAGIC) {
+            m_Error = "invalid magic : not a dpx file";
+            return ;
+        }
+        const auto& image = pImageInformation->image_element[0];
+        const auto bitSize = swap(image.bit_size);
+        const auto componentsFilled = swap(image.packing) == 1;
+        if (bitSize != 10 || !componentsFilled) {
+            m_Error = "Can't use fast dpx";
+            return;
+        }
+    }
 
-		const unsigned int magic = pInformation->magic_num;
+    virtual bool doSetup(const Attributes& readerOptions, PackedFrameDescription& description, Attributes& attributes) override {
+        m_pData = nullptr;
+        description.height = swap(pImageInformation->lines_per_image_ele);
+        description.width = swap(pImageInformation->pixels_per_line);
+        m_pData = pArithmeticPointer + swap(pInformation->offset);
+        description.swapEndianness = bigEndian;
+        description.glPackFormat = GL_RGB10_A2UI;
+        description.dataSize = description.height * description.width * sizeof(int32_t);
+        attributes.set<attribute::DpxImageOrientation>(pImageInformation->orientation);
+        const float pixelAspectRatio = static_cast<float>(pImageInformation->aspect_ratio[0]) / static_cast<float>(pImageInformation->aspect_ratio[1]);
+        attributes.set<attribute::PixelAspectRatio>(pixelAspectRatio);
+        return true;
+    }
 
-		if (magic != DPX_MAGIC_SWAP && magic != DPX_MAGIC) {
-			m_Error = "invalid magic : not a dpx file";
-			return;
-		}
-
-		if (magic == DPX_MAGIC_SWAP) {
-			m_Description.height = bswap_32(pImageInformation->lines_per_image_ele);
-			m_Description.width = bswap_32(pImageInformation->pixels_per_line);
-			m_pData = pArithmeticPointer + bswap_32(pInformation->offset);
-			m_Description.swapEndianness = true;
-		} else {
-			m_Description.height = pImageInformation->lines_per_image_ele;
-			m_Description.width = pImageInformation->pixels_per_line;
-			m_pData = pArithmeticPointer + pInformation->offset;
-		}
-		m_Description.glPackFormat = GL_RGB10_A2UI;
-		m_Description.dataSize = m_Description.height * m_Description.width * sizeof(int32_t);
-
-		// metadata
-		m_Attributes.emplace_back("Orientation", (int) pImageInformation->orientation);
-		if (pImageInformation->aspect_ratio[1])
-			m_Attributes.emplace_back("PixelRatio", ((float) pImageInformation->aspect_ratio[0]) / ((float) pImageInformation->aspect_ratio[1])); 
-	}
-	virtual const void* getMappedImageData() const {
+	virtual const void* getMappedImageData() const override {
 		return m_pData;
 	}
 };

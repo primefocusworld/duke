@@ -33,16 +33,21 @@ if(("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang") OR ("${CMAKE_CXX_COMPILER_ID}" 
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+# clang && debug adds address sanitizer
+if(("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang"))
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+endif()
+
 # duke
 add_subdirectory(src/duke)
 
 # tests
-if(EXISTS "${CMAKE_SOURCE_DIR}/dependencies/gtest-1.6.0/")
-add_subdirectory(dependencies/gtest-1.6.0)
+if(EXISTS "${CMAKE_SOURCE_DIR}/dependencies/gtest-1.7.0/")
+add_subdirectory(dependencies/gtest-1.7.0)
 add_subdirectory(test)
 else()
-MESSAGE(STATUS "Could NOT find gtest (missing: 'dependencies/gtest-1.6.0/' folder) : tests disabled
+MESSAGE(STATUS "Could NOT find gtest (missing: 'dependencies/gtest-1.7.0/' folder) : tests disabled
 To unable tests
-* download https://googletest.googlecode.com/files/gtest-1.6.0.zip
-* unzip into 'dependencies/gtest-1.6.0/'")
+* download https://googletest.googlecode.com/files/gtest-1.7.0.zip
+* unzip into 'dependencies/gtest-1.7.0/'")
 endif()

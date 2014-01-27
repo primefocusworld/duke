@@ -6,6 +6,7 @@
 #include <duke/engine/rendering/ShaderFactory.hpp>
 #include <duke/engine/rendering/ShaderPool.hpp>
 #include <duke/engine/rendering/ShaderConstants.hpp>
+#include <duke/filesystem/FsUtils.hpp>
 #include <duke/gl/Mesh.hpp>
 #include <duke/gl/Textures.hpp>
 #include <duke/engine/ColorSpace.hpp>
@@ -17,10 +18,10 @@ namespace {
 ColorSpace resolve(const Attributes &attributes, ColorSpace original) {
 	if (original != ColorSpace::Auto)
 		return original;
-	original = resolveFromName(attributes.findString(attribute::pOiioColospaceKey));
+	original = resolveFromName(attributes.getOrDefault<attribute::OiioColorspace>());
 	if (original != ColorSpace::Auto)
 		return original;
-	return resolveFromExtension(attributes.findString(attribute::pDukeFileExtensionKey));
+    return resolveFromExtension(fileExtension(attributes.getOrDie<attribute::File>()));
 }
 
 inline float getAspectRatio(glm::vec2 dim) {
@@ -29,15 +30,19 @@ inline float getAspectRatio(glm::vec2 dim) {
 
 }  // namespace
 
-float getPixelRatio(const Context &context)
-{
-    float ratio = 1.;
-    for(const auto attr : context.pCurrentImage->attributes)
-    {
-        if(attr.name().compare("PixelAspectRatio")==0)
-            ratio = *reinterpret_cast<const float*>(attr.data());
-    }
-    return ratio;
+float getPixelRatio(const Context &context) {
+	float ratio = 1.;
+    auto attributes = context.pCurrentImage->attributes;
+    //auto attr = attributes.getOrDefault("PixelAspectRatio");
+    //if (attr != attributes.end()) {
+    //    
+    //}
+    //getattribute("PixelAspectRatio", ratio);
+	//for (const auto attr : context.pCurrentImage->attributes) {
+	//	if (attr.name().compare("PixelAspectRatio") == 0)
+	//		ratio = *reinterpret_cast<const float *>(attr.data());
+	//}
+	return ratio;
 }
 
 float getZoomValue(const Context &context) {
@@ -98,7 +103,8 @@ void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, flo
 	if (isInternalOptimizedFormatRedBlueSwapped(description.glPackFormat))
 		redBlueSwapped = !redBlueSwapped;
 
-	const auto inputColorSpace = resolve(context.pCurrentImage->attributes, context.fileColorSpace);
+	const auto& currentImageAttributes = context.pCurrentImage->attributes;
+	const auto inputColorSpace = resolve(currentImageAttributes, context.fileColorSpace);
 
 	const ShaderDescription shaderDesc = ShaderDescription::createTextureDesc( //
 			isGreyscale(description.glPackFormat), //
@@ -108,7 +114,9 @@ void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, flo
 			inputColorSpace,
 			context.screenColorSpace);
 	const auto pProgram = shaderPool.get(shaderDesc);
-	const auto pair = getTextureDimensions(description.width, description.height, context.pCurrentImage->attributes.getOrientation());
+    const auto pair = getTextureDimensions(description.width,
+                                           description.height,
+                                           currentImageAttributes.getOrDefault<attribute::DpxImageOrientation>());
 	pProgram->use();
 	pProgram->glUniform2i(shader::gImage, pair.first, pair.second);
 	pProgram->glUniform2i(shader::gViewport, context.viewport.dimension.x, context.viewport.dimension.y);

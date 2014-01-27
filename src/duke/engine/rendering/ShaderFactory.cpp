@@ -215,7 +215,6 @@ void main(void)
 }
 )";
 
-
 void appendToLinearFunction(ostream&stream, const ColorSpace colorspace) {
 	stream << endl << "vec3 toLinear(vec3 sample){return " << getToLinearFunction(colorspace) << "(sample);}" << endl;
 }

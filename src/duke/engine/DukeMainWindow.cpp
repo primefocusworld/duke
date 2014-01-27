@@ -247,7 +247,7 @@ void DukeMainWindow::run() {
 
 			m_Context.pCurrentImage = nullptr;
 			const MediaFrameReference mfr = track.getMediaFrameReferenceAt(frame);
-			const auto pMediaStream = mfr.first;
+			const auto pMediaStream = mfr.pStream;
 
             glActiveTexture(GL_TEXTURE1);
             auto bound3dTexture = lookup ? lookup->lookup3d.scope_bind_texture() : nullptr;
@@ -386,7 +386,7 @@ void DukeMainWindow::run() {
 		commands.clear();
 
 		// check stop
-		running = !(shouldClose() || (keyPressed(GLFW_KEY_ESC)));
+		running = !(shouldClose() || (keyPressed(GLFW_KEY_ESCAPE)));
 
 		// dumping cache state every 200 ms
 		const auto now = duke_clock::now();
