@@ -33,6 +33,11 @@ if(("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang") OR ("${CMAKE_CXX_COMPILER_ID}" 
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
+# clang && debug adds address sanitizer
+if(("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang"))
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+endif()
+
 # duke
 add_subdirectory(src/duke)
 
