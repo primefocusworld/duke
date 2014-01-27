@@ -7,8 +7,10 @@
 
 namespace duke {
 
-static const char * const pTextVertexShader =
-		R"(
+namespace {
+
+const char pTextVertexShader[] =
+        R"(
 #version 330
 
 layout (location = 0) in vec3 Position;
@@ -71,8 +73,8 @@ void main() {
     vVaryingTexCoord = charDim*(UV+charPos);
 })";
 
-static const char * const pTextFragmentShader =
-		R"(#version 330
+const char pTextFragmentShader[] =
+        R"(#version 330
 
 out vec4 vFragColor;
 uniform sampler2DRect gTextureSampler;
@@ -86,12 +88,17 @@ void main(void)
     vFragColor = sample;
 })";
 
+}  // namespace
+
 GlyphRenderer::GlyphRenderer(const GeometryRenderer &renderer, const char *glyphsFilename) :
 		m_GeometryRenderer(renderer), //
 		m_Program(makeVertexShader(pTextVertexShader), makeFragmentShader(pTextFragmentShader)) {
-	std::string error;
-	if (!load(glyphsFilename, m_GlyphsTexture, m_Attributes, error))
-		throw std::runtime_error("unable to load glyphs texture");
+	InputFrameOperationResult result = load(glyphsFilename, m_GlyphsTexture);
+    if (result) {
+        m_Attributes = result.rawPackedFrame.attributes;
+    } else {
+        throw std::runtime_error("unable to load glyphs texture");
+    }
 }
 
 GlyphRenderer::GlyphBinder GlyphRenderer::begin(const Viewport &viewport) const {
@@ -123,29 +130,33 @@ const GeometryRenderer &GlyphRenderer::getGeometryRenderer() const {
 	return m_GeometryRenderer;
 }
 
-static glm::ivec2 textDimensions(const char* pMsg, glm::ivec2 glyphDim) {
-	int lines = 0;
-	int maxChars = 0;
-	int currentLineChars = 0;
-	const auto setMax = [&]() {
-		if (maxChars < currentLineChars)
-		maxChars = currentLineChars;
-	};
-	for (; pMsg && *pMsg != '\0'; ++pMsg) {
-		const char c = *pMsg;
-		if (c == '\n') {
-			setMax();
-			++lines;
-			currentLineChars = 0;
-		} else
-			++currentLineChars;
-	}
-	setMax();
-	const glm::ivec2 textDim(maxChars, lines + 1);
-	return (textDim++) * glyphDim;
+namespace {
+
+glm::ivec2 textDimensions(const char* pMsg, glm::ivec2 glyphDim) {
+    int lines = 0;
+    int maxChars = 0;
+    int currentLineChars = 0;
+    const auto setMax = [&]() {
+        if (maxChars < currentLineChars)
+        maxChars = currentLineChars;
+    };
+    for (; pMsg && *pMsg != '\0'; ++pMsg) {
+        const char c = *pMsg;
+        if (c == '\n') {
+            setMax();
+            ++lines;
+            currentLineChars = 0;
+        } else
+            ++currentLineChars;
+    }
+    setMax();
+    const glm::ivec2 textDim(maxChars, lines + 1);
+    return (textDim++) * glyphDim;
 }
 
-void drawText(const GlyphRenderer &glyphRenderer, const Viewport &viewport, const char* pText, int x, int y, float alpha, float zoom, bool isPlaying) {
+}  // namespace
+
+void drawText(const GlyphRenderer &glyphRenderer, const Viewport &viewport, const char* pText, int x, int y, float alpha, float zoom) {
 	if (pText == nullptr || *pText == '\0')
 		return;
 
@@ -155,7 +166,7 @@ void drawText(const GlyphRenderer &glyphRenderer, const Viewport &viewport, cons
 	const glm::ivec2 glyphDim = glm::ivec2(zoom * 8);
 	const glm::ivec2 rectDim = textDimensions(pText, glyphDim);
 	const glm::ivec2 viewportDim(viewport.dimension);
-	geometryRenderer.drawRect(viewportDim, rectDim, glm::ivec2(x, y) + (rectDim - viewportDim) / 2 - glyphDim, glm::vec4(0, 0, 0, alpha * .8), isPlaying);
+	geometryRenderer.drawRect(viewportDim, rectDim, glm::ivec2(x, y) + (rectDim - viewportDim) / 2 - glyphDim, glm::vec4(0, 0, 0, alpha * .8));
 
 	const int xOrigin = x;
 	const auto bound = glyphRenderer.begin(viewport);

@@ -12,13 +12,15 @@
 #include <string>
 #include <sstream>
 
+
 namespace duke {
 
 DukeMainWindow::DukeMainWindow(GLFWwindow *pWindow, const CmdLineParameters &parameters) :
 		DukeGLFWWindow(pWindow), m_CmdLine(parameters), m_Player(parameters), m_GlyphRenderer(m_GeometryRenderer) {
 	m_Context.pGlyphRenderer = &m_GlyphRenderer;
 	m_Context.pGeometryRenderer = &m_GeometryRenderer;
-	m_Context.isPlaying = false;
+	m_Context.fileColorSpace = parameters.inputColorSpace;
+	m_Context.screenColorSpace = parameters.outputColorSpace;
 
 	::glfwMakeContextCurrent(m_pWindow);
 	::glfwGetWindowSize(m_pWindow, &m_WindowDim.x, &m_WindowDim.y);
@@ -116,15 +118,13 @@ void DukeMainWindow::onMouseDrag(int dx, int dy) {
 namespace { // defining channel mask constants
 
 using glm::bvec4;
-static const auto r = bvec4(true, false, false, false);
-static const auto g = bvec4(false, true, false, false);
-static const auto b = bvec4(false, false, true, false);
-static const auto a = bvec4(false, false, false, true);
-static const auto all = bvec4(false);
+const auto r = bvec4(true, false, false, false);
+const auto g = bvec4(false, true, false, false);
+const auto b = bvec4(false, false, true, false);
+const auto a = bvec4(false, false, false, true);
+const auto all = bvec4(false);
 
-}  // namespace
-
-static bool setNextMode(FitMode &mode) {
+bool setNextMode(FitMode &mode) {
 	switch (mode) {
 	case FitMode::FREE:
 		mode = FitMode::INNER;
@@ -142,7 +142,7 @@ static bool setNextMode(FitMode &mode) {
 	throw std::runtime_error("unknown fitmode");
 }
 
-static const char* getFitModeString(FitMode &mode) {
+const char* getFitModeString(FitMode &mode) {
 	switch (mode) {
 	case FitMode::ACTUAL:
 		return "Actual pixel";
@@ -155,6 +155,8 @@ static const char* getFitModeString(FitMode &mode) {
 	}
 	throw std::runtime_error("unknown fitmode");
 }
+
+}  // namespace
 
 void DukeMainWindow::run() {
 	ConsoleIO console;
@@ -236,9 +238,22 @@ void DukeMainWindow::run() {
 
 			m_Context.pCurrentImage = nullptr;
 			const MediaFrameReference mfr = track.getMediaFrameReferenceAt(frame);
-			const auto pMediaStream = mfr.first;
+			const auto pMediaStream = mfr.pStream;
+
+
 			if (pMediaStream) {
 				auto pLoadedTexture = textureCache.getLoadedTexture(mfr);
+				// Mode where we force the texture to be ready before displaying something
+				if (m_CmdLine.unlimitedFPS) {
+					int MaxTry = 1000;
+					while (!pLoadedTexture) {
+						// The texture was not ready, re-ask for it
+						textureCache.prepare(frame, mode);
+						pLoadedTexture = textureCache.getLoadedTexture(mfr);
+						if (MaxTry--<=0)
+							continue; 
+					}
+				}
 				if (pLoadedTexture) {
 					m_Context.pCurrentImage = pLoadedTexture;
 					setupZoom();
@@ -248,7 +263,7 @@ void DukeMainWindow::run() {
 					glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 					renderWithBoundTexture(m_GlyphRenderer.getGeometryRenderer().shaderPool, pSquare.get(), m_Context);
 				} else {
-					drawText(m_GlyphRenderer, m_Context.viewport, "missing frame", 100, 100, 1, 3);
+					drawText(m_GlyphRenderer, m_Context.viewport, "caching", 100, 100, 1, 3);
 				}
 			}
 			const auto& pOverlayTrack = pTrackItr->second.pOverlay;
@@ -268,6 +283,8 @@ void DukeMainWindow::run() {
 		const auto elapsedMicroSeconds = statisticOverlay.vBlankMetronom.tick();
 		const Time offset = m_CmdLine.unlimitedFPS ? m_Player.getFrameDuration() : Time(elapsedMicroSeconds);
 		m_Player.offsetPlaybackTime(offset);
+
+
 		m_Context.liveTime += Time(elapsedMicroSeconds.count(), 1000000);
 
 		if (frame != lastFrame) {
@@ -353,7 +370,7 @@ void DukeMainWindow::run() {
 		commands.clear();
 
 		// check stop
-		running = !(shouldClose() || (keyPressed(GLFW_KEY_ESC)));
+		running = !(shouldClose() || (keyPressed(GLFW_KEY_ESCAPE)));
 
 		// dumping cache state every 200 ms
 		const auto now = duke_clock::now();

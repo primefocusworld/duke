@@ -1,6 +1,6 @@
 #pragma once
 
-#include <duke/NonCopyable.hpp>
+#include <duke/base/NonCopyable.hpp>
 #include <duke/gl/Textures.hpp>
 #include <duke/gl/Program.hpp>
 #include <duke/gl/Mesh.hpp>
@@ -30,6 +30,6 @@ private:
 	GlyphBinder m_pTextureBind;
 };
 
-void drawText(const GlyphRenderer &renderer, const Viewport &viewport, const char* pText, int x, int y, float alpha = 1, float zoom = 1, bool isPlaying = false);
+void drawText(const GlyphRenderer &renderer, const Viewport &viewport, const char* pText, int x, int y, float alpha = 1, float zoom = 1);
 
 } /* namespace duke */

@@ -7,12 +7,27 @@
 using namespace std;
 
 namespace duke {
-ShaderDescription::ShaderDescription() {
+
+// From ColorSpace.cpp, all the conversion functions
+// in a char *
+extern const char *pColorSpaceConversions;
+
+namespace  {
+
+std::tuple<bool, bool, bool, bool, bool, bool, ColorSpace, ColorSpace> 
+asTuple(const ShaderDescription &sd) {
+	return std::make_tuple( sd.grayscale, 
+							sd.sampleTexture, 
+							sd.displayUv, 
+							sd.swapEndianness, 
+							sd.swapRedAndBlue, 
+							sd.tenBitUnpack, 
+							sd.fileColorspace,
+							sd.screenColorspace);
 }
 
-static inline std::tuple<bool, bool, bool, bool, bool, bool, ColorSpace> asTuple(const ShaderDescription &sd) {
-	return std::make_tuple(sd.grayscale, sd.sampleTexture, sd.displayUv, sd.swapEndianness, sd.swapRedAndBlue, sd.tenBitUnpack, sd.colorspace);
-}
+}  // namespace
+
 bool ShaderDescription::operator<(const ShaderDescription &other) const {
 	return asTuple(*this) < asTuple(other);
 }
@@ -30,40 +45,25 @@ ShaderDescription ShaderDescription::createSolidDesc() {
 	return description;
 }
 
-ShaderDescription ShaderDescription::createTextureDesc(bool grayscale, bool swapEndianness, bool swapRedAndBlue, bool tenBitUnpack, ColorSpace colorspace) {
+ShaderDescription ShaderDescription::createTextureDesc(bool grayscale, bool swapEndianness, bool swapRedAndBlue, bool tenBitUnpack, ColorSpace fileColorspace, ColorSpace screenColorspace) {
 	ShaderDescription description;
 	description.grayscale = grayscale;
 	description.sampleTexture = true;
 	description.swapEndianness = swapEndianness;
 	description.swapRedAndBlue = swapRedAndBlue;
 	description.tenBitUnpack = tenBitUnpack;
-	description.colorspace = colorspace;
+	description.fileColorspace = fileColorspace;
+	description.screenColorspace = screenColorspace;
 	return description;
 }
 
-static const char * const pColorSpaceConversions =
-		R"(
-vec3 lintolin(vec3 sample) {
-	return sample;
-}
+namespace {
 
-vec3 alexatolin(vec3 sample) {
-	return mix(pow(vec3(10.0),((sample-0.385537)/0.247190)-0.052272)/5.555556 , (sample-0.092809)/5.367655, lessThan(sample, vec3(0.149658)));
-}
-vec3 cineontolin(vec3 sample) {
-	return 1.010915615730753*(pow(vec3(10), (1023*sample-685)/300)-0.010797751623277);
-}
-vec3 srgbtolin(vec3 sample) {
-	return mix(pow((sample+0.055)/1.055,vec3(2.4)), sample/12.92, lessThan(sample, vec3(0.04045)));
-}
-vec3 lintosrgb(vec3 sample) {
-	sample = mix((1.055*pow(sample,vec3(1/2.4)))-vec3(0.055), 12.92*sample, lessThan(sample, vec3(0.0031308)));
-	return clamp(sample, vec3(0), vec3(1));
-}
-)";
-
-static const char * const pSampleTenbitsUnpack =
+const char pSampleTenbitsUnpack[] =
 		R"(
+smooth in vec2 vVaryingTexCoord;
+uniform usampler2DRect gTextureSampler;
+
 vec4 unpack(uvec4 sample) {
 	uint red   = (sample.a << 2u) | (sample.b >> 6u);
 	uint green = ((sample.b & 0x3Fu) << 4u) | (sample.g >> 4u);
@@ -71,23 +71,48 @@ vec4 unpack(uvec4 sample) {
 	uint alpha = 1023u;//;((sample.r & 0x03u) << 8u);
 	return vec4(red, green, blue, alpha)/1023.;
 }
-smooth in vec2 vVaryingTexCoord;
-uniform usampler2DRect gTextureSampler;
-vec4 sample(vec2 offset) {
-	return unpack(swizzle(texture(gTextureSampler, vVaryingTexCoord+offset)));
+
+vec4 bilinear(usampler2DRect sampler, vec2 offset) {
+    vec4 tl = unpack(swizzle(texture(sampler, offset)));
+    vec4 tr = unpack(swizzle(texture(sampler, offset + vec2(1, 0))));
+    vec4 bl = unpack(swizzle(texture(sampler, offset + vec2(0, 1))));
+    vec4 br = unpack(swizzle(texture(sampler, offset + vec2(1, 1))));
+    vec2 f = fract(offset.xy);
+    vec4 tA = mix(tl, tr, f.x);
+    vec4 tB = mix(bl, br, f.x);
+	return mix(tA, tB, f.y);
 }
+
+vec4 nearest(usampler2DRect sampler, vec2 offset) {
+	return unpack(swizzle(texture(sampler, offset)));
+}
+
 )";
 
-static const char * const pSampleRegular =
+const char pSampleRegular[] =
 		R"(
 smooth in vec2 vVaryingTexCoord;
 uniform sampler2DRect gTextureSampler;
-vec4 sample(vec2 offset) {
-	return swizzle(texture(gTextureSampler, vVaryingTexCoord+offset));
+
+
+vec4 bilinear(sampler2DRect sampler, vec2 offset) {
+    vec4 tl = swizzle(texture(sampler, offset));
+    vec4 tr = swizzle(texture(sampler, offset + vec2(1, 0)));
+    vec4 bl = swizzle(texture(sampler, offset + vec2(0, 1)));
+    vec4 br = swizzle(texture(sampler, offset + vec2(1, 1)));
+    vec2 f = fract(offset.xy);
+    vec4 tA = mix(tl, tr, f.x);
+    vec4 tB = mix(bl, br, f.x);
+	return mix(tA, tB, f.y);
 }
+
+vec4 nearest(sampler2DRect sampler, vec2 offset) {
+	return swizzle(texture(sampler, offset));
+}
+
 )";
 
-static const char* const pTexturedMain =
+const char pTexturedMain[] =
 		R"(
 out vec4 vFragColor;
 uniform bvec4 gShowChannel;
@@ -170,7 +195,7 @@ void main(void)
 }
 )";
 
-static const char* const pSolidMain = R"(
+const char pSolidMain[] = R"(
 out vec4 vFragColor;
 uniform vec4 gSolidColor;
 
@@ -180,7 +205,7 @@ void main(void)
 }
 )";
 
-static const char* const pUvMain = R"(
+const char pUvMain[] = R"(
 out vec4 vFragColor;
 smooth in vec2 vVaryingTexCoord;
 
@@ -190,49 +215,23 @@ void main(void)
 }
 )";
 
-static const char* getToLinearFunction(const ColorSpace fromColorspace) {
-	switch (fromColorspace) {
-	case ColorSpace::AlexaLogC:
-		return "alexatolin";
-	case ColorSpace::KodakLog:
-		return "cineontolin";
-	case ColorSpace::Linear:
-		return "lintolin";
-	case ColorSpace::sRGB:
-	case ColorSpace::GammaCorrected:
-		return "srgbtolin";
-	case ColorSpace::Auto:
-	default:
-		throw std::runtime_error("ColorSpace must be resolved at this point");
-	}
-}
-
-static const char* getToScreenFunction(const ColorSpace fromColorspace) {
-	switch (fromColorspace) {
-	case ColorSpace::KodakLog:
-	case ColorSpace::Linear:
-	case ColorSpace::sRGB:
-	case ColorSpace::GammaCorrected:
-		return "lintosrgb";
-	case ColorSpace::Auto:
-	default:
-		throw std::runtime_error("ColorSpace must be resolved at this point");
-	}
-}
-
-static void appendToLinearFunction(ostream&stream, const ColorSpace colorspace) {
+void appendToLinearFunction(ostream&stream, const ColorSpace colorspace) {
 	stream << endl << "vec3 toLinear(vec3 sample){return " << getToLinearFunction(colorspace) << "(sample);}" << endl;
 }
 
-static void appendToScreenFunction(ostream&stream, const ColorSpace colorspace) {
+void appendToScreenFunction(ostream&stream, const ColorSpace colorspace) {
 	stream << endl << "vec3 toScreen(vec3 sample){return " << getToScreenFunction(colorspace) << "(sample);}" << endl;
 }
 
-static void appendSampler(ostream&stream, const ShaderDescription &description) {
+void appendSampler(ostream&stream, const ShaderDescription &description) {
+	const bool filtering = false; // Testing
+	const string filter(filtering ? "bilinear" : "nearest");
 	stream << (description.tenBitUnpack ? pSampleTenbitsUnpack : pSampleRegular);
+	stream << "vec4 sample(vec2 offset) {"
+	"  return " << filter << "(gTextureSampler, vVaryingTexCoord+offset); }\n";
 }
 
-static void appendSwizzle(ostream&stream, const ShaderDescription &description) {
+void appendSwizzle(ostream&stream, const ShaderDescription &description) {
 	const char* type = description.tenBitUnpack ? "uvec4" : "vec4";
 	string swizzling = description.grayscale ? "rrra" : "rgba";
 	if (description.swapRedAndBlue)
@@ -242,13 +241,15 @@ static void appendSwizzle(ostream&stream, const ShaderDescription &description) 
 	stream << type << " swizzle(" << type << " sample){return sample." << swizzling << ";}";
 }
 
+}  // namespace
+
 std::string buildFragmentShaderSource(const ShaderDescription &description) {
 	ostringstream oss;
 	oss << "#version 330" << endl;
 	if (description.sampleTexture) {
 		oss << pColorSpaceConversions << endl;
-		appendToLinearFunction(oss, description.colorspace);
-		appendToScreenFunction(oss, description.colorspace);
+		appendToLinearFunction(oss, description.fileColorspace);
+		appendToScreenFunction(oss, description.screenColorspace);
 		appendSwizzle(oss, description);
 		appendSampler(oss, description);
 		oss << pTexturedMain;

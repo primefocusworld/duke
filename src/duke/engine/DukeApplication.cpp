@@ -14,7 +14,10 @@
 #include <memory>
 
 namespace duke {
-static sequence::Configuration getParserConf() {
+
+namespace {
+
+sequence::Configuration getParserConf() {
 	using namespace sequence;
 	Configuration conf;
 	conf.sort = true;
@@ -24,7 +27,7 @@ static sequence::Configuration getParserConf() {
 	return conf;
 }
 
-static bool isValid(const std::string& filename) {
+bool isValid(const std::string& filename) {
 	if (!filename.empty() && filename[0] == '.')
 		return false;
 	const char* pExtension = fileExtension(filename.c_str());
@@ -34,6 +37,8 @@ static bool isValid(const std::string& filename) {
 		return false;
 	return true;
 }
+
+}  // namespace
 
 Timeline buildTimeline(const std::vector<std::string> &paths) {
 	using sequence::Item;
@@ -91,7 +96,9 @@ Timeline buildDemoTimeline() {
 	return timeline;
 }
 
-static GLFWwindow * initializeMainWindow(DukeGLFWApplication *pApplication, const CmdLineParameters &parameters) {
+namespace {
+
+GLFWwindow * initializeMainWindow(DukeGLFWApplication *pApplication, const CmdLineParameters &parameters) {
 	const bool fullscreen = parameters.fullscreen;
 	GLFWmonitor* pPrimaryMonitor = glfwGetPrimaryMonitor();
 	if (pPrimaryMonitor == nullptr) {
@@ -102,12 +109,14 @@ static GLFWwindow * initializeMainWindow(DukeGLFWApplication *pApplication, cons
 			throw std::runtime_error("No monitor detected");
 		pPrimaryMonitor = pMonitors[0];
 	}
-	GLFWvidmode desktopDefinition = glfwGetVideoMode(pPrimaryMonitor);
-	auto windowDefinition = glm::ivec2(desktopDefinition.width, desktopDefinition.height);
+	const GLFWvidmode* desktopDefinition = glfwGetVideoMode(pPrimaryMonitor);
+	auto windowDefinition = glm::ivec2(desktopDefinition->width, desktopDefinition->height);
 	if (!fullscreen)
 		windowDefinition /= 2;
 	return pApplication->createRawWindow(windowDefinition.x, windowDefinition.y, "", fullscreen ? pPrimaryMonitor : nullptr, nullptr);
 }
+
+}  // namespace
 
 DukeApplication::DukeApplication(const CmdLineParameters &parameters) :
 		m_MainWindow(initializeMainWindow(this, parameters), parameters) {

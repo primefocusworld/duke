@@ -37,12 +37,6 @@ Ranges getMediaRanges(const Timeline &timeline) {
 	return merged;
 }
 
-bool contains(const Ranges &range, size_t frame) {
-	return std::find_if(begin(range), end(range), [=](const Range &range) {
-		return range.first<=frame && range.last>=frame;
-	}) != end(range);
-}
-
 TrackMediaFrameIterator::TrackMediaFrameIterator(const Timeline * pTimeline, size_t currentFrame) {
 	reset(pTimeline, currentFrame);
 }
@@ -152,7 +146,7 @@ FrameIterator& FrameIterator::setMaxIterations(size_t maxIterations) {
 }
 
 TimelineIterator::TimelineIterator() :
-		TimelineIterator(nullptr, nullptr, 0) {
+		TimelineIterator(nullptr, nullptr, 0, IterationMode::FORWARD) {
 }
 
 TimelineIterator::TimelineIterator(const Timeline * pTimeline, const Ranges *pMediaRanges, size_t currentFrame, IterationMode mode) :

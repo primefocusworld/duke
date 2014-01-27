@@ -1,8 +1,22 @@
-Duke version 2.0
-================
+Duke
+====
 
 Duke is an **opensource high resolution image and sequence viewer** dedicated to visual effect and post production companies.
 
+Binaries
+--------
+
+### Stable v2.0
+
+* [Linux 64 / g++ 4.8](http://www.bbteam.fr:8090/job/duke-master/compiler=gcc/lastSuccessfulBuild/artifact/dist/*zip*/dist.zip)
+* [Linux 64 / clang 3.3](http://www.bbteam.fr:8090/job/duke-master/compiler=clang/lastSuccessfulBuild/artifact/dist/*zip*/dist.zip)
+* no Windows nor MacOsX binaries for now...
+
+
+### Develop
+
+* [Linux 64 / g++ 4.8](http://www.bbteam.fr:8090/job/duke-develop/compiler=gcc/lastSuccessfulBuild/artifact/dist/*zip*/dist.zip)
+* [Linux 64 / clang 3.3](http://www.bbteam.fr:8090/job/duke-develop/compiler=clang/lastSuccessfulBuild/artifact/dist/*zip*/dist.zip)
 
 Current features
 ----------------
@@ -43,13 +57,11 @@ Compilation
 * Compilation
 
     see INSTALL file
+    
+**Known issues**
 
-
-Tested compilers
-----------------
-
-* G++ 4.7.1 on OpenSUSE 12.2
-* G++ 4.7.2 on Gentoo
+GCC 4.7 is not supported due to an issue with `std::chrono`, you will need GCC 4.8.
+If you use Clang and don't use [Clang's standard library](http://libcxx.llvm.org/) then you will also need to rely on GCC 4.8 standard library.
 
 
 More informations 

@@ -1,5 +1,4 @@
 #include "ImageRenderer.hpp"
-#include <duke/StringUtils.hpp>
 #include <duke/imageio/DukeIO.hpp>
 #include <duke/attributes/Attributes.hpp>
 #include <duke/attributes/AttributeKeys.hpp>
@@ -7,50 +6,29 @@
 #include <duke/engine/rendering/ShaderFactory.hpp>
 #include <duke/engine/rendering/ShaderPool.hpp>
 #include <duke/engine/rendering/ShaderConstants.hpp>
+#include <duke/filesystem/FsUtils.hpp>
 #include <duke/gl/Mesh.hpp>
 #include <duke/gl/Textures.hpp>
+#include <duke/engine/ColorSpace.hpp>
 
 namespace duke {
 
-static ColorSpace resolveFromMetadata(const char* pColorspace) {
-	if (pColorspace) {
-		if (streq(pColorspace, "Linear"))
-			return ColorSpace::Linear;
-		if (streq(pColorspace, "sRGB") || streq(pColorspace, "GammaCorrected"))
-			return ColorSpace::sRGB;
-		if (streq(pColorspace, "KodakLog"))
-			return ColorSpace::KodakLog;
-		if (streq(pColorspace, "Rec709"))
-			return ColorSpace::Rec709;
-		if (streq(pColorspace, "AdobeRGB"))
-			return ColorSpace::AdobeRGB;
-	}
-	return ColorSpace::Auto;
-}
+namespace {
 
-static ColorSpace resolveFromExtension(const char* pFileExtension) {
-	if (pFileExtension) {
-		if (streq(pFileExtension, "dpx"))
-			return ColorSpace::KodakLog;
-		if (streq(pFileExtension, "png"))
-			return ColorSpace::sRGB;
-	}
-	printf("Unable to find default ColorSpace for extension '%s' assuming sRGB\n", pFileExtension);
-	return ColorSpace::sRGB;
-}
-
-static ColorSpace resolve(const Attributes &attributes, ColorSpace original) {
+ColorSpace resolve(const Attributes &attributes, ColorSpace original) {
 	if (original != ColorSpace::Auto)
 		return original;
-	original = resolveFromMetadata(attributes.findString(attribute::pOiioColospaceKey));
+	original = resolveFromName(attributes.findString(attribute::pOiioColospaceKey));
 	if (original != ColorSpace::Auto)
 		return original;
-	return resolveFromExtension(attributes.findString(attribute::pDukeFileExtensionKey));
+    return resolveFromExtension(fileExtension(attributes.findString(attribute::pDukeFilePathKey)));
 }
 
-static inline float getAspectRatio(glm::vec2 dim) {
+inline float getAspectRatio(glm::vec2 dim) {
 	return dim.x / dim.y;
 }
+
+}  // namespace
 
 float getZoomValue(const Context &context) {
 	switch (context.fitMode) {
@@ -82,7 +60,9 @@ float getZoomValue(const Context &context) {
 	}
 }
 
-static bool isGreyscale(size_t glPackFormat) {
+namespace {
+
+bool isGreyscale(size_t glPackFormat) {
 	switch (glPackFormat) {
 	case GL_R8:
 	case GL_R16:
@@ -96,17 +76,23 @@ static bool isGreyscale(size_t glPackFormat) {
 	}
 }
 
+}  // namespace
+
 void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, const Context &context) {
 	const auto &description = context.pCurrentImage->description;
 	bool redBlueSwapped = description.swapRedAndBlue;
 	if (isInternalOptimizedFormatRedBlueSwapped(description.glPackFormat))
 		redBlueSwapped = !redBlueSwapped;
+
+	const auto inputColorSpace = resolve(context.pCurrentImage->attributes, context.fileColorSpace);
+
 	const ShaderDescription shaderDesc = ShaderDescription::createTextureDesc( //
 			isGreyscale(description.glPackFormat), //
 			description.swapEndianness, //
 			redBlueSwapped, //
 			description.glPackFormat == GL_RGB10_A2UI, //
-			resolve(context.pCurrentImage->attributes, context.colorSpace));
+			inputColorSpace,
+			context.screenColorSpace);
 	const auto pProgram = shaderPool.get(shaderDesc);
 	const auto pair = getTextureDimensions(description.width, description.height, context.pCurrentImage->attributes.getOrientation());
 	pProgram->use();
@@ -117,7 +103,6 @@ void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, con
 	pProgram->glUniform1f(shader::gExposure, context.exposure);
 	pProgram->glUniform1f(shader::gGamma, context.gamma);
 	pProgram->glUniform4i(shader::gShowChannel, context.channels.x, context.channels.y, context.channels.z, context.channels.w);
-	pProgram->glUniform1i(shader::gIsPlaying, context.isPlaying);
 
 	pProgram->glUniform1f(shader::gZoom, context.zoom);
 	pMesh->draw();
