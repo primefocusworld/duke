@@ -1,6 +1,7 @@
 #ifdef DUKE_OIIO
 
 #include <duke/attributes/Attribute.hpp>
+#include <duke/attributes/AttributeKeys.hpp> // attribute::PixelAspectRatio
 #include <duke/imageio/DukeIO.hpp>
 #include <duke/gl/GL.hpp>
 
@@ -247,7 +248,17 @@ public:
             memcpy(&asEntry.data, pData, oiioDataSize);
             attributes.set(paramvalue.name().c_str(), attribute::OiioAttribute().descriptor(), std::move(data));
         }
-        return true;
+
+        // Pixel aspect ratio
+		// Note that in the following, there might be a chance that an already
+		// existing parameter "PixelAspectRatio" gets overwritten
+		// Its descriptor will be changed as well
+		const ImageIOParameter *aspect =
+			m_Spec.find_attribute("pixelaspectratio", TypeDesc::FLOAT);
+		const float pixelAspectRatio = aspect ? *(float *)aspect->data() : 1.0f;
+		attributes.set<attribute::PixelAspectRatio>(pixelAspectRatio);
+
+		return true;
     }
 
     virtual void readImageDataTo(void* pData) {

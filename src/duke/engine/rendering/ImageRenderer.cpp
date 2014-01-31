@@ -31,18 +31,8 @@ inline float getAspectRatio(glm::vec2 dim) {
 }  // namespace
 
 float getPixelRatio(const Context &context) {
-	float ratio = 1.;
     auto attributes = context.pCurrentImage->attributes;
-    //auto attr = attributes.getOrDefault("PixelAspectRatio");
-    //if (attr != attributes.end()) {
-    //    
-    //}
-    //getattribute("PixelAspectRatio", ratio);
-	//for (const auto attr : context.pCurrentImage->attributes) {
-	//	if (attr.name().compare("PixelAspectRatio") == 0)
-	//		ratio = *reinterpret_cast<const float *>(attr.data());
-	//}
-	return ratio;
+    return attributes.getOrDefault<attribute::PixelAspectRatio>();
 }
 
 float getZoomValue(const Context &context) {

@@ -117,9 +117,11 @@ public:
         description.glPackFormat = GL_RGB10_A2UI;
         description.dataSize = description.height * description.width * sizeof(int32_t);
         attributes.set<attribute::DpxImageOrientation>(pImageInformation->orientation);
-        const float pixelAspectRatio = static_cast<float>(pImageInformation->aspect_ratio[0]) / static_cast<float>(pImageInformation->aspect_ratio[1]);
-        attributes.set<attribute::PixelAspectRatio>(pixelAspectRatio);
-        return true;
+		const float pixelAspectRatio =
+			static_cast<float>(pImageInformation->aspect_ratio[0]) /
+			static_cast<float>(pImageInformation->aspect_ratio[1]);
+		attributes.set<attribute::PixelAspectRatio>(pixelAspectRatio);
+		return true;
     }
 
 	virtual const void* getMappedImageData() const override {
