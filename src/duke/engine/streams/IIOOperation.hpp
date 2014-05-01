@@ -13,33 +13,27 @@ namespace duke {
  * - 'warning' gives a message if needed.
  */
 struct IOOperationResult : public noncopyable {
-    enum Status { SUCCESS, FAILURE };
+  enum Status {
+    SUCCESS,
+    FAILURE
+  };
 
-    Status status = FAILURE;
-    std::string error;
-    std::string warning;
+  Status status = FAILURE;
+  std::string error;
+  std::string warning;
 
-    IOOperationResult() = default;
-    IOOperationResult(IOOperationResult&&) = default;
-    IOOperationResult& operator=(IOOperationResult&&) = default;
-
-    operator bool() const {
-        return status == SUCCESS;
-    }
+  operator bool() const { return status == SUCCESS; }
 };
 
 /**
  * The result of an operation fetching an image
  */
 struct InputFrameOperationResult : public IOOperationResult {
-    RawPackedFrame rawPackedFrame;
+  RawPackedFrame rawPackedFrame;
+  attribute::Attributes readerAttributes;
 
-    InputFrameOperationResult() = default;
-    InputFrameOperationResult(InputFrameOperationResult&&) = default;
-    InputFrameOperationResult& operator=(InputFrameOperationResult&&) = default;
-
-    inline Attributes& attributes() { return rawPackedFrame.attributes; }
-    inline const Attributes& attributes() const { return rawPackedFrame.attributes; }
+  inline attribute::Attributes& attributes() { return rawPackedFrame.attributes; }
+  inline const attribute::Attributes& attributes() const { return rawPackedFrame.attributes; }
 };
 
 }  // namespace duke

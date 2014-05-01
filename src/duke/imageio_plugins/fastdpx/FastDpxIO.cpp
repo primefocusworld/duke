@@ -87,8 +87,8 @@ class FastDpxImageReader: public IImageReader {
     template<typename T>
     inline T swap(T value) const {return ::swap<T>(value, bigEndian); }
 public:
-    FastDpxImageReader(const IIODescriptor *pDesc, const void *pData, const size_t dataSize) :
-                    IImageReader(pDesc),
+    FastDpxImageReader(const attribute::Attributes& options, const IIODescriptor *pDesc, const void *pData, const size_t dataSize) :
+                    IImageReader(options, pDesc),
                     m_pData(nullptr),
                     pInformation(reinterpret_cast<const FileInformation*>(pData)),
                     pArithmeticPointer(reinterpret_cast<const char*>(pData)),
@@ -108,7 +108,7 @@ public:
         }
     }
 
-    virtual bool doSetup(const Attributes& readerOptions, PackedFrameDescription& description, Attributes& attributes) override {
+    virtual bool doSetup(PackedFrameDescription& description, attribute::Attributes& attributes) override {
         m_pData = nullptr;
         description.height = swap(pImageInformation->lines_per_image_ele);
         description.width = swap(pImageInformation->pixels_per_line);
@@ -116,11 +116,11 @@ public:
         description.swapEndianness = bigEndian;
         description.glPackFormat = GL_RGB10_A2UI;
         description.dataSize = description.height * description.width * sizeof(int32_t);
-        attributes.set<attribute::DpxImageOrientation>(pImageInformation->orientation);
-		const float pixelAspectRatio =
-			static_cast<float>(pImageInformation->aspect_ratio[0]) /
-			static_cast<float>(pImageInformation->aspect_ratio[1]);
-		attributes.set<attribute::PixelAspectRatio>(pixelAspectRatio);
+        // FIXME : set correct orientation attributes.set<attribute::DpxImageOrientation>(pImageInformation->orientation);
+        // FIXME : set correct pixel ratio const float pixelAspectRatio =
+		//	static_cast<float>(pImageInformation->aspect_ratio[0]) /
+		//	static_cast<float>(pImageInformation->aspect_ratio[1]);
+		//attributes.set<attribute::PixelAspectRatio>(pixelAspectRatio);
 		return true;
     }
 
@@ -130,18 +130,18 @@ public:
 };
 
 class FastDpxDescriptor: public IIODescriptor {
-	virtual bool supports(Capability capability) const {
-		return capability == Capability::READER_READ_FROM_MEMORY;
+	virtual bool supports(Capability capability) const override {
+	    return capability == Capability::READER_READ_FROM_MEMORY || capability == Capability::READER_FILE_SEQUENCE;
 	}
-	virtual const std::vector<std::string>& getSupportedExtensions() const {
+	virtual const std::vector<std::string>& getSupportedExtensions() const override {
 		static std::vector<std::string> extensions = { "dpx" };
 		return extensions;
 	}
-	virtual const char* getName() const {
+	virtual const char* getName() const override {
 		return "FastDpx";
 	}
-	virtual IImageReader* getReaderFromMemory(const void *pData, const size_t dataSize) const {
-		return new FastDpxImageReader(this, pData, dataSize);
+	virtual IImageReader* getReaderFromMemory(const attribute::Attributes& options, const void *pData, const size_t dataSize) const override {
+		return new FastDpxImageReader(options, this, pData, dataSize);
 	}
 };
 

@@ -20,9 +20,9 @@
  * functions. If plugin creation succeeded Duke can fetch properties by reading
  * the plugin's attributes.
  *
- * Then the 'setup' plugin function will be called to give it a chance
- * to receive parameters from the user (decoding/encoding options, frame to
- * read, etc...), the plugin can talk back by modifying it's attributes.
+ * Then the 'setup' plugin function will be called to initialize the metadata
+ * - read : frame number to read, frame dimensions, data size, ...
+ * - write: frame to write, open file on disk, ...
  *
  * If 'setup' call fails, user can check the getError() function for more
  * informations. If call succeeds, Duke is allowed to go on with read/write
@@ -49,29 +49,35 @@ class IIODescriptor;
 
 class IImageReader: public noncopyable {
 protected:
-    virtual bool doSetup(const Attributes& readerOptions, PackedFrameDescription& description, Attributes& attributes) = 0;
+    virtual bool doSetup(PackedFrameDescription& description, attribute::Attributes& attributes) = 0;
 	const IIODescriptor * const m_pDescriptor;
-	Attributes m_ReaderAttributes;
+	attribute::Attributes m_ReaderAttributes;
 	std::string m_Error;
 
 public:
-	IImageReader(const IIODescriptor * pDescriptor) : m_pDescriptor(pDescriptor) {
-	}
+    IImageReader(const attribute::Attributes& options, const IIODescriptor * pDescriptor) :
+                    m_pDescriptor(pDescriptor), m_ReaderAttributes(std::move(options)) {
+    }
 	virtual ~IImageReader() {}
 	inline bool hasError() const {
 		return !m_Error.empty();
 	}
-	inline const std::string &getError() const {
-		return m_Error;
+	inline std::string getError() {
+    std::string copy;
+    copy.swap(m_Error); // reading error clears it.
+		return copy;
 	}
-	inline Attributes& getAttributes() {
+	inline const attribute::Attributes& getAttributes() const {
 		return m_ReaderAttributes;
+	}
+	inline attribute::Attributes&& moveAttributes() {
+		return std::move(m_ReaderAttributes);
 	}
 	inline const IIODescriptor * getDescriptor() const {
 		return m_pDescriptor;
 	}
-    bool setup(const Attributes& readerOptions, RawPackedFrame& packedFrame) {
-        return doSetup(readerOptions, packedFrame.description, packedFrame.attributes);
+    inline bool setup(RawPackedFrame& packedFrame) {
+        return doSetup(packedFrame.description, packedFrame.attributes);
     }
 	virtual const void* getMappedImageData() const {
 		return nullptr;
@@ -82,17 +88,17 @@ public:
 };
 
 class IImageWriter: public noncopyable {
-    Attributes m_WriterAttributes;
+    attribute::Attributes m_WriterAttributes;
     std::string m_Error;
 public:
 	virtual ~IImageWriter() {}
     inline const std::string &getError() const {
         return m_Error;
     }
-    inline Attributes& getAttributes() {
+    inline attribute::Attributes& getAttributes() {
         return m_WriterAttributes;
     }
-    virtual bool setup(const Attributes &input) {
+    virtual bool setup(const attribute::Attributes &input) {
         return false;
     }
 };
@@ -105,22 +111,23 @@ namespace duke {
 
 class IIODescriptor: public noncopyable {
 public:
-	enum class Capability {
-		READER_READ_FROM_MEMORY, // Plugin can decode in-memory buffers
-		READER_GENERAL_PURPOSE,  // Plugin can read several formats
-		READER_PERSISTENT,       // Plugin instance can be reused
-	};
+    enum class Capability {
+        READER_READ_FROM_MEMORY, // Plugin can decode in-memory buffers
+        READER_GENERAL_PURPOSE,  // Plugin can read several formats
+        READER_FILE_SEQUENCE,    // Plugin will be instantiated for each frame
+                                 // read will be parallel and out of order
+    };
 	virtual ~IIODescriptor() {}
 	virtual const std::vector<std::string>& getSupportedExtensions() const = 0;
 	virtual const char* getName() const = 0;
 	virtual bool supports(Capability capability) const = 0;
-	virtual IImageReader* getReaderFromFile(const char *filename) const {
+	virtual IImageReader* getReaderFromFile(const attribute::Attributes& options, const char *filename) const {
 		return nullptr;
 	}
-	virtual IImageReader* getReaderFromMemory(const void *pData, const size_t dataSize) const {
+	virtual IImageReader* getReaderFromMemory(const attribute::Attributes& options, const void *pData, const size_t dataSize) const {
 		return nullptr;
 	}
-	virtual IImageWriter* getWriterToFile(const char *filename) const {
+	virtual IImageWriter* getWriterToFile(const attribute::Attributes& options, const char *filename) const {
 		return nullptr;
 	}
 };

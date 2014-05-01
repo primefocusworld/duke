@@ -1,17 +1,20 @@
 #include "DukeApplication.hpp"
 
+#include <duke/attributes/AttributeKeys.hpp>
+#include <duke/cmdline/CmdLineParameters.hpp>
 #include <duke/engine/streams/DiskMediaStream.hpp>
 #include <duke/engine/overlay/DukeSplashStream.hpp>
-#include <duke/cmdline/CmdLineParameters.hpp>
-#include <duke/imageio/DukeIO.hpp>
 #include <duke/filesystem/FsUtils.hpp>
 #include <duke/gl/GL.hpp>
+#include <duke/imageio/DukeIO.hpp>
 
 #include <sequence/Parser.hpp>
 
 #include <glm/glm.hpp>
 
 #include <memory>
+
+using sequence::Item;
 
 namespace duke {
 
@@ -38,48 +41,48 @@ bool isValid(const std::string& filename) {
 	return true;
 }
 
+void AddItemToTrack(const attribute::Attributes& options, const Item& item, Track& track, size_t &offset) {
+    auto pMediaStream(std::make_shared<DiskMediaStream>(options, item));
+    using namespace attribute;
+    const auto frameCount = getWithDefault<MediaFrameCount>(pMediaStream->getState());
+    track.add(offset, Clip { frameCount, std::move(pMediaStream), nullptr });
+    offset += frameCount;
+}
+
 }  // namespace
 
 Timeline buildTimeline(const std::vector<std::string> &paths) {
-	using sequence::Item;
 	Track track;
 	size_t offset = 0;
-	for (const std::string &path : paths) {
-		const std::string absolutePath = getAbsoluteFilename(path.c_str());
-		switch (getFileStatus(absolutePath.c_str())) {
-		case FileStatus::NOT_A_FILE:
-			throw commandline_error("'" + absolutePath + "' is not a file nor a directory");
-		case FileStatus::FILE:
-			track.add(offset, Clip { 1, std::make_shared<DiskMediaStream>(Item(absolutePath)), nullptr });
-			++offset;
-			break;
-		case FileStatus::DIRECTORY:
-			for (Item item : sequence::parseDir(getParserConf(), absolutePath.c_str()).files) {
-				const auto type = item.getType();
-				if (type == Item::INVALID)
-					throw commandline_error("invalid item while parsing directory");
-				if (!isValid(item.filename))
-					continue; // escaping hidden file
-				item.filename = absolutePath + '/' + item.filename;
-				switch (type) {
-				case Item::SINGLE:
-					track.add(offset, Clip { 1, std::make_shared<DiskMediaStream>(item), nullptr });
-					++offset;
-					break;
-				case Item::PACKED: {
-					const auto count = item.end - item.start + 1;
-					track.add(offset, Clip { count, std::make_shared<DiskMediaStream>(item), nullptr });
-					offset += count;
-				}
-				case Item::INDICED:
-				default:
-					break;
-				}
-			}
-			break;
-		}
-	}
-	return {track};
+	attribute::Attributes options;
+    for (const std::string &path : paths) {
+        const std::string absolutePath = getAbsoluteFilename(path.c_str());
+        switch (getFileStatus(absolutePath.c_str())) {
+            case FileStatus::FILE:
+                AddItemToTrack(options, Item(absolutePath), track, offset);
+                break;
+            case FileStatus::DIRECTORY:
+                for (Item item : sequence::parseDir(getParserConf(), absolutePath.c_str()).files) {
+                    const auto type = item.getType();
+                    if (type == Item::INVALID) throw commandline_error("invalid item while parsing directory");
+                    if (!isValid(item.filename)) continue; // escaping hidden file
+                    item.filename = absolutePath + '/' + item.filename;
+                    switch (type) {
+                        case Item::SINGLE:
+                        case Item::PACKED:
+                            AddItemToTrack(options, item, track, offset);
+                            break;
+                        case Item::INDICED:
+                        default:
+                            break;
+                    }
+                }
+                break;
+            default:
+                throw commandline_error("'" + absolutePath + "' is not a file nor a directory");
+        }
+    }
+    return {track};
 }
 
 Timeline buildDemoTimeline() {

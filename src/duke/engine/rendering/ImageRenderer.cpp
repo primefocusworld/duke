@@ -15,13 +15,13 @@ namespace duke {
 
 namespace {
 
-ColorSpace resolve(const Attributes &attributes, ColorSpace original) {
+ColorSpace resolve(const attribute::Attributes &attributes, ColorSpace original) {
 	if (original != ColorSpace::Auto)
 		return original;
-	original = resolveFromName(attributes.getOrDefault<attribute::OiioColorspace>());
+	original = resolveFromName(attribute::getWithDefault<attribute::OiioColorspace>(attributes));
 	if (original != ColorSpace::Auto)
 		return original;
-    return resolveFromExtension(fileExtension(attributes.getOrDie<attribute::File>()));
+    return resolveFromExtension(fileExtension(attribute::getOrDie<attribute::File>(attributes)));
 }
 
 inline float getAspectRatio(glm::vec2 dim) {
@@ -31,8 +31,9 @@ inline float getAspectRatio(glm::vec2 dim) {
 }  // namespace
 
 float getPixelRatio(const Context &context) {
-    auto attributes = context.pCurrentImage->attributes;
-    return attributes.getOrDefault<attribute::PixelAspectRatio>();
+    return 1.0; // FIXME return correct pixel ratio
+    //FIXME auto attributes = context.pCurrentImage->attributes;
+    //FIXME return attributes.getOrDefault<attribute::PixelAspectRatio>();
 }
 
 float getZoomValue(const Context &context) {
@@ -106,7 +107,7 @@ void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, flo
 	const auto pProgram = shaderPool.get(shaderDesc);
     const auto pair = getTextureDimensions(description.width,
                                            description.height,
-                                           currentImageAttributes.getOrDefault<attribute::DpxImageOrientation>());
+                                           attribute::getWithDefault<attribute::DpxImageOrientation>(currentImageAttributes));
 	pProgram->use();
 	pProgram->glUniform2i(shader::gImage, pair.first, pair.second);
 	pProgram->glUniform2i(shader::gViewport, context.viewport.dimension.x, context.viewport.dimension.y);

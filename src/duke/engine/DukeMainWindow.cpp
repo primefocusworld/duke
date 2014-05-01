@@ -81,6 +81,7 @@ void DukeMainWindow::onWindowResize(int width, int height) {
 	::glViewport(0, 0, width, height);
 	m_WindowDim.x = width;
 	m_WindowDim.y = height;
+	m_Context.resetFitMode = true;
 }
 
 void DukeMainWindow::onMouseMove(int x, int y) {
@@ -168,7 +169,6 @@ void DukeMainWindow::run() {
 	StatisticsOverlay statisticOverlay(m_GlyphRenderer, m_Player.getTimeline());
 	bool showMetadataOverlay = false;
 	bool showStatisticOverlay = true;
-	bool doSetupZoom = true;
 
 	SharedMesh pSquare = createSquare();
 
@@ -202,11 +202,11 @@ void DukeMainWindow::run() {
 	};
 
 	const auto setupZoom = [&]() {
-		if(m_Context.fitMode == FitMode::FREE||!doSetupZoom)
+		if(m_Context.fitMode == FitMode::FREE||!m_Context.resetFitMode)
 		return;
 		m_Context.zoom = getZoomValue(m_Context);
 		m_Context.pan= glm::ivec2();
-		doSetupZoom = false;
+		m_Context.resetFitMode = false;
 	};
 
 	// Testing : load 3d lut texture
@@ -246,6 +246,7 @@ void DukeMainWindow::run() {
 				continue;
 
 			m_Context.pCurrentImage = nullptr;
+			m_Context.pCurrentMediaStream = nullptr;
 			const MediaFrameReference mfr = track.getMediaFrameReferenceAt(frame);
 			const auto pMediaStream = mfr.pStream;
 
@@ -270,6 +271,7 @@ void DukeMainWindow::run() {
 				}
 				if (pLoadedTexture) {
 					m_Context.pCurrentImage = pLoadedTexture;
+					m_Context.pCurrentMediaStream = pMediaStream;
 					setupZoom();
 					auto &texture = *pLoadedTexture->pTexture;
 					auto boundTexture = texture.scope_bind_texture();
@@ -348,7 +350,7 @@ void DukeMainWindow::run() {
 				break;
 			case 'f':
 				setNextMode(m_Context.fitMode);
-				doSetupZoom = true;
+				m_Context.resetFitMode = true;
 				display(getFitModeString(m_Context.fitMode));
 				break;
 			}
@@ -357,7 +359,8 @@ void DukeMainWindow::run() {
 
 		// handling input by key
 		const bool ctrlModifier = keyPressed(GLFW_KEY_LEFT_CONTROL) || keyPressed(GLFW_KEY_RIGHT_CONTROL);
-		//		const bool shiftModifier = keyPressed(GLFW_KEY_LEFT_SHIFT) || keyPressed(GLFW_KEY_RIGHT_SHIFT);
+        const bool shiftModifier = keyPressed(GLFW_KEY_LEFT_SHIFT) || keyPressed(GLFW_KEY_RIGHT_SHIFT);
+        const int seekAmount = shiftModifier && ctrlModifier ? 250 : (ctrlModifier ? 25 : 1);
 		for (const int key : m_KeyStrokes) {
 			switch (key) {
 			case GLFW_KEY_HOME:
@@ -367,10 +370,10 @@ void DukeMainWindow::run() {
 				commands.emplace_back("end");
 				break;
 			case GLFW_KEY_LEFT:
-				m_Player.cueRelative(ctrlModifier ? -25 : -1);
+				m_Player.cueRelative(-seekAmount);
 				break;
 			case GLFW_KEY_RIGHT:
-				m_Player.cueRelative(ctrlModifier ? 25 : 1);
+				m_Player.cueRelative(seekAmount);
 				break;
 			}
 		}

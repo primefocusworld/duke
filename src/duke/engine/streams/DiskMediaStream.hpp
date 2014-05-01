@@ -1,24 +1,25 @@
 #pragma once
 
 #include "IMediaStream.hpp"
-#include <sequence/Item.hpp>
-#include <string>
+
+namespace sequence {
+struct Item;
+}
 
 namespace duke {
 
-class DiskMediaStream: public duke::IMediaStream {
-public:
-	DiskMediaStream(const sequence::Item& item);
+class DiskMediaStream final : public duke::IMediaStream {
+ public:
+  DiskMediaStream(const attribute::Attributes& readerOptions, const sequence::Item& item);
 
-	virtual InputFrameOperationResult process(const MediaFrameReference& mfr) const override;
-private:
-	std::string generateFilePath(size_t atFrame) const;
-	std::string writeFilename(size_t frame) const;
+  InputFrameOperationResult process(const size_t frame) const override;
 
-	sequence::Item m_Item;
-	sequence::Item::Type m_ItemType;
-	std::string m_Prefix;
-	std::string m_Suffix;
+  bool isForwardOnly() const override;
+
+  const attribute::Attributes& getState() const override;
+
+ private:
+  std::unique_ptr<IMediaStream> m_pDelegate;
 };
 
 } /* namespace duke */

@@ -1,11 +1,12 @@
 #pragma once
 
-#include <string>
-#include <functional>
+#include <duke/attributes/Attributes.hpp>
 #include <duke/engine/streams/IIOOperation.hpp>
 
+#include <string>
+#include <functional>
+
 struct PackedFrameDescription;
-struct Attributes;
 
 namespace duke {
 
@@ -13,7 +14,13 @@ struct RawPackedFrame;
 
 typedef std::function<void(RawPackedFrame& packedFrame, const void* pVolatileData)> LoadCallback;
 
-InputFrameOperationResult load(const Attributes& readOptions,
+class IImageReader;
+InputFrameOperationResult loadImage(IImageReader *pRawReader,
+                                    const LoadCallback& callback,
+                                    InputFrameOperationResult&& result);
+
+
+InputFrameOperationResult load(const attribute::Attributes& options,
                                const LoadCallback& callback,
                                InputFrameOperationResult&& result);
 

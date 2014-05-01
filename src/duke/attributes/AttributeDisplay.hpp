@@ -1,11 +1,11 @@
 #pragma once
 
-#include <string>
+#include <duke/attributes/Attribute.hpp>
+#include <duke/base/StringAppender.hpp>
 
-struct AttributeEntry;
+namespace attribute {
 
-std::string dataString(const AttributeEntry& entry);
+// Printf from a StringAppender directly
+void append(const Attribute& attribute, StringAppender& appender);
 
-const char* typeString(const AttributeEntry& entry);
-
-const char* nameString(const AttributeEntry& entry);
+}  // namespace attribute
