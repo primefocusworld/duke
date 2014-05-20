@@ -1,11 +1,11 @@
 #pragma once
 
-#include <duke/imageio/PackedFrameDescription.hpp>
 #include <duke/gl/GLUtils.hpp>
+#include <duke/image/FrameDescription.hpp>
 
 namespace duke {
 
-struct TexturePoolPolicy : public pool::PoolBase<PackedFrameDescription, Texture> {
+struct TexturePoolPolicy : public pool::PoolBase<FrameDescription, Texture> {
  protected:
   value_type* evictAndCreate(const key_type& key, PoolMap& map) {
     auto* pValue = new Texture();

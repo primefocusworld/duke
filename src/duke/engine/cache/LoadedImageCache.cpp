@@ -51,7 +51,7 @@ void LoadedImageCache::cue(size_t frame, IterationMode mode) {
 
 void LoadedImageCache::terminate() { stopWorkers(); }
 
-bool LoadedImageCache::get(const MediaFrameReference &id, RawPackedFrame &data) const { return m_Cache.get(id, data); }
+bool LoadedImageCache::get(const MediaFrameReference &id, FrameData &data) const { return m_Cache.get(id, data); }
 
 uint64_t LoadedImageCache::dumpState(std::map<const IMediaStream *, std::vector<Range> > &state) const {
   state.clear();
@@ -105,18 +105,18 @@ void LoadedImageCache::workerFunction() {
     for (;;) {
       m_Cache.pop(mfr);
       CHECK(mfr.pStream);
-      InputFrameOperationResult result(mfr.pStream->process(mfr.frame));
+      ReadFrameResult result(mfr.pStream->process(mfr.frame));
 
       switch (result.status) {
-        case IOOperationResult::FAILURE: {
+        case IOResult::FAILURE: {
           printf("error while reading %s : %s\n", attribute::getOrDie<attribute::File>(result.attributes()),
                  result.error.c_str());
-          m_Cache.push(mfr, 1UL, RawPackedFrame());
+          m_Cache.push(mfr, 1UL, FrameData());
           break;
         }
-        case IOOperationResult::SUCCESS: {
-          const size_t weight = result.rawPackedFrame.description.dataSize;
-          m_Cache.push(mfr, weight, std::move(result.rawPackedFrame));
+        case IOResult::SUCCESS: {
+          const size_t weight = result.frame.description.dataSize;
+          m_Cache.push(mfr, weight, std::move(result.frame));
           break;
         }
       }

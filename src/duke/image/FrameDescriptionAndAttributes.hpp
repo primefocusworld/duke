@@ -1,12 +1,12 @@
 #pragma once
 
-#include <duke/imageio/PackedFrameDescription.hpp>
 #include <duke/attributes/Attributes.hpp>
+#include <duke/image/FrameDescription.hpp>
 
 namespace duke {
 
-struct PackedFrameDescriptionAndAttributes {
-  PackedFrameDescription description;
+struct FrameDescriptionAndAttributes {
+  FrameDescription description;
   attribute::Attributes attributes;
 };
 

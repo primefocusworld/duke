@@ -1,11 +1,12 @@
 #pragma once
 
+#include <concurrent/cache/lookahead_cache.hpp>
 #include <duke/base/NonCopyable.hpp>
 #include <duke/engine/cache/TimelineIterator.hpp>
 #include <duke/engine/Timeline.hpp>
 #include <duke/engine/streams/IMediaStream.hpp>
-#include <duke/imageio/RawPackedFrame.hpp>
-#include <concurrent/cache/lookahead_cache.hpp>
+#include <duke/image/FrameData.hpp>
+
 #include <thread>
 #include <vector>
 
@@ -20,7 +21,7 @@ struct LoadedImageCache : public noncopyable {
   void cue(size_t frame, IterationMode mode);
   void terminate();
 
-  bool get(const MediaFrameReference &id, RawPackedFrame &data) const;
+  bool get(const MediaFrameReference &id, FrameData &data) const;
   uint64_t dumpState(std::map<const IMediaStream *, std::vector<Range> > &state) const;
   uint64_t getMaxWeight() const;
   size_t getWorkerCount() const;
@@ -32,7 +33,7 @@ struct LoadedImageCache : public noncopyable {
 
   typedef MediaFrameReference ID_TYPE;
   typedef uint64_t METRIC_TYPE;
-  typedef RawPackedFrame DATA_TYPE;
+  typedef FrameData DATA_TYPE;
   typedef TimelineIterator WORK_UNIT_RANGE;
 
   size_t m_MaxWeight;

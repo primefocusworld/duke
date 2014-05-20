@@ -6,22 +6,20 @@
 #include <string>
 #include <functional>
 
-struct PackedFrameDescription;
+struct FrameDescription;
 
 namespace duke {
 
-struct RawPackedFrame;
+struct FrameData;
 
-typedef std::function<void(RawPackedFrame& packedFrame, const void* pVolatileData)> LoadCallback;
+typedef std::function<void(FrameData& frame, const void* pVolatileData)> LoadCallback;
 
 class IImageReader;
-InputFrameOperationResult loadImage(IImageReader* pRawReader, const LoadCallback& callback,
-                                    InputFrameOperationResult&& result);
+ReadFrameResult loadImage(IImageReader* pRawReader, const LoadCallback& callback, ReadFrameResult&& result);
 
-InputFrameOperationResult load(const attribute::Attributes& options, const LoadCallback& callback,
-                               InputFrameOperationResult&& result);
+ReadFrameResult load(const attribute::Attributes& options, const LoadCallback& callback, ReadFrameResult&& result);
 
 struct Texture;
-InputFrameOperationResult load(const char* pFilename, Texture& texture);
+ReadFrameResult load(const char* pFilename, Texture& texture);
 
 } /* namespace duke */

@@ -3,11 +3,30 @@
 #include <cstddef>
 #include <string>
 
+/**
+ * Tests if two strings are equals.
+ * Both strings have to be non nullptr.
+ * Equality of pointers is first checked and fallback to string
+ * comparison if needed.
+ */
 bool streq(const char* first, const char* second);
+
+/**
+ * Compares the two strings lexicographically.
+ * Both strings have to be non nullptr.
+ */
 bool strless(const char* first, const char* second);
 
 /**
- * Returns the number of digits needed to represent frame.
+ * Computes the dimensions of the string.
+ * 'string' have to be non nullptr.
+ * 'height' is the number of lines.
+ * 'width' is the maximum length of the lines.
+ */
+void strdim(const char* string, unsigned& width, unsigned& height);
+
+/**
+ * Returns the number of digits needed to represent the number.
  * ie. digits(5243) == 4
  */
 unsigned char digits(size_t frame);

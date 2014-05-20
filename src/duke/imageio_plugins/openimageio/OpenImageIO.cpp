@@ -21,7 +21,7 @@ const vector<string> A = {"A"};
 const vector<string> RGB = {"R", "G", "B"};
 const vector<string> RGBA = {"R", "G", "B", "A"};
 
-GLuint getGLType(const TypeDesc& typedesc, const vector<string>& channels) {
+GLuint getGlType(const TypeDesc& typedesc, const vector<string>& channels) {
   if (channels == A) {
     switch (typedesc.basetype) {
       case TypeDesc::UCHAR:
@@ -134,18 +134,6 @@ class OpenImageIOReader : public IImageReader {
       m_Error += "'";
       return;
     }
-  }
-
-  ~OpenImageIOReader() {
-    if (m_pImageInput) m_pImageInput->close();
-  }
-
-  virtual bool doSetup(PackedFrameDescription& description, attribute::Attributes& attributes) override {
-    description.width = m_Spec.width;
-    description.height = m_Spec.height;
-    description.glPackFormat = getGLType(m_Spec.format, m_Spec.channelnames);
-    description.dataSize = m_Spec.width * m_Spec.height * m_Spec.nchannels * getTypeSize(m_Spec.format);
-
     for (const ParamValue& paramvalue : m_Spec.extra_attribs) {
       // skipping none scalar type for now
       if (paramvalue.nvalues() != 1) {
@@ -158,42 +146,53 @@ class OpenImageIOReader : public IImageReader {
       const auto aggregate = paramvalue.type().aggregate;
       switch (paramvalue.type().basetype) {
         case TypeDesc::STRING:
-          attribute::set(attributes, key, *reinterpret_cast<const char* const*>(data));
+          attribute::set(m_ReaderAttributes, key, *reinterpret_cast<const char* const*>(data));
           break;
         case TypeDesc::INT8:
-          insert<int8_t>(attributes, key, data, aggregate);
+          insert<int8_t>(m_ReaderAttributes, key, data, aggregate);
           break;
         case TypeDesc::INT16:
-          insert<int16_t>(attributes, key, data, aggregate);
+          insert<int16_t>(m_ReaderAttributes, key, data, aggregate);
           break;
         case TypeDesc::INT32:
-          insert<int32_t>(attributes, key, data, aggregate);
+          insert<int32_t>(m_ReaderAttributes, key, data, aggregate);
           break;
         case TypeDesc::INT64:
-          insert<int64_t>(attributes, key, data, aggregate);
+          insert<int64_t>(m_ReaderAttributes, key, data, aggregate);
           break;
         case TypeDesc::UINT8:
-          insert<uint8_t>(attributes, key, data, aggregate);
+          insert<uint8_t>(m_ReaderAttributes, key, data, aggregate);
           break;
         case TypeDesc::UINT16:
-          insert<uint16_t>(attributes, key, data, aggregate);
+          insert<uint16_t>(m_ReaderAttributes, key, data, aggregate);
           break;
         case TypeDesc::UINT32:
-          insert<uint32_t>(attributes, key, data, aggregate);
+          insert<uint32_t>(m_ReaderAttributes, key, data, aggregate);
           break;
         case TypeDesc::UINT64:
-          insert<uint64_t>(attributes, key, data, aggregate);
+          insert<uint64_t>(m_ReaderAttributes, key, data, aggregate);
           break;
         case TypeDesc::FLOAT:
-          insert<float>(attributes, key, data, aggregate);
+          insert<float>(m_ReaderAttributes, key, data, aggregate);
           break;
         case TypeDesc::DOUBLE:
-          insert<double>(attributes, key, data, aggregate);
+          insert<double>(m_ReaderAttributes, key, data, aggregate);
           break;
         default:
           CHECK(false) << "Unhandled type";
       }
     }
+  }
+
+  ~OpenImageIOReader() {
+    if (m_pImageInput) m_pImageInput->close();
+  }
+
+  virtual bool doSetup(FrameDescription& description, attribute::Attributes& attributes) override {
+    description.width = m_Spec.width;
+    description.height = m_Spec.height;
+    description.glFormat = getGlType(m_Spec.format, m_Spec.channelnames);
+    description.dataSize = m_Spec.width * m_Spec.height * m_Spec.nchannels * getTypeSize(m_Spec.format);
     return true;
   }
 

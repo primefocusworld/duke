@@ -1,7 +1,7 @@
 #pragma once
 
 #include <duke/base/NonCopyable.hpp>
-#include <duke/imageio/RawPackedFrame.hpp>
+#include <duke/image/FrameData.hpp>
 
 namespace duke {
 
@@ -12,7 +12,7 @@ namespace duke {
  * - 'error' gives a message in case of failure.
  * - 'warning' gives a message if needed.
  */
-struct IOOperationResult : public noncopyable {
+struct IOResult : public noncopyable {
   enum Status {
     SUCCESS,
     FAILURE
@@ -20,7 +20,6 @@ struct IOOperationResult : public noncopyable {
 
   Status status = FAILURE;
   std::string error;
-  std::string warning;
 
   operator bool() const { return status == SUCCESS; }
 };
@@ -28,12 +27,12 @@ struct IOOperationResult : public noncopyable {
 /**
  * The result of an operation fetching an image
  */
-struct InputFrameOperationResult : public IOOperationResult {
-  RawPackedFrame rawPackedFrame;
+struct ReadFrameResult : public IOResult {
+  FrameData frame;
   attribute::Attributes readerAttributes;
 
-  inline attribute::Attributes& attributes() { return rawPackedFrame.attributes; }
-  inline const attribute::Attributes& attributes() const { return rawPackedFrame.attributes; }
+  inline attribute::Attributes& attributes() { return frame.attributes; }
+  inline const attribute::Attributes& attributes() const { return frame.attributes; }
 };
 
 }  // namespace duke
