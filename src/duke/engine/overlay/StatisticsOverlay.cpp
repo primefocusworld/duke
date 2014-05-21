@@ -2,7 +2,18 @@
 #include <duke/engine/Context.hpp>
 #include <duke/engine/rendering/GlyphRenderer.hpp>
 #include <duke/engine/rendering/GeometryRenderer.hpp>
-#include <sstream>
+#include <sstream> 
+
+#include <duke/attributes/AttributeKeys.hpp>
+#include <duke/attributes/Attributes.hpp>     // for Attributes
+#include <duke/imageio/DukeIO.hpp>
+
+#include <duke/engine/streams/DiskMediaStream.hpp>
+
+
+#include <set>
+
+
 
 namespace duke {
 
@@ -49,7 +60,39 @@ void StatisticsOverlay::render(const Context& context) const {
   //  draw infos
   std::ostringstream oss;
 
-  oss << context.currentFrame.round() << '\n';
+
+ //setting the current frame value according to the filename
+
+ using namespace attribute;
+
+ int currentFrameOffset = context.currentFrame.round();
+
+ if (!context.pCurrentImage)
+	{}
+ else
+	{
+	const std::string Path = attribute::getOrDie<attribute::File>(context.pCurrentImage->attributes);
+	
+	size_t lastPathIndex = Path.rfind('/');	
+	std::string Filename = std::string(Path.begin() + lastPathIndex +1, Path.end());
+
+	const auto begin = Filename.begin();
+	size_t firstSharpIndex = Filename.find('.');
+
+	//works for: duke foo.*.tif
+	size_t lastSharpIndex = Filename.rfind('.');
+
+
+	if (lastSharpIndex!=std::string::npos)
+		{
+		std::string m_frames = std::string(begin + firstSharpIndex +1 , begin + lastSharpIndex);
+		currentFrameOffset = atoi(m_frames.c_str());
+		}
+	}
+
+
+
+  oss << currentFrameOffset << '\n';
   oss << std::fixed;
   oss.width(5);
   oss.precision(2);
