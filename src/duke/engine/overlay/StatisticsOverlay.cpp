@@ -8,13 +8,6 @@
 #include <duke/attributes/Attributes.hpp>     // for Attributes
 #include <duke/imageio/DukeIO.hpp>
 
-#include <duke/engine/streams/DiskMediaStream.hpp>
-
-
-#include <set>
-
-
-
 namespace duke {
 
 StatisticsOverlay::StatisticsOverlay(const GlyphRenderer& glyphRenderer, const Timeline& timeline)
