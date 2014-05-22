@@ -94,7 +94,16 @@ void DukeMainWindow::onMouseMove(int x, int y) {
 }
 
 void DukeMainWindow::onMouseClick(int buttonId, int buttonState) {
-  if (buttonId == GLFW_MOUSE_BUTTON_LEFT) m_MouseLeftDown = buttonState == GLFW_PRESS;
+if (buttonId == GLFW_MOUSE_BUTTON_LEFT) 
+ {
+ m_MouseLeftDown = buttonState == GLFW_PRESS;
+	
+  if (m_MousePos.y >m_WindowDim.y-10)//10 pixels clickable because the timeline is 10px height
+  {
+  int framenumber  = floor(m_MousePos.x*((float)m_Player.getTimeline().getRange().last/m_WindowDim.x));
+  m_Player.cue(framenumber);	
+  }
+ }
 }
 
 void DukeMainWindow::onScroll(double x, double y) {
@@ -113,8 +122,16 @@ void DukeMainWindow::onScroll(double x, double y) {
 }
 
 void DukeMainWindow::onMouseDrag(int dx, int dy) {
+ if (m_MousePos.y >m_WindowDim.y-10)//10 pixels clickable because the timeline is 10px height
+  {
+  int framenumber  = floor(m_MousePos.x*((float)m_Player.getTimeline().getRange().last/m_WindowDim.x));
+  m_Player.cue(framenumber);	
+  }
+ else
+  {
   m_Context.pan.x += dx;
   m_Context.pan.y -= dy;
+  }
 }
 
 namespace {  // defining channel mask constants
