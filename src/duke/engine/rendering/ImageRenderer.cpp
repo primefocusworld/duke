@@ -10,6 +10,8 @@
 #include <duke/gl/Mesh.hpp>
 #include <duke/gl/Textures.hpp>
 #include <duke/engine/ColorSpace.hpp>
+#include <duke/engine/streams/IMediaStream.hpp>//to get Pixel Aspect Ratio
+
 
 namespace duke {
 
@@ -27,9 +29,9 @@ inline float getAspectRatio(glm::vec2 dim) { return dim.x / dim.y; }
 }  // namespace
 
 float getPixelRatio(const Context &context) {
-    return 1.0; // FIXME return correct pixel ratio
-    //FIXME auto attributes = context.pCurrentImage->attributes;
-    //FIXME return attributes.getOrDefault<attribute::PixelAspectRatio>();
+	if (!contains(context.pCurrentMediaStream->getState(), "PixelAspectRatio")) return 1.0;
+	return attribute::getOrDie<attribute::PixelAspectRatio>(context.pCurrentMediaStream->getState());
+			
 }
 
 float getZoomValue(const Context &context) {
@@ -42,7 +44,7 @@ float getZoomValue(const Context &context) {
       break;
   }
   if (!context.pCurrentImage) return 1;
-  // FIXME incomplete merge ?const float pixelRatio = getPixelRatio(context);
+  //const float pixelRatio = getPixelRatio(context);
   const auto viewportDim = glm::vec2(context.viewport.dimension);
   const auto viewportAspect = getAspectRatio(viewportDim);
   const auto &imageDescription = context.pCurrentImage->description;

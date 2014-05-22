@@ -5,7 +5,6 @@
 #include <sstream> 
 
 #include <duke/attributes/AttributeKeys.hpp>
-#include <duke/attributes/Attributes.hpp>     // for Attributes
 #include <duke/imageio/DukeIO.hpp>
 
 namespace duke {
@@ -60,9 +59,7 @@ void StatisticsOverlay::render(const Context& context) const {
 
  int currentFrameOffset = context.currentFrame.round();
 
- if (!context.pCurrentImage)
-	{}
- else
+ if (context.pCurrentImage)
 	{
 	const std::string Path = attribute::getOrDie<attribute::File>(context.pCurrentImage->attributes);
 	
