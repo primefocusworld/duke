@@ -66,6 +66,20 @@ else(OPENIMAGEIO_FOUND)
   add_definitions(-DDUKE_TGA)
 endif(OPENIMAGEIO_FOUND)
 
+
+#
+# OpenColorIO
+#
+find_package(OpenColorIO)
+if(OPENCOLORIO_FOUND)
+  add_definitions(-DDUKE_OCIO)
+  include_directories(${OPENCOLORIO_INCLUDE_DIRS})
+  target_link_libraries(duke ${OPENCOLORIO_LIBRARIES})
+  target_link_libraries(duke_core ${OPENCOLORIO_LIBRARIES})
+else(OPENCOLORIO_FOUND)
+
+endif(OPENCOLORIO_FOUND)
+
 #
 # LibAv
 #

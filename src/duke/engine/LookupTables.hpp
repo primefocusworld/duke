@@ -9,20 +9,10 @@ namespace duke {
 
 struct Context;
 
-// Lookup table data
-struct LookupTransform {
-	//
-	LookupTransform();
-    gl::GlTexture1D lookup1d; // pre-lut
-    gl::GlTexture3D	lookup3d; // 3d lut
-    float lookup1d_min, lookup1d_max;
-    int lut1DSize, lut3DSize;
-
-};
-
-LookupTransform* createIDLut(uint size = 32);
-LookupTransform* createFromFile(const std::string &);
-LookupTransform* defaultsRGB(); // defaut for testing purposes
+std::vector<float> g_lut3d;
+void AllocateLut3D();
+void InitOCIO(unsigned char ColorSpace);
+void UpdateOCIOGLState();
 
 
 };//namespace duke

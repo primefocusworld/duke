@@ -1,523 +1,287 @@
 #include <fstream>
 #include <sstream>
-#include <vector>
 #include <cstdio> // sscanf
 #include <cmath>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <vector>
 
-#include "duke/engine/LookupTables.hpp"
+
+//#include <GL/glew.h>
+#include <GL/gl.h>
+#include <GL/glext.h>
+//#include <GL/glut.h>
+
+#include <OpenColorIO/OpenColorIO.h>
+namespace OCIO = OCIO_NAMESPACE;
+
+#include <OpenImageIO/imageio.h>
+#include <OpenImageIO/typedesc.h>
+#if (OIIO_VERSION < 10100)
+namespace OIIO = OIIO_NAMESPACE;
+#endif
 
 namespace duke {
 
-// anonymous functions
-namespace {
+GLuint g_fragShader = 0;
+GLuint g_program = 0;
 
-//
-// Should micmic the OpenGL 3D buffer packing
-// 
-struct Buffer3D {
+GLuint g_lut3dTexID;
+const int LUT3D_EDGE_SIZE = 32;
+std::vector<float> g_lut3d;
+std::string g_lut3dcacheid;
+std::string g_shadercacheid;
 
-	typedef float ComponentType;// GL_UNSIGNED_BYTE or GL_FLOAT ?
+std::string g_inputColorSpace;
+std::string g_display;
+std::string g_transformName;
 
-	ComponentType *rawBuffer; 
-    static const unsigned int nbChannel=3; // GL_RGB
-	unsigned int nbSamplePerChannel; // Resolved at creation, generally 16 or 32
-
-	Buffer3D(unsigned int size) :
-			rawBuffer(new ComponentType[nbChannel*size*size*size]), nbSamplePerChannel(size) {
-		applyIdentity();// Not really needed, but cleaner 
-	} 
-
-	~Buffer3D() {
-		if (rawBuffer) 
-			delete [] rawBuffer;
-	}
-
-	// Sets the identity
-	void applyIdentity() {
-	}
-	
-	// apply a function to all elements 
-	void applyMap() {
-	
-	}
-
-	void uploadTo(gl::GlTexture3D &tex) {
-		// Using texture unit 1 ?? check if the fonts are not using this one
-		// NOTE that this might go in scope_bind_texture ...
-        GLint memID;
-        glGetIntegerv(GL_ACTIVE_TEXTURE, &memID);
-		glActiveTexture(GL_TEXTURE1);
-		//glEnable(GL_TEXTURE_3D);
-		auto textureBound = tex.scope_bind_texture();
-		// Interpolation ?
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		// Initialize the bounds of the 3d texture
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB, 
-					 nbSamplePerChannel, nbSamplePerChannel, nbSamplePerChannel, 
-					 0, GL_RGB, GL_FLOAT, rawBuffer);
-        glActiveTexture(memID);
-	}
-
-};
-
-//
-// Should micmic the OpenGL 1D buffer packing
-//
-struct Buffer1D {
-
-    typedef float ComponentType;// GL_UNSIGNED_BYTE or GL_FLOAT ?
-
-    ComponentType *rawBuffer;
-    unsigned int nbSamplePerChannel; // Resolved at creation, generally 16 or 32
-
-    Buffer1D(unsigned int size) :
-           rawBuffer(new ComponentType[size]), nbSamplePerChannel(size)
-    {
-        applyIdentity();// Not really needed, but cleaner
-    }
-
-    ~Buffer1D() {
-        if (rawBuffer)
-            delete [] rawBuffer;
-    }
-
-    // Sets the identity
-    void applyIdentity() {
-    }
-
-    // apply a function to all elements
-    void applyMap() {
-
-    }
-
-    void uploadTo(gl::GlTexture1D &tex) {
-        // Using texture unit 1 ?? check if the fonts are not using this one
-        // NOTE that this might go in scope_bind_texture ...
-        GLint memID;
-        glGetIntegerv(GL_ACTIVE_TEXTURE, &memID);
-        glActiveTexture(GL_TEXTURE2);
-        //glEnable(GL_TEXTURE_3D);
-        auto textureBound = tex.scope_bind_texture();
-        // Interpolation ?
-        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        // Initialize the bounds of the 3d texture
-        glTexImage1D(GL_TEXTURE_1D, 0, GL_RED,
-                     nbSamplePerChannel,
-                     0, GL_RED, GL_FLOAT, rawBuffer);
-       glActiveTexture(memID);
-    }
-
-};
+#include "duke/engine/LookupTables.hpp"
 
 
 
-/// Decode cube file 
-LookupTransform* decodeCube(const char *filename) {
-	
-    std::ifstream infile(filename);
-	if (!infile.is_open())
-		return nullptr;
-
-    std::string line;
-    std::vector<int>::iterator tableIt;
-
-	enum class FileParts : char {Header, LutData};
-	//readHeader, readContent
-	Buffer3D *buffer = nullptr;
-	Buffer3D::ComponentType *bufIt = nullptr;
-	Buffer3D::ComponentType r, g, b;
-	FileParts part = FileParts::Header;
-	int nbSteps = 0; 
-    while(std::getline(infile, line)) {
-        // Pass comments and new lines
-		if (line[0] == '\n')
-			continue;
-		if (line[0] == '#')
-			continue;
-		if (line[0] == 'T') // Assuming TITLE keyword
-			continue;
-		// Read the size 
-		if (part == FileParts::Header) {
-			if (sscanf(line.c_str(), "LUT_3D_SIZE %d", &nbSteps) == 1) {
-				buffer = new Buffer3D(nbSteps);
-				if (buffer) {
-					bufIt = buffer->rawBuffer;
-					// Jump to new part of the file
-					part = FileParts::LutData;
-					continue;
-				}// else throw ?	
-			}
-
-		} else if (part == FileParts::LutData) {
-			std::stringstream sline(line);
-			sline >> r >> g >> b;
-			*bufIt++ = r;
-			*bufIt++ = g;
-			*bufIt++ = b;
-		}
-	}
-
-    auto transform = new LookupTransform();
-    transform->lut3DSize = nbSteps;
-    buffer->uploadTo(transform->lookup3d);
-    delete buffer;
-
-    return transform;
-}
-
-/// Decode 3dl file
-LookupTransform* decode3dl(const char *filename) {
-
-    std::ifstream infile(filename);
-	if (!infile.is_open())
-		return nullptr;
-
-    std::string line;
-
-	enum class FileParts : char {Header, LutData, Footer};
-	//readHeader, readContent
-    Buffer3D *buffer = nullptr;
-	Buffer3D::ComponentType r, g, b;
-	FileParts part = FileParts::Header;
-    int nbSteps = 0, colorMax = 0;
-	float invColorMax = 0;
-	int cpt =0; // A compteur to know when you quit the LutData Part.
-
-    while(std::getline(infile, line)) {
-	    // Pass comments and new lines
-		if (line[0] == '\n')
-			continue;
-		if (line[0] == '#') // Assuming that is a comment
-			continue;
-
-		if (part == FileParts::Header) 
-		{
-			if (sscanf(line.c_str(), "Mesh %d %d", &nbSteps, &colorMax) == 2) 
-			{
-					nbSteps = ( 1 << nbSteps ) + 1;
-					colorMax = 1 << colorMax ;
-                    invColorMax = float( 1. / colorMax );
-					buffer = new Buffer3D(nbSteps);
-					// HACK : Bypass next line (it is a scale of values)
-					std::getline(infile, line);
-					if (buffer) {
-						// Jump to new part of the file
-						part = FileParts::LutData;
-						continue;
-					}// else throw ?	
-            }
-		} else if (part == FileParts::LutData) {
-			std::stringstream sline(line);
-			sline >> r >> g >> b;
-
-            // Compute the index
-            int x = cpt % nbSteps,
-                y = (cpt / nbSteps) % nbSteps,
-                z = (( cpt / nbSteps) / nbSteps) % nbSteps;
-
-            int idx =  z  + y * nbSteps + x * nbSteps *nbSteps;
-
-            buffer->rawBuffer[3*idx]   = r * invColorMax;
-            buffer->rawBuffer[3*idx+1] = g * invColorMax;
-            buffer->rawBuffer[3*idx+2] = b * invColorMax;
-
-            if(++cpt >= nbSteps*nbSteps*nbSteps)
-				part = FileParts::Footer;
-			
-		} else if (part == FileParts::Footer)
-			break ; // TODO	
-	}
-
-    auto transform = new LookupTransform();
-    transform->lut3DSize = nbSteps;
-    buffer->uploadTo(transform->lookup3d);
-    delete buffer;
-
-    return transform;
-}
-
-LookupTransform* decodeCsp(const char *filename)
+void AllocateLut3D()
 {
-    std::ifstream infile(filename);
-    if (!infile.is_open())
-        return nullptr;
+    glGenTextures(1, &g_lut3dTexID);
 
-    std::string line;
+    int num3Dentries = 3*LUT3D_EDGE_SIZE*LUT3D_EDGE_SIZE*LUT3D_EDGE_SIZE;
+    g_lut3d.resize(num3Dentries);
+    memset(&g_lut3d[0], 0, sizeof(float)*num3Dentries);
 
-    enum class FileParts : char {Header, Lut1DData, Lut3DData};
-    //readHeader, readContent
-    Buffer3D *buffer = nullptr;
-    Buffer3D::ComponentType r, g, b;
-    //LUT
-    Buffer1D *lut = nullptr;
-    Buffer1D::ComponentType tmp, bmin, bmax;
+    glActiveTexture(GL_TEXTURE2);
 
-    FileParts part = FileParts::Header;
-    int nbSteps = 0;
-    int lut1DSize = -1, cpt = 0, cptLut =0;
-    // Skip the 1D Luts
-
-    while(std::getline(infile, line)) {
-        // Pass comments and new lines
-        if (line[0] == '\n')
-            continue;
-        if (line[0] == '#')
-            continue;
-        if ( line.compare("CSPLUTV100") == 0 || line.compare("3D") == 0 )
-            continue;
-        // Read the size
-        if (part == FileParts::Header) {
-
-            if (sscanf(line.c_str(), "%d", &lut1DSize) == 1)
-            {
-                if(!lut)
-                {
-                    lut = new Buffer1D(lut1DSize);
-                }
-
-                // Jump the first line which is the indexes
-                std::getline(infile, line);
-                std::stringstream sline(line);
-                sline >> bmin;
-                float mark = bmin;
-
-                for(int i=1; i<lut1DSize-1; i++)
-                {
-                    sline >> tmp;
-                    if( fabs(mark-bmin) > 1./float(lut1DSize) * .1 )
-                         throw std::runtime_error("Not Regular LUT 1D - Not yet implemented");
-                }
-                sline >> bmax;
-
-                std::getline(infile, line);
-
-                sline.str("");
-                sline.clear();
-
-                sline << line;
-
-
-                for(int i=0; i<lut1DSize; i++)
-                {
-                    sline >> tmp;
-                    if(cptLut > 0 )
-                        if(tmp != lut->rawBuffer[i])
-                               throw std::runtime_error("LUT different for R G and B - Not yet implemented");
-                    lut->rawBuffer[i] =  tmp;
-                }
-                cptLut++;
-            }
-            if(cptLut > 2)
-            {
-                    part = FileParts::Lut3DData;
-                    continue;
-            }
-        }
-        else if (part == FileParts::Lut3DData)
-        {
-            int tmp1, tmp2, tmp3;
-            if (sscanf(line.c_str(), "%d %d %d", &tmp1, &tmp2, &tmp3) == 3)
-            {
-                nbSteps = tmp1;
-               // Initialization of the buffer
-                buffer = new Buffer3D(nbSteps);
-            }
-            else if ( sscanf(line.c_str(), "%f %f %f", &r, &g, &b) == 3)
-            {
-                assert(nbSteps);
-
-                // Compute the index
-                int x = cpt % nbSteps,
-                    y = (cpt / nbSteps) % nbSteps,
-                    z = (( cpt / nbSteps) / nbSteps) % nbSteps;
-
-                int idx =  z* nbSteps *nbSteps  + y * nbSteps + x ;
-
-                buffer->rawBuffer[3*idx]   = r ;
-                buffer->rawBuffer[3*idx+1] = g ;
-                buffer->rawBuffer[3*idx+2] = b ;
-
-                cpt++;
-
-            }
-        }
-    }
-
-    auto transform = new LookupTransform();
-    transform->lut3DSize = nbSteps;
-    buffer->uploadTo(transform->lookup3d);
-
-    transform->lut1DSize = lut1DSize ;
-    transform->lookup1d_max = bmax ;
-    transform->lookup1d_min = bmin ;
-    lut->uploadTo(transform->lookup1d);
-
-
-
-    delete lut;
-    delete buffer;
-
-    return transform;
-
-
+    glBindTexture(GL_TEXTURE_3D, g_lut3dTexID);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16F_ARB,
+                 LUT3D_EDGE_SIZE, LUT3D_EDGE_SIZE, LUT3D_EDGE_SIZE,
+                 0, GL_RGB,GL_FLOAT, &g_lut3d[0]);
 }
 
 
 
-};// anonymous namespace
-
-
-LookupTransform::LookupTransform() :
-    lookup1d(),
-    lookup3d(),
-    lookup1d_min(0.),
-    lookup1d_max(0.),
-    lut1DSize(0),
-    lut3DSize(0)
+  void InitOCIO(std::string ColorSpace)
 {
-}
+    OCIO::ConstConfigRcPtr config = OCIO::GetCurrentConfig();
+    g_display = config->getDefaultDisplay();
+    g_transformName = config->getDefaultView(g_display.c_str());
+
+    g_inputColorSpace = OCIO::ROLE_SCENE_LINEAR;
+    
+        //std::string cs = config->parseColorSpaceFromString(filename);
+      //std::string cs = config->getColorSpaceNameByIndex(index);
+      std::string cs = ColorSpace;
 
 
-// Load an identity Lut
-
-LookupTransform* createIDLut(uint size) {
-	// Create the buffer
-	Buffer3D *buffer = new Buffer3D(size);
-	Buffer3D::ComponentType *bufIt = buffer->rawBuffer;
-
-	// Precompute the inverse of the size
-	float invSizef = float(1. / ( size - 1. ));
-	
-	// Pull the colors on the LUT - RGB
-        for(uint i = 0; i < size * size * size; i++)
+        // std::string cs = "lnf";
+        if(!cs.empty())
         {
-            *bufIt++ = (float)(i%size) * invSizef;
-            *bufIt++ = (float)((i/size)%size) * invSizef;
-            *bufIt++ = (float)((i/size/size)%size) * invSizef;
-        }	
-
-	auto transform = new LookupTransform();
-    transform->lut3DSize = size;
-    buffer->uploadTo(transform->lookup3d);
-	delete buffer;
-
-
-	return transform;
-}
-//
-
-
-// Readers for different formats
-
-// OpenGL code
-
-LookupTransform* createFromFile(const std::string &lutFilePath) {
-	// TODO : read lookup code
-	//
-	//
-	// Look for extension, 3dl, cub, etc...
-
-	// 3 parts in the file 
-	//
-
-    int size = lutFilePath.length();
-    int marker = -1;
-    for(int idx = size - 1; idx > 0; idx--)
-    {
-        if(lutFilePath.c_str()[idx] == '.')
-        {
-            marker = idx+1;
-            break;
+            g_inputColorSpace = cs;
+            std::cout << "colorspace: " << cs << std::endl;
         }
+        else
+        {
+            std::cout << "colorspace: " << g_inputColorSpace << " \t(could not determine from filename, using default)" << std::endl;
+        }
+    
 
-    }
+    //g_inputColorSpace = ColorSpace;
+    //std::cout << "colorspace: " << g_inputColorSpace << std::endl;
 
-    std::string  ext = lutFilePath.substr(marker, size-1);
-
-    if(ext.compare("cube") == 0)
-    {
-        return decodeCube(lutFilePath.c_str());
-    }
-    else if(ext.compare("3dl") == 0)
-    {
-        return decode3dl(lutFilePath.c_str());
-    }
-    else if(ext.compare("csp") == 0)
-    {
-        return decodeCsp(lutFilePath.c_str());
-    }
-    else
-    {
-        printf("Duke does know the file format of your LUT, please use 3dl or cube");
-    }
-
-    return nullptr;
-}
-//
-
-LookupTransform * defaultsRGB() {
-
-	//const unsigned int s=16;
-	//const unsigned int sss=s*s*s;
-	//buffer.applyMap(srgbFunction);
-	//auto transform = new LookupTransform();
-	
-//	Buffer3D buffer(s);
-//	float *bufIt = buffer.rawBuffer;
-//	for (unsigned int i=0; i<s; i++)
-//		for (unsigned int j=0; j<s; j++)
-//			for (unsigned int k=0; k<s; k++) {
-//				*bufIt++ = static_cast<float>(k)/static_cast<float>(s-1);
-//				*bufIt++ = static_cast<float>(j)/static_cast<float>(s-1);
-//				*bufIt++ = static_cast<float>(i)/static_cast<float>(s-1);
-//			}
-
-    return decodeCube("/tmp/mytestlut.cube");
-
-//	auto transform = new LookupTransform();
-//    transform->lut3DSize = buffer->nbSamplePerChannel;
-//	buffer->uploadTo(transform->lookup3d);
-//	delete buffer;
-
-//	return transform;
 }
 
-// glsl code 
-const char *pLookupTransformFunc =
-		R"(
-uniform sampler3D lookup3d;
-uniform float lutSize;
+GLuint
+CompileShaderText(GLenum shaderType, const char *text)
+{
+    GLuint shader;
+    GLint stat;
 
-uniform sampler1D lookup1d;
-uniform float lookup1d_min, lookup1d_max, lookup1d_size ;
+    shader = glCreateShader(shaderType);
+    glShaderSource(shader, 1, (const GLchar **) &text, NULL);
+    glCompileShader(shader);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &stat);
 
-
-vec4 apply3dTransform(vec4 pix) {
-	// TODO add 3x1d lookup
-	// FIXME : depends on size of the texture !!!
-
-    if( lookup1d_min != lookup1d_max )
+    if (!stat)
     {
-        float scale_1d =  ( lookup1d_size - 1. )/ lookup1d_size;
-        float offset_1d = 1. / (2. * lookup1d_size);
-
-        pix = (pix - lookup1d_min) / (lookup1d_max - lookup1d_min  ) ;
-
-        pix.r = texture(lookup1d,clamp(pix.r,0.,1.) * scale_1d + offset_1d);
-        pix.g = texture(lookup1d,clamp(pix.g,0.,1.) * scale_1d + offset_1d);
-        pix.b = texture(lookup1d,clamp(pix.b,0.,1.) * scale_1d + offset_1d);
+        GLchar log[1000];
+        GLsizei len;
+        glGetShaderInfoLog(shader, 1000, &len, log);
+        fprintf(stderr, "Error: problem compiling shader: %s\n", log);
+        return 0;
     }
 
-    float scale =  ( lutSize - 1. )/ lutSize;
-    float offset = 1. / (2. * lutSize);
+    return shader;
+}
+ 
+GLuint
+LinkShaders(GLuint fragShader)
+{
+    if (!fragShader) return 0;
 
-    return texture(lookup3d, clamp(pix.rgb,0.,1.) * scale + offset );
-} 
+    GLuint program = glCreateProgram();
 
-)";
+    if (fragShader)
+        glAttachShader(program, fragShader);
+
+    glLinkProgram(program);
+
+    // check link
+    {
+        GLint stat;
+        glGetProgramiv(program, GL_LINK_STATUS, &stat);
+        if (!stat) {
+            GLchar log[1000];
+            GLsizei len;
+            glGetProgramInfoLog(program, 1000, &len, log);
+            fprintf(stderr, "Shader link error:\n%s\n", log);
+            return 0;
+        }
+    }
+
+    return program;
+}
+
+
+const char * g_fragShaderText = ""
+                                "\n"
+                                "uniform sampler2D lookup2d;\n"
+                                "uniform sampler3D lookup3d;\n"
+                                "\n"
+                                "void main()\n"
+                                "{\n"
+                                "    vec4 col = texture2D(lookup2d, gl_TexCoord[0].st);\n"
+                                "    gl_FragColor = OCIODisplay(col, lookup3d);\n"
+                                "}\n";
+
+
+void UpdateOCIOGLState()
+{
+    // Step 0: Get the processor using any of the pipelines mentioned above.
+    OCIO::ConstConfigRcPtr config = OCIO::GetCurrentConfig();
+
+    OCIO::DisplayTransformRcPtr transform = OCIO::DisplayTransform::Create();
+
+    transform->setInputColorSpaceName( g_inputColorSpace.c_str() );
+    transform->setDisplay( g_display.c_str() );
+    transform->setView( g_transformName.c_str() );
+
+    std::cout << "Transform Name: "<<  g_transformName.c_str() << std::endl;
+    std::cout << "input Color Space: "<<  g_inputColorSpace.c_str() << std::endl;
+    std::cout << "Display blah: "<< g_display.c_str() << std::endl;
+
+
+    OCIO::ConstProcessorRcPtr processor;
+    try
+    {
+        processor = config->getProcessor(transform);
+    }
+    catch(OCIO::Exception & e)
+    {
+        std::cerr << e.what() << std::endl;
+        std::cout << "UpdateOCIOGLState"  <<std::endl;
+        return;
+
+    }
+    catch(...)
+    {   return;
+
+    }
+
+    // Step 1: Create a GPU Shader Description
+    OCIO::GpuShaderDesc shaderDesc;
+    shaderDesc.setLanguage(OCIO::GPU_LANGUAGE_GLSL_1_0);
+    shaderDesc.setFunctionName("OCIODisplay");
+    shaderDesc.setLut3DEdgeLen(LUT3D_EDGE_SIZE);
+
+    // Step 2: Compute the 3D LUT
+    std::string lut3dCacheID = processor->getGpuLut3DCacheID(shaderDesc);
+    if(lut3dCacheID != g_lut3dcacheid)
+    {
+        std::cerr << "Computing 3DLut HERRE  " << g_lut3dcacheid << std::endl;
+
+        g_lut3dcacheid = lut3dCacheID;
+        processor->getGpuLut3D(&g_lut3d[0], shaderDesc);
+
+
+
+        glBindTexture(GL_TEXTURE_3D, g_lut3dTexID);
+        glTexSubImage3D(GL_TEXTURE_3D, 0,
+                        0, 0, 0,
+                        LUT3D_EDGE_SIZE, LUT3D_EDGE_SIZE, LUT3D_EDGE_SIZE,
+                        GL_RGB,GL_FLOAT, &g_lut3d[0]);
+    }
+
+    // Step 3: Compute the Shader
+    std::string shaderCacheID = processor->getGpuShaderTextCacheID(shaderDesc);
+    if(g_program == 0 || shaderCacheID != g_shadercacheid)
+    {
+        std::cerr << "Computing Shader TESSST " << g_shadercacheid << std::endl;
+
+        g_shadercacheid = shaderCacheID;
+
+        std::ostringstream os;
+        os << processor->getGpuShaderText(shaderDesc) << "\n";
+
+
+	//        os << g_fragShaderText;
+        std::cerr << os.str() << std::endl;
+
+        if(g_fragShader) glDeleteShader(g_fragShader);
+        g_fragShader = CompileShaderText(GL_FRAGMENT_SHADER, os.str().c_str());
+        if(g_program) glDeleteProgram(g_program);
+        g_program = LinkShaders(g_fragShader);
+    }
+
+    //glUseProgram(g_fragShader);
+    glUseProgram(g_program);
+    glUniform1i(glGetUniformLocation(g_program, "lookup2d"), 1);
+    glUniform1i(glGetUniformLocation(g_program, "lookup3d"), 2);
+
+
+}
+
+void PopulateOCIOMenus()
+{
+    OCIO::ConstConfigRcPtr config = OCIO::GetCurrentConfig();
+    std::cout << "test" << std::endl;
+    
+    // int csMenuID = glutCreateMenu(imageColorSpace_CB);
+    for(int i=0; i<config->getNumColorSpaces(); ++i)
+    {
+
+      std::cout <<"ColorSpace: "<< config->getColorSpaceNameByIndex(i)<<std::endl;
+      // glutAddMenuEntry(config->getColorSpaceNameByIndex(i), i);
+    }
+    
+    // int deviceMenuID = glutCreateMenu(displayDevice_CB);
+    for(int i=0; i<config->getNumDisplays(); ++i)
+    {
+      std::cout <<"Displays: "<< config->getDisplay(i)<<std::endl;
+      // glutAddMenuEntry(config->getDisplay(i), i);
+    }
+    
+    //int transformMenuID = glutCreateMenu(transform_CB);
+    //const char * defaultDisplay = config->getDefaultDisplay();
+    //for(int i=0; i<config->getNumViews(defaultDisplay); ++i)
+    // {
+    //    glutAddMenuEntry(config->getView(defaultDisplay, i), i);
+    //}
+    
+    //glutCreateMenu(menuCallback);
+    //glutAddSubMenu("Image ColorSpace", csMenuID);
+    //glutAddSubMenu("Transform", transformMenuID);
+    //glutAddSubMenu("Device", deviceMenuID);
+    
+    //glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
+
 
 };//namespace duke
+
+
+

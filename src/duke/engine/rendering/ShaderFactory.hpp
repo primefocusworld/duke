@@ -15,8 +15,8 @@ struct ShaderDescription {
   bool swapEndianness = false;
   bool swapRedAndBlue = false;
   bool tenBitUnpack = false;
-  ColorSpace fileColorspace = ColorSpace::Auto;    // aka input colorspace
-  ColorSpace screenColorspace = ColorSpace::Auto;  // aka output colorspace
+  ColorSpace fileColorspace = ColorSpace::linear;    // aka input colorspace
+  ColorSpace screenColorspace = ColorSpace::linear;  // aka output colorspace
   ShaderDescription() = default;
   bool operator<(const ShaderDescription &other) const;
 

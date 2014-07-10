@@ -130,7 +130,7 @@ void benchmark() {
 
   SharedMesh pMesh = createSquare();
   const ShaderDescription description =
-      ShaderDescription::createTextureDesc(false, false, false, false, ColorSpace::Linear, ColorSpace::sRGB);
+      ShaderDescription::createTextureDesc(false, false, false, false, ColorSpace::linear, ColorSpace::sRGB);
   Program program(makeVertexShader(buildVertexShaderSource(description).c_str()),  //
                   makeFragmentShader(R"(
 #version 330

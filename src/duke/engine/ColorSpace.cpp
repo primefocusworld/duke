@@ -9,20 +9,19 @@ namespace duke {
 
 ColorSpace resolveFromName(const char* pColorspace) {
   if (pColorspace) {
-    if (streq(pColorspace, "Linear")) return ColorSpace::Linear;
+    if (streq(pColorspace, "linear")) return ColorSpace::linear;
     if (streq(pColorspace, "sRGB") || streq(pColorspace, "GammaCorrected")) return ColorSpace::sRGB;
-    if (streq(pColorspace, "KodakLog")) return ColorSpace::KodakLog;
-    if (streq(pColorspace, "Rec709")) return ColorSpace::Rec709;
-    if (streq(pColorspace, "AdobeRGB")) return ColorSpace::AdobeRGB;
-    if (streq(pColorspace, "AlexaV3LogC")) return ColorSpace::AlexaLogC;
+    if (streq(pColorspace, "Cineon")) return ColorSpace::Cineon;
+    if (streq(pColorspace, "rec709")) return ColorSpace::rec709;
+    if (streq(pColorspace, "AlexaV3LogC")) return ColorSpace::AlexaV3LogC;
   }
-  return ColorSpace::Auto;
+  return ColorSpace::linear;
 }
 
 ColorSpace resolveFromExtension(const char* pFileExtension) {
   if (pFileExtension) {
-    if (streq(pFileExtension, "dpx")) return ColorSpace::KodakLog;
-    if (streq(pFileExtension, "exr")) return ColorSpace::Linear;
+    if (streq(pFileExtension, "dpx")) return ColorSpace::Cineon;
+    if (streq(pFileExtension, "exr")) return ColorSpace::linear;
     if (streq(pFileExtension, "jpg")) return ColorSpace::sRGB;
     if (streq(pFileExtension, "png")) return ColorSpace::sRGB;
   }
@@ -33,7 +32,7 @@ ColorSpace resolveFromExtension(const char* pFileExtension) {
   }
   return ColorSpace::sRGB;
 }
-
+  /*
 // GLSL ColorSpace conversion functions
 const char* pColorSpaceConversions = R"(
 vec3 lintolin(vec3 sample) {
@@ -61,21 +60,19 @@ vec3 lintorec709(vec3 sample) {
 }
 
 )";
-
+  
 const char* getToLinearFunction(const ColorSpace fromColorspace) {
   switch (fromColorspace) {
-    case ColorSpace::AlexaLogC:
+    case ColorSpace::AlexaV3LogC:
       return "alexatolin";
-    case ColorSpace::KodakLog:
+    case ColorSpace::Cineon:
       return "cineontolin";
-    case ColorSpace::Linear:
-      return "lintolin";
     case ColorSpace::sRGB:
-    case ColorSpace::GammaCorrected:
+    case ColorSpace::Gamma18:
       return "srgbtolin";
-    case ColorSpace::Rec709:
+    case ColorSpace::rec709:
       return "rec709tolin";
-    case ColorSpace::Auto:
+    case ColorSpace::linear:
     default:
       throw std::runtime_error("ColorSpace must be resolved at this point");
   }
@@ -83,17 +80,15 @@ const char* getToLinearFunction(const ColorSpace fromColorspace) {
 
 const char* getToScreenFunction(const ColorSpace fromColorspace) {
   switch (fromColorspace) {
-    case ColorSpace::Linear:
-      return "lintolin";
-    case ColorSpace::Rec709:
+    case ColorSpace::rec709:
       return "lintorec709";
     case ColorSpace::sRGB:
-    case ColorSpace::GammaCorrected:
-    case ColorSpace::Auto:
+    case ColorSpace::Gamma18:
+    case ColorSpace::linear:
       return "lintosrgb";  // this is the default screen colorspace though
     default:
       throw std::runtime_error("Screen colorspace not handled");
   }
 }
-
+  */
 }  // namespace duke
