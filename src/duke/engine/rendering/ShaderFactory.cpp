@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <tuple>
-#include <duke/OpenColorIO/OpenColorIOManager.hpp>
+#include <duke/engine/commands/Commands.hpp>
 
 using namespace std;
 
@@ -11,16 +11,13 @@ namespace duke {
 
 // From ColorSpace.cpp, all the conversion functions
 // in a char *
-extern const char *pColorSpaceConversions;
-OpenColorIOManager OCIOManager;
 
-//extern const char *pLookupTransformFunc;//FIXME
 
 namespace {
 
-std::tuple<bool, bool, bool, bool, bool, bool, ColorSpace, ColorSpace> asTuple(const ShaderDescription &sd) {
+  std::tuple<bool, bool, bool, bool, bool, bool, ColorSpace, ColorSpace, string> asTuple(const ShaderDescription &sd) {
     return std::make_tuple(sd.grayscale, sd.sampleTexture, sd.displayUv, sd.swapEndianness, sd.swapRedAndBlue,
-                           sd.tenBitUnpack, sd.fileColorspace, sd.screenColorspace);
+                           sd.tenBitUnpack, sd.fileColorspace, sd.screenColorspace, sd.OCIOoutput);
 }
 
 }  // namespace
@@ -44,7 +41,7 @@ ShaderDescription ShaderDescription::createSolidDesc() {
 
 ShaderDescription ShaderDescription::createTextureDesc(bool grayscale, bool swapEndianness, bool swapRedAndBlue,
         bool tenBitUnpack, ColorSpace fileColorspace,
-        ColorSpace screenColorspace) {
+						       ColorSpace screenColorspace,  std::string OCIOoutput) {
     ShaderDescription description;
     description.grayscale = grayscale;
     description.sampleTexture = true;
@@ -53,6 +50,7 @@ ShaderDescription ShaderDescription::createTextureDesc(bool grayscale, bool swap
     description.tenBitUnpack = tenBitUnpack;
     description.fileColorspace = fileColorspace;
     description.screenColorspace = screenColorspace;
+    description.OCIOoutput = OCIOoutput;
     return description;
 }
 
@@ -213,23 +211,15 @@ vFragColor = vec4(vVaryingTexCoord,0,1);
 }
 )";
 
-  //void appendToLinearFunction(ostream&stream, const ColorSpace colorspace) {
-//stream << endl << "vec3 toLinear(vec3 sample){return " << getToLinearFunction(colorspace) << "(sample);}" << endl;
-//}
-
-//void appendToScreenFunction(ostream &stream, const ColorSpace colorspace) {
-//stream << endl << "vec3 toScreen(vec3 sample){return " << getToScreenFunction(colorspace) << "(sample);}" << endl;
-//}
-
 void appendSampler(ostream&stream, const ShaderDescription &description) {
 const bool filtering = false; // Testing
 const string filter(filtering ? "bilinear" : "nearest");
 stream << (description.tenBitUnpack ? pSampleTenbitsUnpack : pSampleRegular);
- stream << "uniform sampler3D lookup3d; \n";
+ stream << "uniform sampler3D lut3d; \n";
 stream << "vec4 sample(vec2 offset) {"
-  // "  return " << filter << "(gTextureSampler, vVaryingTexCoord+offset); }\n";
-  // "return " << "OCIODisplay(" << filter << "(gTextureSampler,vVaryingTexCoord+offset), lookup3d); }\n";//FIXME
-  " return texture(gTextureSampler,vVaryingTexCoord); }\n";
+      // "  return " << "apply3dTransform(" << filter << "(gTextureSampler, vVaryingTexCoord+offset)); }\n";
+  //" return texture(gTextureSampler,vVaryingTexCoord); }\n";
+  	"return " << "OCIODisplay(" << filter << "(gTextureSampler,vVaryingTexCoord+offset), lut3d); }\n";
 }
 
 void appendSwizzle(ostream&stream, const ShaderDescription &description) {
@@ -245,18 +235,12 @@ stream << type << " swizzle(" << type << " sample){return sample." << swizzling 
 }  // namespace
 
 std::string buildFragmentShaderSource(const ShaderDescription &description) {
-ostringstream oss;
-//OCIOManager.PopulateOCIOMenus(); 
-OCIOManager.AllocateLut3D();
 
+ostringstream oss;
 
 oss << "#version 330" << endl;
 if (description.sampleTexture) {
-oss << OCIOManager.UpdateOCIOGLState() << endl;//FIXME
-
-//oss << pColorSpaceConversions << endl;
-//appendToLinearFunction(oss, description.fileColorspace);
-//appendToScreenFunction(oss, description.screenColorspace);
+oss << description.OCIOoutput << endl;
 appendSwizzle(oss, description);
 appendSampler(oss, description);
 oss << pTexturedMain;
@@ -266,7 +250,7 @@ oss << pUvMain;
 else
 oss << pSolidMain;
 }
- std::cout << oss.str()<<std::endl;
+//std::cout << "ShaderFactory: "<< oss.str()<<std::endl;
 return oss.str();
 }
 

@@ -11,9 +11,6 @@
 #include <duke/gl/Textures.hpp>
 #include <duke/engine/ColorSpace.hpp>
 #include <duke/engine/streams/IMediaStream.hpp>//to get Pixel Aspect Ratio
-#include <OpenColorIO/OpenColorIO.h>
-
-namespace OCIO = OCIO_NAMESPACE;
 
 
 namespace duke {
@@ -85,8 +82,8 @@ bool isGreyscale(size_t glPackFormat) {
 
 }  // namespace
 
-//void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, int lutSize, const Context &context){
-void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, const Context &context) {
+void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, const Context &context, std::string OCIOoutput, bool OCIOflag_raw) {
+
     const auto &description = context.pCurrentImage->description;
     bool redBlueSwapped = description.swapRedAndBlue;
     if (isInternalOptimizedFormatRedBlueSwapped(description.glFormat)) redBlueSwapped = !redBlueSwapped;
@@ -99,7 +96,7 @@ void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, con
             description.swapEndianness,                                             //
             redBlueSwapped,                                                         //
             description.glFormat == GL_RGB10_A2UI,                                  //
-            inputColorSpace, context.screenColorSpace);
+            inputColorSpace, context.screenColorSpace, OCIOoutput);
     const auto pProgram = shaderPool.get(shaderDesc);
     const auto pair =
         getTextureDimensions(description.width, description.height,
@@ -118,16 +115,11 @@ void renderWithBoundTexture(const ShaderPool &shaderPool, const Mesh *pMesh, con
     pProgram->glUniform1f("pixelRatio", getPixelRatio(context) ); // Texture unit 1
 
     // 3d lut
-    /*
-    pProgram->glUniform1i("lookup3d", 1); // Texture unit 1
-      
-      pProgram->glUniform1f("lutSize", lutSize ); // Texture unit 1
-      pProgram->glUniform1i("lookup1d", 2); // Texture unit 2
-      pProgram->glUniform1f("lookup1d_size", lut1dSize ); // Texture unit
-      pProgram->glUniform1f("lookup1d_min", lutmin ); // Texture unit
-      pProgram->glUniform1f("lookup1d_max", lutmax ); // Texture unit
-    */
-   
+    if (OCIOflag_raw==false)
+    {
+	pProgram->glUniform1i("lut3d", 2); // Texture unit 1
+    }
+    
     pMesh->draw();
     glCheckError();
 }

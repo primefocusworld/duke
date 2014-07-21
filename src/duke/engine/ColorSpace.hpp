@@ -9,7 +9,7 @@ enum class ColorSpace {
     rec709,
     Cineon,
     Panalog,
-    REDlog,
+    REDLog,
     ViperLog,
     AlexaV3LogC,
     PLogLin, 
@@ -22,9 +22,6 @@ enum class ColorSpace {
 // Deduce a the colorspace
 ColorSpace resolveFromExtension(const char* pFileExtension);
 ColorSpace resolveFromName(const char* pColorspace);
-
-// GlSl functions names
-//const char* getToLinearFunction(const ColorSpace fromColorspace);
-  //const char* getToScreenFunction(const ColorSpace fromColorspace);
+const char* getColorspaceString(ColorSpace &colorspace);
 
 } /* namespace duke */

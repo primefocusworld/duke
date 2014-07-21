@@ -7,14 +7,10 @@
 #include <duke/engine/ConsoleIO.hpp>
 #include <duke/engine/rendering/ImageRenderer.hpp>
 #include <duke/engine/commands/Commands.hpp>
-//#include <duke/engine/LookupTables.cpp>
-#include <duke/time/Clock.hpp>
-#include <duke/gl/GL.hpp>
 #include <duke/engine/ColorSpace.hpp>
 #include <duke/OpenColorIO/OpenColorIOManager.hpp>
-
-#include <OpenColorIO/OpenColorIO.h>
-namespace OCIO = OCIO_NAMESPACE;
+#include <duke/time/Clock.hpp>
+#include <duke/gl/GL.hpp>
 
 #include <string>
 #include <sstream>
@@ -196,40 +192,6 @@ const char *getFitModeString(FitMode &mode) {
     throw std::runtime_error("unknown fitmode");
 }
 
-  /*
-  const char *getColorspaceString(ColorSpace &colorspace) {//TODO
-    switch (colorspace) {
-    case ColorSpace::linear:
-        return "linear";
-    case ColorSpace::sRGB:
-        return "sRGB";
-    case ColorSpace::sRGBf:
-        return "sRGBf";
-    case ColorSpace::rec709:
-        return "rec709";
-    case ColorSpace::Cineon:
-        return "Cineon";
-    case ColorSpace::Panalog:
-        return "Panalog";
-    case ColorSpace::REDlog:
-        return "REDlog";
-    case ColorSpace::ViperLog:
-        return "ViperLog";
-    case ColorSpace::AlexaV3LogC:
-        return "AlexaV3LogC";
-    case ColorSpace::PLogLin:
-        return "PLogLin";
-    case ColorSpace::SLog:
-        return "SLog";
-    case ColorSpace::raw:
-        return "raw";
-    case ColorSpace::Gamma18:
-        return "Gamma1.8";
-    case ColorSpace::Gamma22:
-        return "Gamma2.2";
-    }
-    throw std::runtime_error("unknown colorspace");
-    }*/
  
 
 }  // namespace
@@ -281,41 +243,16 @@ void DukeMainWindow::run() {
         m_Context.resetFitMode = false;
     };
 
-// Testing : load 3d lut texture-----------------------------------FXME
-/*
-    std::cout << "Load 3D texture"<<std::endl;
-    AllocateLut3D();
-    // PopulateOCIOMenus();
-    //std::cout << "Filename" << m_Context.filename << std::endl;
-    //filename = "vo_153_0010_editorial_plates_el01_v01.*.exr";
-    std::cout << "FileColorSpace"<< getColorspaceString(m_Context.fileColorSpace) << std:: endl;
-    std::cout << "ScreenColorSpace"<< getColorspaceString(m_Context.screenColorSpace) << std::endl;
+//--Handling of ColorSpaces and lutfiles------------------------------------------------------------------  
+   OpenColorIOManager OCIOManager(getColorspaceString(m_Context.screenColorSpace), m_CmdLine.lutFilePath);
+ 
+  OCIOManager.SetState();
+  OCIOManager.CreateGPUShaderDesc();
+  OCIOManager.Compute3DLut();
+  OCIOManager.ComputeShader();
 
-    std::string ColorSpace = "sRGB";
-    try
-    {
-      InitOCIO(getColorspaceString(m_Context.fileColorSpace));
-    }
-    catch(OCIO::Exception & e)
-    {
-        std::cerr << e.what() << std::endl;
-        std::cout << "DukeMainWindow"  <<std::endl;
-        exit(1);
-    }
-    // std::ostringstream os;
-    // os << processor->getGpuShaderText(shaderDesc) << "\n";
+//--------------------------------------------------------------------
 
-    UpdateOCIOGLState();
-    //Get ColorSpaceName by index
-    
-
-//LookupTransform *lookup = nullptr;
-//if ( m_CmdLine.lutFilePath != "") {
-//	lookup = createFromFile(m_CmdLine.lutFilePath); // defaut for testing purposes
-//	}
-// if (!lookup) { lookup = createIDLut(); }
-*/
-//----------------------------------------------------------------
     while (running) {
         // fetching user inputs
         ::glfwPollEvents();
@@ -347,36 +284,37 @@ void DukeMainWindow::run() {
             m_Context.pCurrentMediaStream = nullptr;
             const MediaFrameReference mfr = track.getMediaFrameReferenceAt(frame);
             const auto pMediaStream = mfr.pStream;
-//------------------------------------------------------------------------------FIXME
-            //  glActiveTexture(GL_TEXTURE1);
-            //   auto bound3dTexture = lookup ? lookup->lookup3d.scope_bind_texture() : nullptr;
-            //   glActiveTexture(GL_TEXTURE2);
-            //   auto bound1dTexture = lookup ? lookup->lookup1d.scope_bind_texture() : nullptr;
-            //   glActiveTexture(GL_TEXTURE0);
-//------------------------------------------------------------------------------
 
-            if (pMediaStream) {
+      glActiveTexture(GL_TEXTURE2);
+      auto bound3dTexture = OCIOManager.m_tex.scope_bind_texture();
+      glActiveTexture(GL_TEXTURE0);
+
+            if (pMediaStream) { 
                 auto pLoadedTexture = textureCache.getLoadedTexture(mfr);
+      
                 // Mode where we force the texture to be ready before displaying something
-                if (m_CmdLine.unlimitedFPS) {
+                if (m_CmdLine.unlimitedFPS) { 
                     int MaxTry = 1000;
-                    while (!pLoadedTexture) {
+                    while (!pLoadedTexture) { 
                         // The texture was not ready, re-ask for it
                         textureCache.prepare(frame, mode);
                         pLoadedTexture = textureCache.getLoadedTexture(mfr);
                         if (MaxTry-- <= 0) continue;
                     }
                 }
-                if (pLoadedTexture) {
+                if (pLoadedTexture) { 
                     m_Context.pCurrentImage = pLoadedTexture;
                     m_Context.pCurrentMediaStream = pMediaStream;
                     setupZoom();
+		   
                     auto &texture = *pLoadedTexture->pTexture;
+		    
                     auto boundTexture = texture.scope_bind_texture();
                     glTexParameteri(texture.target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                     glTexParameteri(texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                    renderWithBoundTexture(m_GlyphRenderer.getGeometryRenderer().shaderPool, pSquare.get(), m_Context);//FIXME
-                    //      renderWithBoundTexture(m_GlyphRenderer.getGeometryRenderer().shaderPool, pSquare.get(), lookup->lookup1d_min, lookup->lookup1d_max, lookup->lut1DSize, lookup->lut3DSize, m_Context);
+		   
+		    renderWithBoundTexture(m_GlyphRenderer.getGeometryRenderer().shaderPool, pSquare.get(), m_Context, OCIOManager.output, OCIOManager.flag_raw);
+		     
                 } else {
                     drawText(m_GlyphRenderer, m_Context.viewport, "caching", 100, 100, 1, 3);
                 }
@@ -385,6 +323,7 @@ void DukeMainWindow::run() {
             if (pOverlayTrack) pOverlayTrack->render(m_Context);
             if (showMetadataOverlay) metadataOverlay.render(m_Context);
         }
+	 
         if (showStatisticOverlay) statisticOverlay.render(m_Context);
         statusOverlay.render(m_Context);
 
@@ -446,12 +385,8 @@ void DukeMainWindow::run() {
                 m_Context.resetFitMode = true;
                 display(getFitModeString(m_Context.fitMode));
                 break;
-		//   case 'l':
-		//   display(m_Context.fileColorspace);
-		//    break;//TODO
-    
-            case 'w'://TODO swipe mode
-                break;
+        //    case 'w'://TODO swipe mode
+        //        break;
 
             }
         }

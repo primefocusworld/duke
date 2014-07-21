@@ -1,4 +1,5 @@
 #pragma once
+#include <duke/OpenColorIO/OpenColorIOManager.hpp>
 
 namespace duke {
 
