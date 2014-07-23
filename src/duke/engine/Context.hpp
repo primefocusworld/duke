@@ -35,8 +35,8 @@ struct Context {
   glm::bvec4 channels = glm::bvec4(false);
   float exposure = 1;
   float gamma = 1;
-  ColorSpace fileColorSpace = ColorSpace::Auto;
-  ColorSpace screenColorSpace = ColorSpace::Auto;
+  ColorSpace fileColorSpace = ColorSpace::linear;
+  ColorSpace screenColorSpace = ColorSpace::linear;
   // file
   std::string filename;
   // current drawing

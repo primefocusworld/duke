@@ -2,6 +2,7 @@
 
 #include <duke/gl/Program.hpp>
 #include <duke/engine/ColorSpace.hpp>
+#include <duke/OpenColorIO/OpenColorIOManager.hpp>
 
 namespace duke {
 
@@ -15,13 +16,16 @@ struct ShaderDescription {
   bool swapEndianness = false;
   bool swapRedAndBlue = false;
   bool tenBitUnpack = false;
-  ColorSpace fileColorspace = ColorSpace::Auto;    // aka input colorspace
-  ColorSpace screenColorspace = ColorSpace::Auto;  // aka output colorspace
+  ColorSpace fileColorspace = ColorSpace::linear;    // aka input colorspace
+  ColorSpace screenColorspace = ColorSpace::linear;  // aka output colorspace
+ 
+  std::string OCIOoutput;
+
   ShaderDescription() = default;
   bool operator<(const ShaderDescription &other) const;
 
   static ShaderDescription createTextureDesc(bool grayscale, bool swapEndianness, bool swapRedAndBlue,
-                                             bool tenBitUnpack, ColorSpace fileColorspace, ColorSpace screenColorspace);
+                                             bool tenBitUnpack, ColorSpace fileColorspace, ColorSpace screenColorspace, std::string OCIOoutput);
   static ShaderDescription createSolidDesc();
   static ShaderDescription createUvDesc();
 };

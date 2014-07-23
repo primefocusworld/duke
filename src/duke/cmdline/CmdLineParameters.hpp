@@ -32,8 +32,8 @@ struct CmdLineParameters {
   ApplicationMode mode = ApplicationMode::DUKE;
   FrameDuration defaultFrameRate = FrameDuration::PAL;
   std::vector<std::string> additionnalOptions;
-  ColorSpace inputColorSpace = ColorSpace::Auto;
-  ColorSpace outputColorSpace = ColorSpace::Auto;
+  ColorSpace inputColorSpace = ColorSpace::linear;
+  ColorSpace outputColorSpace = ColorSpace::linear;
   std::string lutFilePath;
   static unsigned getDefaultConcurrency();
   static size_t getDefaultCacheSize();
