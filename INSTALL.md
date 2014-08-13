@@ -21,7 +21,7 @@ You'll need a C++11 compiler, Duke is known to compile on GCC 4.7.1 and later.
 ####OpenImageIO
 If you want OpenImageIO's support you'll have to compile the library and set the `OPENIMAGEIO_ROOT_DIR`
 environment variable to the directory containing the `include`, `lib` and `bin` folders.
-> export OCIO = "~/duke/dependencies/nuke-default/config.oci" or wherever you have put the config.ocio file.
+> export OCIO = "~/duke/dependencies/nuke-default/config.ocio" or wherever you have put the config.ocio file.
 
 If your Linux distribution has an openimageio-dev package, just install it and CMake should autodetect it.
 
