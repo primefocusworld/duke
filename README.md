@@ -32,8 +32,19 @@ Current features
 * `home` `end` : go to begin, end of playlist
 * `r` `g` `b` `a` : toggle R/G/B/A filter channel
 * mouse drag and mouse wheel to pan/zoom
-* colorspace is autodetected from image metadata or filename extension
+* timeline scrub
+* frame number from file name
 
+* OpenColorIO integration: load and handle Lut files and Colorspace changes.
+Colorspaces available from nuke configuration: linear, sRGB, sRGBf, Cineon, Gamma1.8, Gamma2.2, Panalog, REDLog, ViperLog, AlexaV3logC, PLogLin, SLog and raw.
+
+Before launching Duke, export the OCIO configuration file with:
+export OCIO = "~/duke/dependencies/nuke-default/config.ocio" or wherever you have put the config.ocio file.
+
+Use the --outputspace and --viewinglut commands to use OCIO.
+example for Colorspace changes: ./src/duke/duke ~/Desktop/video..exr --outputspace Cineon
+example for Luts files: ./src/duke/duke ~/Desktop/video..exr --viewinglut ~/pathtoluthile/luts/cineon.spi1d
+The default Colorspace is linear.
 
 We aim at
 ---------
@@ -45,6 +56,7 @@ We aim at
 * recording to file sequences or movies
 * sound support
 * 3D support
+* Qt interface
 
 
 Compilation
