@@ -38,9 +38,6 @@ Current features
 * OpenColorIO integration: load and handle Lut files and Colorspace changes.
 Colorspaces available from nuke configuration: linear, sRGB, sRGBf, Cineon, Gamma1.8, Gamma2.2, Panalog, REDLog, ViperLog, AlexaV3logC, PLogLin, SLog and raw.
 
-Before launching Duke, export the OCIO configuration file with:
-export OCIO = "~/duke/dependencies/nuke-default/config.ocio" or wherever you have put the config.ocio file.
-
 Use the --outputspace and --viewinglut commands to use OCIO.
 example for Colorspace changes: ./src/duke/duke ~/Desktop/video..exr --outputspace Cineon
 example for Luts files: ./src/duke/duke ~/Desktop/video..exr --viewinglut ~/pathtoluthile/luts/cineon.spi1d
@@ -64,11 +61,51 @@ Compilation
 
 * Getting the source
 
-> git clone --recursive https://github.com/mikrosimage/duke.git  
+> git clone --recursive https://github.com/primefocusworld/duke.git
+cd duke
+
+Current branch should be "develop", but to be sure
+git checkout develop
+
 
 * Compilation
 
-    see INSTALL file
+
+1. Load the dev environment with 
+module load dev/duke
+
+2. Export the OCIO configuration file with:
+export OCIO = "~/duke/dependencies/nuke-default/config.ocio" or wherever you have put the config.ocio file.
+
+3. In the duke folder, create a build directory with
+mkdir build
+cd build
+
+if ccache is not installed on your machine then use the following ccmake command line:
+ccmake -D CMAKE_CXX_COMPILER=$(which g++)
+
+4. Create the makefiles
+ccmake ..
+ccmake opens a configuration window. the key c is use to configure, key g to generate once configuration is done. You can change all the variables, but they should already be pointing to the correct libs. key g generates and quit 
+
+5. Makefile is created, so build the project with make
+make
+
+The executable should be duke/build/src/duke/duke, so provided your current folder is duke/build/, just run
+./src/duke/duke
+
+    see INSTALL file for more information
+    
+You might need the following libraries to make it run on your machine:
+libxtst-dev
+libxrandr-dev
+libxext-dev 
+libxi-dev
+libglu-dev
+glibc-devel 
+glibc-static
+libXrandr-devel.x86_64
+libmesa-dev
     
 **Known issues**
 
